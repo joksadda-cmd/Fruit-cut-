@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fruit Cut - Slice Mania</title>
+    <title>Fruit Cut - Slice Mania (TON)</title>
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Adsgram SDK -->
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <!-- Monetag SDK -->
+    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
 
@@ -26,7 +32,6 @@
             overflow:hidden;touch-action:none;width:100vw;height:100vh;position:relative;
         }
 
-        /* ========= STRIPED BACKGROUND ========= */
         .bg-stripes{
             position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;
             background:repeating-linear-gradient(180deg,rgba(255,255,255,0.04) 0px,rgba(255,255,255,0.04) 30px,transparent 30px,transparent 60px);
@@ -49,7 +54,6 @@
         .floor-arch:nth-child(2){left:33.3%;}
         .floor-arch:nth-child(3){left:66.6%;}
 
-        /* Snowflakes */
         .snowflake{
             position:fixed;top:-30px;color:#fff;font-size:22px;opacity:0.5;pointer-events:none;z-index:2;
             animation:snow linear infinite;
@@ -58,7 +62,6 @@
 
         canvas{display:block;width:100%;height:100%;position:fixed;top:0;left:0;z-index:3;}
 
-        /* ========= UI LAYER ========= */
         #ui{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none;}
         .ptr{pointer-events:auto;}
 
@@ -87,14 +90,13 @@
         }
         .diamond-value{font-size:20px;color:#003366;font-weight:900;font-family:'Luckiest Guy',cursive;}
 
-        /* ============= MENU ============= */
+        /* MENU */
         #menu-screen{
             position:fixed;top:0;left:0;width:100%;height:100%;z-index:12;
-            display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+            display:none;flex-direction:column;align-items:center;justify-content:space-between;
             padding:10px 10px 0 10px;
         }
 
-        /* Title Logo */
         .game-title{
             display:flex;flex-direction:column;align-items:center;
             margin-top:80px;animation:floatLogo 3s ease-in-out infinite;
@@ -105,23 +107,13 @@
             font-family:'Luckiest Guy',cursive;font-size:62px;line-height:0.9;
             text-align:center;letter-spacing:2px;
         }
-        .title-fruit{
-            color:#7dff00;
-            -webkit-text-stroke:3px #2a7000;
-            text-shadow:0 6px 0 #2a7000,0 10px 20px rgba(0,0,0,0.5);
-        }
-        .title-cut{
-            color:#ffcc00;
-            -webkit-text-stroke:3px #996600;
-            text-shadow:0 6px 0 #996600,0 10px 20px rgba(0,0,0,0.5);
-        }
+        .title-fruit{color:#7dff00;-webkit-text-stroke:3px #2a7000;text-shadow:0 6px 0 #2a7000,0 10px 20px rgba(0,0,0,0.5);}
+        .title-cut{color:#ffcc00;-webkit-text-stroke:3px #996600;text-shadow:0 6px 0 #996600,0 10px 20px rgba(0,0,0,0.5);}
         .title-sub{font-size:13px;color:rgba(255,255,255,0.8);font-weight:800;letter-spacing:3px;margin-top:4px;}
 
-        /* Knife icon in menu */
         .menu-knife{font-size:70px;margin:10px 0;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));animation:knifeFloat 2s ease-in-out infinite;}
         @keyframes knifeFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-8px) rotate(5deg);}}
 
-        /* Token indicator */
         #token-bar{
             background:rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);
             border-radius:20px;padding:6px 16px;display:flex;align-items:center;gap:8px;
@@ -129,7 +121,6 @@
         }
         .token-refill{font-size:11px;color:#ffcc00;}
 
-        /* Start Button */
         .start-btn{
             background:linear-gradient(180deg,#ffe040,#ff8c00);
             border:4px solid #fff;border-radius:20px;
@@ -143,7 +134,6 @@
         @keyframes pulsBtn{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
         .start-btn:active{transform:translateY(6px)!important;box-shadow:0 2px 0 #cc6600!important;animation:none!important;}
 
-        /* Daily Spin Button */
         .spin-btn{
             background:linear-gradient(180deg,#a855f7,#7e22ce);
             border:3px solid rgba(255,255,255,0.6);border-radius:16px;
@@ -160,10 +150,9 @@
         }
         @keyframes badgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
 
-        /* Bottom Icons */
         #bottom-icons{
-            display:flex;justify-content:center;gap:14px;
-            padding:14px 10px 20px;width:100%;
+            display:flex;justify-content:center;gap:10px;
+            padding:14px 10px 20px;width:100%;flex-wrap:wrap;
         }
         .icon-btn{
             display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -171,22 +160,23 @@
         }
         .icon-btn:active{transform:scale(0.9);}
         .icon-face{
-            width:60px;height:60px;border-radius:16px;
-            display:flex;align-items:center;justify-content:center;font-size:28px;
+            width:55px;height:55px;border-radius:16px;
+            display:flex;align-items:center;justify-content:center;font-size:26px;
             box-shadow:0 5px 0 rgba(0,0,0,0.3),0 8px 16px rgba(0,0,0,0.2);
             border:3px solid rgba(255,255,255,0.3);
             transition:transform 0.15s;
         }
         .icon-btn:active .icon-face{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,0.3)!important;}
-        .icon-label{font-size:11px;font-weight:900;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,0.5);}
+        .icon-label{font-size:10px;font-weight:900;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,0.5);}
         .ic-setting{background:linear-gradient(135deg,#607d8b,#37474f);}
         .ic-share{background:linear-gradient(135deg,#43a047,#1b5e20);}
         .ic-shop{background:linear-gradient(135deg,#ff9800,#e65100);}
         .ic-wallet{background:linear-gradient(135deg,#1976d2,#0d47a1);animation:jiggle 4s infinite;}
         .ic-ads{background:linear-gradient(135deg,#e91e63,#880e4f);}
+        .ic-task{background:linear-gradient(135deg,#00bcd4,#006064);}
         @keyframes jiggle{0%,8%,100%{transform:rotate(0);}2%{transform:rotate(-12deg);}4%{transform:rotate(12deg);}6%{transform:rotate(-8deg);}}
 
-        /* ============ GAME HUD ============ */
+        /* GAME HUD */
         #game-hud{
             position:fixed;top:0;left:0;width:100%;z-index:12;
             display:none;justify-content:space-between;align-items:center;
@@ -221,18 +211,19 @@
         .x-mark{font-family:'Luckiest Guy',cursive;font-size:28px;color:rgba(255,255,255,0.2);}
         .x-active{color:#ff3355;text-shadow:0 0 12px #ff3355;}
 
-        /* ============ MODALS ============ */
+        /* MODALS */
         .overlay{
             display:none;position:fixed;top:0;left:0;width:100%;height:100%;
             background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);
             z-index:50;justify-content:center;align-items:center;
+            overflow-y:auto;
         }
         .modal{
             background:linear-gradient(160deg,#0d3040,#071e28);
             border:3px solid rgba(100,200,220,0.3);border-radius:24px;
-            padding:28px 22px;width:92%;max-width:360px;
+            padding:28px 22px;width:92%;max-width:380px;
             box-shadow:0 20px 60px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.05);
-            position:relative;overflow:hidden;
+            position:relative;overflow:hidden;margin:auto;
         }
         .modal::before{
             content:'';position:absolute;top:0;left:0;width:100%;height:3px;
@@ -247,6 +238,7 @@
         .mh-red{color:var(--red);}
         .mh-green{color:#4caf50;}
         .mh-purple{color:#cf6fef;}
+        .mh-cyan{color:#00e5ff;}
 
         .btn{
             width:100%;padding:13px;border-radius:14px;border:none;cursor:pointer;
@@ -255,13 +247,13 @@
             box-shadow:var(--btn-shadow) rgba(0,0,0,0.3);
         }
         .btn:active{transform:translateY(5px);box-shadow:none!important;}
+        .btn:disabled{filter:grayscale(1); opacity:0.6; cursor:not-allowed;}
         .btn-gold{background:linear-gradient(180deg,#ffe040,#ff8c00);color:#fff;text-shadow:1px 2px 0 rgba(0,0,0,0.3);box-shadow:var(--btn-shadow) #cc5500;}
         .btn-red{background:linear-gradient(180deg,#ff3355,#cc0033);color:#fff;box-shadow:var(--btn-shadow) #880022;}
         .btn-green{background:linear-gradient(180deg,#4caf50,#2e7d32);color:#fff;box-shadow:var(--btn-shadow) #1b5e20;}
         .btn-blue{background:linear-gradient(180deg,#1976d2,#0d47a1);color:#fff;box-shadow:var(--btn-shadow) #002171;}
         .btn-purple{background:linear-gradient(180deg,#9c27b0,#6a0080);color:#fff;box-shadow:var(--btn-shadow) #4a0060;}
         .btn-grey{background:linear-gradient(180deg,#546e7a,#37474f);color:#fff;box-shadow:var(--btn-shadow) #1c313a;}
-        .btn-orange{background:linear-gradient(180deg,#ff9800,#e65100);color:#fff;box-shadow:var(--btn-shadow) #b33000;}
 
         .mrow{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 16px;margin-bottom:10px;}
         .mrow-label{font-size:15px;font-weight:800;color:#ddd;}
@@ -275,31 +267,37 @@
         }
         select option{background:#0d3040;color:#fff;}
 
-        .info-text{font-size:12px;color:#7ab;margin:8px 0;line-height:1.5;}
+        .info-text{font-size:12px;color:#7ab;margin:8px 0;line-height:1.5;text-align:center;}
 
-        /* Withdraw badge */
         .w-badge{
             display:inline-block;background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.4);
             border-radius:8px;padding:3px 10px;font-size:12px;color:var(--gold);font-weight:800;margin-bottom:4px;
         }
 
-        /* Spin Wheel */
-        #spin-canvas-wrap{position:relative;width:260px;height:260px;margin:0 auto 10px;}
-        #spin-canvas-wrap canvas{width:260px;height:260px;}
+        /* ===== SPIN WHEEL ===== */
+        #spin-canvas-wrap{
+            position:relative;width:260px;height:280px;margin:0 auto 16px;
+        }
+        #spin-canvas-wrap canvas{width:260px;height:260px;display:block; transition: transform 4s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
         .spin-pointer{
-            position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);
-            width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:28px solid #ff3355;
+            position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+            width:0;height:0;
+            border-left:14px solid transparent;
+            border-right:14px solid transparent;
+            border-top:28px solid #ff3355;
             filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            z-index:5;
         }
         .spin-wheel-btn{
             background:linear-gradient(180deg,#ff3355,#cc0033);
             border:3px solid #fff;border-radius:50%;
-            width:60px;height:60px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            width:60px;height:60px;position:absolute;
+            top:50%;left:50%;transform:translate(-50%,-50%);
             display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;
-            box-shadow:0 4px 15px rgba(0,0,0,0.5);
+            box-shadow:0 4px 15px rgba(0,0,0,0.5);z-index:4;
         }
 
-        /* Shop items */
+        /* Shop */
         .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
         .shop-card{
             background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
@@ -315,41 +313,106 @@
         .refer-link{
             background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
             border-radius:12px;padding:10px 14px;font-size:13px;color:#7de;
-            word-break:break-all;margin:8px 0;
+            word-break:break-all;margin:8px 0;text-align:center;
         }
+        .refer-stats{
+            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+            border-radius:14px;padding:12px;margin-bottom:10px;text-align:center;
+        }
+        .refer-count{font-size:32px;font-family:'Luckiest Guy',cursive;color:#ffcc00;}
+        .refer-count-label{font-size:12px;color:#aaa;}
 
-        /* Level complete & gameover */
         .big-emoji{font-size:64px;text-align:center;display:block;animation:floatLogo 2s infinite;margin-bottom:8px;}
         .reward-row{display:flex;align-items:center;justify-content:center;gap:10px;font-size:22px;font-weight:900;color:#fff;margin:12px 0;}
 
-        /* Confetti */
         #confetti-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:49;display:none;}
         .cp{position:absolute;width:10px;height:14px;animation:fall linear infinite;}
         @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
 
-        /* Ad loader */
-        #ad-loader{
-            display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-            background:rgba(0,0,0,0.9);z-index:999;
+        /* Loading / AD loader */
+        #fullscreen-loader, #ad-loader{
+            display:flex;position:fixed;top:0;left:0;width:100%;height:100%;
+            background:rgba(0,64,80,0.95);z-index:9999;
             justify-content:center;align-items:center;flex-direction:column;gap:16px;
         }
+        #ad-loader{ background:rgba(0,0,0,0.9); display:none; }
         .spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,0.2);border-top-color:#ffcc00;border-radius:50%;animation:spin 1s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
 
-        /* Token popup */
         #token-toast{
             position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
             background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px;
-            padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:60;
-            display:none;animation:fadeUp 0.3s ease;
+            padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999;
+            display:none;animation:fadeUp 0.3s ease;white-space:nowrap;
         }
         @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 
-        .hidden{display:none!important;}
+        /* ===== ADS MODAL / LOOTBOX ===== */
+        .lootbox-wrap{
+            background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3);
+            border-radius:16px;padding:16px;margin-bottom:12px;text-align:center;
+        }
+        .lootbox-bar-bg{
+            width:100%;height:20px;background:rgba(0,0,0,0.4);border-radius:10px;
+            overflow:hidden;margin:8px 0;border:2px solid rgba(255,200,0,0.3);
+        }
+        .lootbox-bar-fill{
+            height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00);
+            border-radius:10px;transition:width 0.5s;
+        }
+        .lootbox-pts{font-size:22px;font-family:'Luckiest Guy',cursive;color:#ffcc00;}
+        .lootbox-claim-btn{
+            background:linear-gradient(180deg,#ffe040,#ff8c00);
+            border:none;border-radius:12px;padding:10px 24px;
+            font-family:'Luckiest Guy',cursive;font-size:18px;color:#fff;
+            cursor:pointer;box-shadow:0 4px 0 #cc5500;margin-top:6px;width:100%;
+        }
+        .lootbox-claim-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 4px 0 #111;cursor:not-allowed; }
+
+        .ads-section{
+            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+            border-radius:14px;padding:12px;margin-bottom:10px;
+        }
+        .ads-row{ display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
+        .ads-info{font-size:12px;color:#aaa;}
+        .ads-info strong{color:#ffcc00;}
+        .watch-ad-btn{
+            background:linear-gradient(180deg,#e91e63,#880e4f);
+            border:none;border-radius:10px;padding:7px 14px;
+            font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff;
+            cursor:pointer;box-shadow:0 3px 0 #500030;white-space:nowrap;
+        }
+        .watch-ad-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 3px 0 #111;cursor:not-allowed; }
+
+        /* ===== TASK SECTION ===== */
+        .task-card{
+            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+            border-radius:14px;padding:12px 14px;margin-bottom:10px;
+            display:flex;align-items:center;gap:12px;
+        }
+        .task-icon{font-size:28px;flex-shrink:0;}
+        .task-info{flex:1;}
+        .task-name{font-size:14px;font-weight:900;color:#fff;}
+        .task-reward{font-size:12px;color:#ffcc00;margin-top:2px;}
+        .task-btn{
+            background:linear-gradient(180deg,#00bcd4,#006064);
+            border:none;border-radius:10px;padding:7px 14px;
+            font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff;
+            cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0;
+        }
+        .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
+        
+        .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
     </style>
 </head>
 <body>
-<!-- BG Decoration -->
+
+<div id="fullscreen-loader">
+    <div class="spinner"></div>
+    <div style="font-family:'Luckiest Guy',cursive;font-size:24px;color:#fff;letter-spacing:2px;">CONNECTING TO SERVER...</div>
+    <div id="loader-text" style="color:#7de;font-size:13px;margin-top:10px;">Authenticating Telegram ID</div>
+</div>
+
 <div class="bg-stripes"></div>
 <div class="bg-left-shelf"></div>
 <div class="bg-right-shelf"></div>
@@ -357,10 +420,8 @@
 <div class="floor-arch"></div><div class="floor-arch"></div><div class="floor-arch"></div>
 <div id="snowflakes"></div>
 
-<!-- Game Canvas -->
 <canvas id="gc"></canvas>
 
-<!-- Shared Top Bar (always visible when in menu) -->
 <div id="ui">
     <div id="top-bar" class="ptr">
         <div class="coin-box">
@@ -370,14 +431,14 @@
         <div class="lv-box">Lv <span id="ui-lv">1</span></div>
         <div class="diamond-box">
             <span style="font-size:18px">💎</span>
-            <div><div class="coin-label">GEMS</div><div class="diamond-value" id="ui-gems">0</div></div>
+            <div><div class="coin-label">DIAMONDS</div><div class="diamond-value" id="ui-gems">0</div></div>
         </div>
     </div>
 </div>
 
 <!-- MENU SCREEN -->
 <div id="menu-screen" class="ptr">
-    <div style="width:100%;padding:0 12px;"><!-- spacer for top bar --></div>
+    <div style="width:100%;padding:0 12px;"></div>
 
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:60px;">
         <div class="title-fruits">🍉🍓🍊🥝🍍</div>
@@ -390,39 +451,37 @@
 
     <div class="menu-knife">🗡️</div>
 
-    <div id="token-bar" class="ptr" onclick="showTokenInfo()">
-        🎮 Tokens: <span id="ui-tokens">3</span> / 3
+    <div id="token-bar" class="ptr" onclick="window.showTokenInfo()">
+        🎮 Tokens: <span id="ui-tokens">3</span> / 10
         <span class="token-refill" id="token-timer"></span>
     </div>
 
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-        <div class="start-btn ptr" onclick="tryStartGame()">▶ START</div>
-        <div class="spin-btn ptr" onclick="showModal('spin-modal')">
+        <div class="start-btn ptr" onclick="window.tryStartGame()">▶ START</div>
+        <div class="spin-btn ptr" onclick="window.showModal('spin-modal')">
             🎡 DAILY SPIN
             <span class="spin-badge" id="spin-badge">FREE</span>
         </div>
     </div>
 
     <div id="bottom-icons">
-        <div class="icon-btn ptr" onclick="showModal('setting-modal')">
-            <div class="icon-face ic-setting">⚙️</div>
-            <span class="icon-label">Setting</span>
+        <div class="icon-btn ptr" onclick="window.showModal('setting-modal')">
+            <div class="icon-face ic-setting">⚙️</div><span class="icon-label">Setting</span>
         </div>
-        <div class="icon-btn ptr" onclick="showModal('share-modal')">
-            <div class="icon-face ic-share">🔗</div>
-            <span class="icon-label">Share</span>
+        <div class="icon-btn ptr" onclick="window.showModal('share-modal')">
+            <div class="icon-face ic-share">🔗</div><span class="icon-label">Refer</span>
         </div>
-        <div class="icon-btn ptr" onclick="showModal('shop-modal')">
-            <div class="icon-face ic-shop">🛍️</div>
-            <span class="icon-label">Shop</span>
+        <div class="icon-btn ptr" onclick="window.showModal('shop-modal')">
+            <div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span>
         </div>
-        <div class="icon-btn ptr" onclick="showModal('wallet-modal')">
-            <div class="icon-face ic-wallet">💳</div>
-            <span class="icon-label">Wallet</span>
+        <div class="icon-btn ptr" onclick="window.showModal('wallet-modal')">
+            <div class="icon-face ic-wallet">💳</div><span class="icon-label">Wallet</span>
         </div>
-        <div class="icon-btn ptr" onclick="watchAdForCoins()">
-            <div class="icon-face ic-ads">📺</div>
-            <span class="icon-label">Ads</span>
+        <div class="icon-btn ptr" onclick="window.showModal('ads-modal')">
+            <div class="icon-face ic-ads">📺</div><span class="icon-label">Ads</span>
+        </div>
+        <div class="icon-btn ptr" onclick="window.showModal('task-modal')">
+            <div class="icon-face ic-task">📋</div><span class="icon-label">Tasks</span>
         </div>
     </div>
 </div>
@@ -440,10 +499,9 @@
         <div class="lv-bar-wrap"><div class="lv-bar-fill" id="lv-fill" style="width:0%"></div></div>
         <span id="hud-lv">Lv 1</span>
     </div>
-    <div class="get-btn" onclick="showModal('shop-modal')">🎁 Get</div>
+    <div class="get-btn" onclick="window.showModal('shop-modal')">🎁 Get</div>
 </div>
 
-<!-- Strikes -->
 <div id="strikes" style="display:none;flex-direction:row;position:fixed;top:72px;right:16px;z-index:13;gap:5px;">
     <span class="x-mark" id="s1">✕</span>
     <span class="x-mark" id="s2">✕</span>
@@ -451,53 +509,46 @@
 </div>
 
 <!-- ========== MODALS ========== -->
-
-<!-- SPIN WHEEL -->
 <div class="overlay ptr" id="spin-modal">
     <div class="modal">
-        <div class="mh mh-purple">🎡 Weapon Turntable</div>
+        <div class="mh mh-purple">🎡 Lucky Spin Wheel</div>
+        <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;font-weight:800;">
+            <span style="color:#4caf50">🟢 50💎</span> <span style="color:#66bb00">🟩 20💎</span> <span style="color:#e53935">🟥 80💎</span>
+            <span style="color:#ff9800">🟧 10💎</span> <span style="color:#ffcc00">⭐ 100💎</span> <span style="color:#2196f3">🔵 Token</span>
+        </div>
         <div id="spin-canvas-wrap">
-            <canvas id="wheel-canvas" width="260" height="260"></canvas>
             <div class="spin-pointer"></div>
-            <div class="spin-wheel-btn ptr" id="spin-center" onclick="spinWheel()">🎯</div>
+            <canvas id="wheel-canvas" width="260" height="260"></canvas>
+            <div class="spin-wheel-btn ptr" id="spin-center" onclick="window.spinWheel()">🎯</div>
         </div>
         <div id="spin-result" style="text-align:center;font-size:16px;font-weight:800;color:#ffcc00;min-height:28px;margin-bottom:6px;"></div>
-        <button class="btn btn-purple" onclick="hideModal('spin-modal')">CLOSE</button>
+        <div class="info-text" id="spin-timer-info"></div>
+        <button class="btn btn-purple" onclick="window.hideModal('spin-modal')">CLOSE</button>
     </div>
 </div>
 
-<!-- SHOP -->
 <div class="overlay ptr" id="shop-modal">
     <div class="modal">
         <div class="mh mh-gold">🛍️ Shop</div>
         <div class="shop-grid">
-            <div class="shop-card ptr" onclick="buyItem('gem1')">
-                <div class="shop-icon">💎</div>
-                <div class="shop-price">500 🪙</div>
-                <div class="shop-desc">1 Diamond</div>
+            <div class="shop-card ptr" onclick="window.buyItem('gem10')">
+                <div class="shop-icon">💎</div><div class="shop-price">500 🪙</div><div class="shop-desc">10 Diamonds</div>
             </div>
-            <div class="shop-card ptr" onclick="buyItem('gem5')">
-                <div class="shop-icon">💎💎</div>
-                <div class="shop-price">2000 🪙</div>
-                <div class="shop-desc">5 Diamonds</div>
+            <div class="shop-card ptr" onclick="window.buyItem('gem50')">
+                <div class="shop-icon">💎💎</div><div class="shop-price">2000 🪙</div><div class="shop-desc">50 Diamonds</div>
             </div>
-            <div class="shop-card ptr" onclick="buyItem('token')">
-                <div class="shop-icon">🎮</div>
-                <div class="shop-price">200 🪙</div>
-                <div class="shop-desc">+1 Token</div>
+            <div class="shop-card ptr" onclick="window.buyItem('token')">
+                <div class="shop-icon">🎮</div><div class="shop-price">200 🪙</div><div class="shop-desc">+1 Token</div>
             </div>
-            <div class="shop-card ptr" onclick="watchAdForCoins()">
-                <div class="shop-icon">📺</div>
-                <div class="shop-price">Watch Ad</div>
-                <div class="shop-desc">+100 Coins</div>
+            <div class="shop-card ptr" onclick="window.showModal('ads-modal');window.hideModal('shop-modal')">
+                <div class="shop-icon">📺</div><div class="shop-price">Watch Ad</div><div class="shop-desc">+150 Points</div>
             </div>
         </div>
-        <div class="info-text" style="text-align:center">💎 500+ Diamonds required to withdraw</div>
-        <button class="btn btn-grey" onclick="hideModal('shop-modal')">CLOSE</button>
+        <div class="info-text">💎 Min 100 Diamonds to withdraw</div>
+        <button class="btn btn-grey" onclick="window.hideModal('shop-modal')">CLOSE</button>
     </div>
 </div>
 
-<!-- WALLET -->
 <div class="overlay ptr" id="wallet-modal">
     <div class="modal">
         <div class="mh mh-gold">💳 Withdraw</div>
@@ -505,621 +556,677 @@
             <span class="mrow-label">My Diamonds</span>
             <span class="mrow-val">💎 <span id="w-gems">0</span></span>
         </div>
-        <div style="margin-bottom:6px;">
-            <span class="w-badge">bKash: Min 500 💎 = 60 BDT</span><br>
-            <span class="w-badge">Nagad: Min 500 💎 = 60 BDT</span><br>
-            <span class="w-badge">TON: Min 500 💎 = 1 TON</span><br>
-            <span class="w-badge">Binance: Min 1000 💎 = $1 USDT</span>
+        <div style="margin-bottom:8px;">
+            <div class="w-badge">💎 1000 = $1 USD</div><br>
+            <div class="w-badge">💎 1000 = 120 BDT</div><br>
+            <div class="w-badge">💎 1000 = 0.75 TON</div>
         </div>
         <select id="w-method">
-            <option value="bkash">bKash (Min 500 💎)</option>
-            <option value="nagad">Nagad (Min 500 💎)</option>
-            <option value="ton">TON Wallet (Min 500 💎)</option>
-            <option value="binance">Binance (Min 1000 💎)</option>
+            <option value="bkash">bKash (Min 100 💎 = 12 BDT)</option>
+            <option value="tonkeeper">Tonkeeper (Min 100 💎 = 0.075 TON)</option>
+            <option value="binance">Binance UID (Min 500 💎 = $0.5)</option>
         </select>
+        <input type="number" id="w-amount" placeholder="Enter Diamond amount" min="100">
         <input type="text" id="w-address" placeholder="Phone / Wallet Address / UID">
-        <button class="btn btn-gold" onclick="doWithdraw()">💸 WITHDRAW NOW</button>
+        <button class="btn btn-gold" id="btn-withdraw" onclick="window.doWithdraw()">💸 WITHDRAW NOW</button>
         <div class="info-text">Processing: 24-48 hours after review</div>
-        <button class="btn btn-grey" onclick="hideModal('wallet-modal')">CLOSE</button>
+        <button class="btn btn-grey" onclick="window.hideModal('wallet-modal')">CLOSE</button>
     </div>
 </div>
 
-<!-- SHARE / REFER -->
 <div class="overlay ptr" id="share-modal">
     <div class="modal">
         <div class="mh mh-green">🔗 Refer & Earn</div>
+        <div class="refer-stats">
+            <div class="refer-count" id="refer-count-display">0</div>
+            <div class="refer-count-label">Total Valid Referrals</div>
+        </div>
         <div class="mrow">
             <span class="mrow-label">Per Referral</span>
-            <span class="mrow-val">🪙50 + 🎮5</span>
+            <span class="mrow-val">💎5 + 🎮2 tokens</span>
         </div>
-        <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Share your code:</div>
-        <div class="refer-link ptr" id="refer-link" onclick="copyRefer()">Loading...</div>
+        <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
+        <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
         <div style="font-size:12px;color:#7de;margin-bottom:6px;" id="copy-status"></div>
-        <button class="btn btn-green" onclick="copyRefer()">📋 Copy Link</button>
-        <button class="btn btn-blue" onclick="shareNative()">📤 Share Now</button>
-        <button class="btn btn-grey" onclick="hideModal('share-modal')">CLOSE</button>
+        <button class="btn btn-green" onclick="window.copyRefer()">📋 Copy Link</button>
+        <button class="btn btn-blue" onclick="window.shareToTelegram()">✈️ Share on Telegram</button>
+        <button class="btn btn-grey" onclick="window.hideModal('share-modal')">CLOSE</button>
     </div>
 </div>
 
-<!-- SETTING -->
 <div class="overlay ptr" id="setting-modal">
     <div class="modal">
         <div class="mh mh-gold">⚙️ Settings</div>
+        <div id="tg-user-info" class="tg-info"></div>
         <div class="mrow">
             <span class="mrow-label">Sound</span>
-            <span class="mrow-val ptr" id="snd-toggle" onclick="toggleSound()">🔊</span>
+            <span class="mrow-val ptr" id="snd-toggle" onclick="window.toggleSound()">🔊</span>
         </div>
         <div class="mrow">
             <span class="mrow-label">Vibration</span>
-            <span class="mrow-val ptr" id="vib-toggle" onclick="toggleVib()">📳</span>
+            <span class="mrow-val ptr" id="vib-toggle" onclick="window.toggleVib()">📳</span>
         </div>
         <div class="mrow">
-            <span class="mrow-label">Version</span>
-            <span class="mrow-val" style="font-size:14px;color:#7ab;">v2.0.0</span>
+            <span class="mrow-label">Version (Firebase)</span>
+            <span class="mrow-val" style="font-size:14px;color:#7ab;">v4.0.0</span>
         </div>
-        <button class="btn btn-red" onclick="if(confirm('Reset all data?')){resetAll()}">⚠️ Reset Data</button>
-        <button class="btn btn-grey" onclick="hideModal('setting-modal')">CLOSE</button>
+        <button class="btn btn-grey" onclick="window.hideModal('setting-modal')">CLOSE</button>
     </div>
 </div>
 
-<!-- LEVEL COMPLETE -->
+<div class="overlay ptr" id="ads-modal">
+    <div class="modal">
+        <div class="mh mh-red">📺 Earn with Ads</div>
+        <div class="lootbox-wrap">
+            <div style="font-size:16px;font-weight:900;color:#ffcc00;margin-bottom:4px;">🎁 Lootbox</div>
+            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Collect 600 points to claim!</div>
+            <div class="lootbox-bar-bg"><div class="lootbox-bar-fill" id="lootbox-fill" style="width:0%"></div></div>
+            <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 600 pts</span></div>
+            <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD (50💎)</button>
+        </div>
+
+        <div class="ads-section">
+            <div class="ads-row">
+                <div class="ads-info">⚡ <strong>Adsgram Ads</strong> (+150 pts)<br><span id="adsgram-left">0/5 remaining</span></div>
+                <button class="watch-ad-btn" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
+            </div>
+        </div>
+        <div class="ads-section">
+            <div class="ads-row">
+                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+50 pts)<br><span id="monetag-left">0/10 remaining</span></div>
+                <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
+            </div>
+        </div>
+        <div class="info-text">Resets daily at midnight 🕛</div>
+        <button class="btn btn-grey" onclick="window.hideModal('ads-modal')">CLOSE</button>
+    </div>
+</div>
+
+<div class="overlay ptr" id="task-modal">
+    <div class="modal">
+        <div class="mh mh-cyan">📋 Tasks</div>
+        <div id="task-list"></div>
+        <div class="info-text">Complete tasks to earn rewards!</div>
+        <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
+    </div>
+</div>
+
 <div class="overlay" id="complete-modal">
     <div id="confetti-wrap"></div>
     <div class="modal">
         <span class="big-emoji">🎉</span>
         <div class="mh mh-gold">LEVEL COMPLETE!</div>
         <div class="reward-row">Reward: 🪙 <span id="comp-reward" style="color:#ffcc00;">0</span></div>
-        <button class="btn btn-gold" onclick="claimReward(false)">▶ NEXT LEVEL</button>
-        <button class="btn btn-red" onclick="claimReward(true)">📺 2× REWARD (Watch Ad)</button>
+        <button class="btn btn-gold" onclick="window.claimReward(false)">▶ NEXT LEVEL</button>
+        <button class="btn btn-red" onclick="window.claimReward(true)">📺 2× REWARD (Watch Ad)</button>
     </div>
 </div>
 
-<!-- GAME OVER -->
 <div class="overlay" id="over-modal">
     <div class="modal">
         <span class="big-emoji">😵</span>
         <div class="mh mh-red">GAME OVER</div>
         <div style="text-align:center;color:#aaa;margin-bottom:10px;">You missed too many fruits!</div>
-        <button class="btn btn-gold" onclick="retryGame()">🔁 RETRY</button>
-        <button class="btn btn-grey" onclick="backToMenu()">🏠 MAIN MENU</button>
+        <button class="btn btn-gold" onclick="window.retryGame()">🔁 RETRY</button>
+        <button class="btn btn-grey" onclick="window.backToMenu()">🏠 MAIN MENU</button>
     </div>
 </div>
 
-<!-- AD LOADER -->
 <div id="ad-loader">
     <div class="spinner"></div>
     <div style="font-family:'Luckiest Guy',cursive;font-size:22px;color:#ffcc00;letter-spacing:2px;">AD LOADING...</div>
-    <div style="font-size:13px;color:#777;margin-top:4px;">Please wait 5 seconds</div>
+    <div style="font-size:13px;color:#777;margin-top:4px;">Please wait...</div>
 </div>
 
-<!-- TOKEN TOAST -->
 <div id="token-toast"></div>
 
-<script>
-// ====================== DATA ======================
-let G = {
-    coins: 0, gems: 0, stage: 1, tokens: 3,
-    referCode: '', referCount: 0,
-    sound: true, vib: true,
-    dailySpin: 0, // timestamp last spin
-    tokenRefill: 0, // timestamp last refill start
-};
+<!-- FIREBASE & GAME LOGIC -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, arrayUnion, collection, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 
-function load(){
-    let s = localStorage.getItem('fc_data');
-    if(s){ try{ let d=JSON.parse(s); Object.assign(G,d); }catch(e){} }
-    if(!G.referCode) G.referCode = 'FRUITCUT' + Math.random().toString(36).substr(2,6).toUpperCase();
-    document.getElementById('refer-link').textContent = 'https://fruitcut.game/?ref=' + G.referCode;
-    updateUI();
-    startTokenTimer();
-}
-function save(){ localStorage.setItem('fc_data', JSON.stringify(G)); updateUI(); }
-function updateUI(){
-    document.getElementById('ui-coins').textContent = G.coins;
-    document.getElementById('ui-gems').textContent = G.gems;
-    document.getElementById('ui-lv').textContent = G.stage;
-    document.getElementById('ui-tokens').textContent = G.tokens;
-    document.getElementById('w-gems').textContent = G.gems;
-    document.getElementById('snd-toggle').textContent = G.sound ? '🔊' : '🔇';
-    document.getElementById('vib-toggle').textContent = G.vib ? '📳' : '🔕';
-    let canSpin = Date.now() - G.dailySpin > 24*3600*1000;
-    document.getElementById('spin-badge').textContent = canSpin ? 'FREE' : 'DONE';
-}
+    // Initialize Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyDH56nAHruchExL-kZOUv1MZS8forDWOH0",
+        authDomain: "fruit-cut-477ab.firebaseapp.com",
+        projectId: "fruit-cut-477ab",
+        storageBucket: "fruit-cut-477ab.firebasestorage.app",
+        messagingSenderId: "476402093190",
+        appId: "1:476402093190:web:382339ab1403de24751507",
+        measurementId: "G-MCBRFK1ZEJ"
+    };
 
-// Token refill every 30 min
-function startTokenTimer(){
-    setInterval(()=>{
-        if(G.tokens < 3){
-            let elapsed = Date.now() - G.tokenRefill;
-            let left = 30*60*1000 - elapsed;
-            if(left <= 0){
-                G.tokens = Math.min(3, G.tokens+1);
-                G.tokenRefill = Date.now();
-                save();
-                showToast('🎮 Token refilled! You have ' + G.tokens + ' tokens.');
-            } else {
-                let m = Math.floor(left/60000), s = Math.floor((left%60000)/1000);
-                document.getElementById('token-timer').textContent = `(+1 in ${m}:${s.toString().padStart(2,'0')})`;
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if(tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#006070'); tg.setBackgroundColor('#004050'); }
+
+    // State object for game
+    let currentUser = null;
+    window.G = {
+        coins: 0, gems: 0, stage: 1, tokens: 3, referCode: '', referCount: 0,
+        sound: true, vib: true, dailySpin: 0, tokenRefill: 0, adsDayStamp: '',
+        adsgramCount: 0, monetagCount: 0, lootboxPoints: 0, completedTasks: [], gamesPlayed: 0
+    };
+
+    const DEFAULT_TASKS = [
+        {id:'join_channel', icon:'📢', name:'Join Telegram Channel', reward:'💎 20 Diamonds', link:'https://t.me/FruitCutGame', gems:20, coins:0},
+        {id:'play_10', icon:'🎮', name:'Play 10 Games', reward:'💎 30 Diamonds', link:null, coins:0, gems:30, playReq:10},
+    ];
+
+    function getTodayStr() { return new Date().toDateString(); }
+
+    function showToast(msg) {
+        let t = document.getElementById('token-toast');
+        t.textContent = msg; t.style.display = 'block';
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(()=> t.style.display='none', 3500);
+    }
+
+    async function checkDailyReset() {
+        let today = getTodayStr();
+        if(window.G.adsDayStamp !== today) {
+            window.G.adsDayStamp = today;
+            window.G.adsgramCount = 0; window.G.monetagCount = 0;
+            if(currentUser) {
+                await updateDoc(doc(db, 'users', currentUser.id), { adsDayStamp: today, adsgramCount: 0, monetagCount: 0 });
             }
+        }
+    }
+
+    window.saveState = async function() {
+        if(!currentUser) return;
+        window.updateUI();
+        try {
+            await updateDoc(doc(db, 'users', currentUser.id), {
+                coins: window.G.coins, gems: window.G.gems, stage: window.G.stage,
+                tokens: window.G.tokens, lootboxPoints: window.G.lootboxPoints,
+                gamesPlayed: window.G.gamesPlayed, completedTasks: window.G.completedTasks,
+                tokenRefill: window.G.tokenRefill
+            });
+        } catch(e) { console.error("Save error", e); }
+    };
+
+    window.updateUI = function() {
+        document.getElementById('ui-coins').textContent = window.G.coins;
+        document.getElementById('ui-gems').textContent = window.G.gems;
+        document.getElementById('ui-lv').textContent = window.G.stage;
+        document.getElementById('ui-tokens').textContent = window.G.tokens;
+        document.getElementById('w-gems').textContent = window.G.gems;
+        document.getElementById('snd-toggle').textContent = window.G.sound ? '🔊' : '🔇';
+        document.getElementById('vib-toggle').textContent = window.G.vib ? '📳' : '🔕';
+        document.getElementById('refer-count-display').textContent = window.G.referCount || 0;
+        let canSpin = Date.now() - window.G.dailySpin > 24*3600*1000;
+        document.getElementById('spin-badge').textContent = canSpin ? 'FREE' : 'DONE';
+    };
+
+    // Firebase Auth & Init
+    async function initApp() {
+        let tgUser = tg?.initDataUnsafe?.user;
+        if (!tgUser) {
+            document.getElementById('fullscreen-loader').innerHTML = '<h3 style="color:#ff3355;margin-top:20px;">Please open inside Telegram!</h3>';
+            return;
+        }
+
+        const userId = String(tgUser.id);
+        const userRef = doc(db, 'users', userId);
+        
+        try {
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) {
+                // New User Registration
+                let startParam = tg.initDataUnsafe?.start_param;
+                let referredBy = null;
+                
+                if (startParam && startParam !== `FC${userId}`) {
+                    referredBy = startParam.replace('FC', '');
+                    try {
+                        // Reward Referrer
+                        await updateDoc(doc(db, 'users', referredBy), { referCount: increment(1), gems: increment(5), tokens: increment(2) });
+                    } catch(e){}
+                }
+
+                const initialData = {
+                    telegramId: userId, username: tgUser.username || 'unknown',
+                    coins: 0, gems: (referredBy ? 5 : 0), stage: 1, tokens: (referredBy ? 5 : 3),
+                    referCode: `FC${userId}`, referCount: 0, referredBy: referredBy,
+                    dailySpin: 0, tokenRefill: Date.now(), adsDayStamp: getTodayStr(),
+                    adsgramCount: 0, monetagCount: 0, lootboxPoints: 0, completedTasks: [], gamesPlayed: 0
+                };
+                await setDoc(userRef, initialData);
+                currentUser = { id: userId, ...initialData };
+                if(referredBy) showToast('🎉 Joined via referral! Bonus +5💎 & +2🎮');
+            } else {
+                currentUser = { id: snap.id, ...snap.data() };
+            }
+
+            // Sync Database with Local G object
+            Object.assign(window.G, currentUser);
+
+            // Load settings from local storage
+            let prefs = localStorage.getItem('fc_prefs');
+            if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
+
+            await checkDailyReset();
+            window.updateUI();
+
+            let uiTg = document.getElementById('tg-user-info');
+            uiTg.textContent = `👤 ${tgUser.first_name||''} (@${tgUser.username||''})`;
+
+            document.getElementById('refer-link').textContent = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
+            
+            // Hide Loader, Show Menu
+            document.getElementById('fullscreen-loader').style.display = 'none';
+            document.getElementById('menu-screen').style.display = 'flex';
+            
+            // Start Canvas Game Loop
+            startTokenTimer();
+            window.drawWheel();
+            requestAnimationFrame(window.loop);
+
+        } catch (error) {
+            document.getElementById('loader-text').textContent = 'Error connecting to database. Please reload.';
+            console.error(error);
+        }
+    }
+
+    function startTokenTimer(){
+        setInterval(()=>{
+            if(window.G.tokens < 10){
+                let elapsed = Date.now() - window.G.tokenRefill;
+                let left = 30*60*1000 - elapsed;
+                if(left <= 0){
+                    window.G.tokens = Math.min(10, window.G.tokens+1);
+                    window.G.tokenRefill = Date.now();
+                    window.saveState();
+                    showToast(`🎮 Token refilled! (${window.G.tokens})`);
+                } else {
+                    let m = Math.floor(left/60000), sec = Math.floor((left%60000)/1000);
+                    document.getElementById('token-timer').textContent = `(+1 in ${m}:${sec.toString().padStart(2,'0')})`;
+                }
+            } else {
+                document.getElementById('token-timer').textContent = 'MAX';
+            }
+        }, 1000);
+    }
+
+    /* -------------------------------------------------------------------------
+       Expose standard UI interaction functions to Window (for HTML onclicks)
+    ------------------------------------------------------------------------- */
+    window.showModal = function(id){
+        document.getElementById(id).style.display='flex';
+        if(id==='ads-modal'){ checkDailyReset().then(()=>{ updateAdsUI(); }); }
+        if(id==='spin-modal'){ window.updateSpinTimer(); }
+        if(id==='task-modal'){ window.renderTasks(); }
+    };
+    window.hideModal = function(id){ document.getElementById(id).style.display='none'; };
+    window.showTokenInfo = function(){ showToast('🎮 Tokens: 1 token = 1 game. Max 10. Refills +1 every 30m!'); };
+    window.toggleSound = function(){ window.G.sound=!window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
+    window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
+
+    window.buyItem = function(type){
+        if(type==='gem10'){
+            if(window.G.coins<500){ showToast('❌ Need 500 Coins!'); return; }
+            window.G.coins-=500; window.G.gems+=10; window.saveState(); showToast('💎 +10 Diamonds!');
+        } else if(type==='gem50'){
+            if(window.G.coins<2000){ showToast('❌ Need 2000 Coins!'); return; }
+            window.G.coins-=2000; window.G.gems+=50; window.saveState(); showToast('💎 +50 Diamonds!');
+        } else if(type==='token'){
+            if(window.G.tokens>=10){ showToast('Tokens full!'); return; }
+            if(window.G.coins<200){ showToast('❌ Need 200 Coins!'); return; }
+            window.G.coins-=200; window.G.tokens++; window.saveState(); showToast('🎮 +1 Token!');
+        }
+    };
+
+    window.copyRefer = function(){
+        let txt = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
+        navigator.clipboard?.writeText(txt).then(()=>{
+            document.getElementById('copy-status').textContent='✅ Copied!';
+            setTimeout(()=>document.getElementById('copy-status').textContent='', 2000);
+        });
+    };
+    window.shareToTelegram = function(){
+        let link = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
+        let text = '🎮 Play Fruit Cut & Earn! Join with my link:';
+        if(tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
+        else window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
+    };
+
+    /* -------------------------------------------------------------------------
+       Ads & Lootbox (Firebase Sync)
+    ------------------------------------------------------------------------- */
+    function updateAdsUI(){
+        let agLeft = 5 - window.G.adsgramCount;
+        let mtLeft = 10 - window.G.monetagCount;
+        document.getElementById('adsgram-left').textContent = `${agLeft}/5 remaining`;
+        document.getElementById('monetag-left').textContent = `${mtLeft}/10 remaining`;
+        document.getElementById('adsgram-btn').disabled = agLeft <= 0;
+        document.getElementById('monetag-btn').disabled = mtLeft <= 0;
+
+        let pct = Math.min(100, (window.G.lootboxPoints/600)*100);
+        document.getElementById('lootbox-fill').style.width = pct + '%';
+        document.getElementById('lootbox-pts').textContent = window.G.lootboxPoints;
+        document.getElementById('lootbox-claim-btn').disabled = window.G.lootboxPoints < 600;
+    }
+
+    window.claimLootbox = async function(){
+        if(window.G.lootboxPoints < 600) return;
+        window.G.lootboxPoints = 0; window.G.gems += 50;
+        await window.saveState();
+        updateAdsUI(); showToast('🎁 Lootbox claimed! +50 Diamonds!');
+        if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    };
+
+    window.watchAdsgramAd = async function(){
+        if(window.G.adsgramCount >= 5){ showToast('Limit reached!'); return; }
+        try {
+            let AdC = Adsgram.init({ blockId: "28066" });
+            await AdC.show();
+            window.G.adsgramCount++; window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints+150);
+            await updateDoc(doc(db, 'users', currentUser.id), { adsgramCount: window.G.adsgramCount });
+            window.saveState(); updateAdsUI(); showToast('✅ +150 Points!');
+        } catch(e) { simAd(150, 'adsgramCount'); } // Fallback for testing
+    };
+
+    window.watchMonetagAd = async function(){
+        if(window.G.monetagCount >= 10){ showToast('Limit reached!'); return; }
+        try {
+            await show_10893505();
+            window.G.monetagCount++; window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints+50);
+            await updateDoc(doc(db, 'users', currentUser.id), { monetagCount: window.G.monetagCount });
+            window.saveState(); updateAdsUI(); showToast('✅ +50 Points!');
+        } catch(e) { simAd(50, 'monetagCount'); } // Fallback for testing
+    };
+
+    function simAd(pts, type){
+        document.getElementById('ad-loader').style.display='flex';
+        setTimeout(async ()=>{
+            document.getElementById('ad-loader').style.display='none';
+            window.G[type]++; window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints+pts);
+            await updateDoc(doc(db, 'users', currentUser.id), { [type]: window.G[type] });
+            window.saveState(); updateAdsUI(); showToast(`✅ +${pts} Points!`);
+        }, 2000);
+    }
+
+    /* -------------------------------------------------------------------------
+       Tasks System
+    ------------------------------------------------------------------------- */
+    window.renderTasks = function(){
+        let c = document.getElementById('task-list'); c.innerHTML='';
+        DEFAULT_TASKS.forEach(t => {
+            let done = window.G.completedTasks.includes(t.id);
+            if(t.playReq && window.G.gamesPlayed >= t.playReq && !done) done = false;
+            c.innerHTML += `
+                <div class="task-card">
+                    <div class="task-icon">${t.icon}</div>
+                    <div class="task-info"><div class="task-name">${t.name}</div><div class="task-reward">${t.reward}</div></div>
+                    <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}')" ${done?'disabled':''}>
+                        ${done ? '✅ Done' : '▶ Go'}
+                    </button>
+                </div>`;
+        });
+    };
+
+    window.doTask = async function(id){
+        let t = DEFAULT_TASKS.find(x=>x.id===id);
+        if(t.playReq && window.G.gamesPlayed < t.playReq){ showToast(`❌ Play ${t.playReq} games! (${window.G.gamesPlayed}/${t.playReq})`); return; }
+        if(t.link){ if(tg?.openLink) tg.openLink(t.link); else window.open(t.link, '_blank'); }
+        
+        setTimeout(async ()=>{
+            if(!window.G.completedTasks.includes(id)){
+                window.G.completedTasks.push(id);
+                if(t.gems) window.G.gems += t.gems;
+                if(t.coins) window.G.coins += t.coins;
+                await window.saveState(); window.renderTasks(); showToast(`✅ Task done! ${t.reward}`);
+            }
+        }, 2000);
+    };
+
+    /* -------------------------------------------------------------------------
+       Withdrawal System
+    ------------------------------------------------------------------------- */
+    window.doWithdraw = async function(){
+        let method = document.getElementById('w-method').value;
+        let addr = document.getElementById('w-address').value.trim();
+        let amount = parseInt(document.getElementById('w-amount').value)||0;
+        
+        if(!addr) return showToast('❌ Enter address!');
+        if(amount < 100) return showToast(`❌ Min 100 💎!`);
+        if(window.G.gems < amount) return showToast('❌ Not enough Diamonds!');
+        
+        let btn = document.getElementById('btn-withdraw');
+        btn.disabled = true; btn.textContent = "Processing...";
+
+        try {
+            await runTransaction(db, async (t) => {
+                const uRef = doc(db, 'users', currentUser.id);
+                const uDoc = await t.get(uRef);
+                if(uDoc.data().gems < amount) throw new Error("Insufficient");
+                
+                t.update(uRef, { gems: increment(-amount) });
+                t.set(doc(collection(db, 'withdrawals')), {
+                    userId: currentUser.id, username: currentUser.username,
+                    method, address: addr, amount, status: 'pending', createdAt: serverTimestamp()
+                });
+            });
+            window.G.gems -= amount; window.updateUI();
+            window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!');
+        } catch(e) {
+            showToast('❌ Server error. Try again.');
+        } finally {
+            btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
+        }
+    };
+
+    /* -------------------------------------------------------------------------
+       Game Logic & Canvas
+    ------------------------------------------------------------------------- */
+    const canvas = document.getElementById('gc'); const ctx = canvas.getContext('2d');
+    let W, H; function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    let gameState='menu', objects=[], particles=[], sliceTrail=[], isSlicing=false, mouse={x:0,y:0};
+    let cutTarget=0, currentCut=0, missCount=0, pendingReward=0;
+
+    class FruitObj {
+        constructor(isMenu=false){
+            this.isBomb = !isMenu && Math.random() < Math.min(0.05+window.G.stage*0.008, 0.12);
+            let emojis = ['🍉','🍓','🥝','🍊','🍋','🍑','🍍'];
+            let colors = ['#ff4444','#ff2244','#66bb00','#ff9900','#ffee00','#ff8866','#ffcc00'];
+            let rIdx = Math.floor(Math.random()*emojis.length);
+            this.emoji = this.isBomb ? '💣' : emojis[rIdx]; this.color = this.isBomb ? '#ff0000' : colors[rIdx];
+            this.r = 40 + Math.random()*18; this.x = 80 + Math.random()*(W-160); this.y = H + this.r;
+            this.vx = (Math.random()-0.5)*(isMenu?2:4); this.vy = -(isMenu?(9+Math.random()*4):(13+Math.random()*4+Math.min(window.G.stage*0.1,3)));
+            this.grav = isMenu ? 0.05 : 0.14; this.rot = 0; this.rotSpd = (Math.random()-0.5)*0.12;
+            this.cut=false; this.sliced=false; this.sliceAlpha=0;
+        }
+        update(){ this.x+=this.vx; this.y+=this.vy; this.vy+=this.grav; this.rot+=this.rotSpd; if(this.sliced) this.sliceAlpha=Math.max(0,this.sliceAlpha-0.05); }
+        draw(){
+            ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rot);
+            ctx.shadowColor=this.isBomb?'#ff0000':'rgba(0,0,0,0.3)'; ctx.shadowBlur=this.isBomb?20:8; ctx.shadowOffsetY=4;
+            ctx.font=`${this.r*1.6}px Arial`; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(this.emoji,0,0); ctx.restore();
+            if(this.sliced && this.sliceAlpha>0){
+                ctx.save(); ctx.translate(this.x,this.y); ctx.globalAlpha=this.sliceAlpha;
+                ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=3; ctx.beginPath();
+                ctx.moveTo(-this.r*0.8, -this.r*0.3); ctx.lineTo(this.r*0.8, this.r*0.3); ctx.stroke(); ctx.restore();
+            }
+        }
+    }
+    
+    class Particle {
+        constructor(x,y,color){
+            this.x=x; this.y=y; this.vx=(Math.random()-0.5)*16; this.vy=(Math.random()-0.5)*16;
+            this.color=color; this.life=1; this.decay=0.02+Math.random()*0.03; this.sz=Math.random()*8+4;
+        }
+        update(){ this.x+=this.vx; this.y+=this.vy; this.vy+=0.35; this.life-=this.decay; }
+        draw(){ ctx.globalAlpha=this.life*0.8; ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,this.sz,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; }
+    }
+
+    function splash(x,y,c){ for(let i=0;i<20;i++) particles.push(new Particle(x,y,c)); }
+    function getPos(e){ let t=e.touches?e.touches[0]:e; return {x:t.clientX,y:t.clientY}; }
+    
+    function onStart(e){ if(gameState!=='playing')return; isSlicing=true; sliceTrail=[]; let p=getPos(e); mouse.x=p.x; mouse.y=p.y; }
+    function onMove(e){ if(!isSlicing||gameState!=='playing')return; let p=getPos(e); mouse.x=p.x; mouse.y=p.y; sliceTrail.push({x:p.x,y:p.y,time:Date.now()}); checkCuts(); }
+    function onEnd(){ isSlicing=false; setTimeout(()=>sliceTrail=[],120); }
+    
+    canvas.addEventListener('mousedown',onStart); canvas.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onEnd);
+    canvas.addEventListener('touchstart',onStart,{passive:false}); canvas.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',onEnd);
+
+    function checkCuts(){
+        for(let i=objects.length-1;i>=0;i--){
+            let o=objects[i];
+            if(!o.cut && Math.hypot(o.x-mouse.x, o.y-mouse.y)<o.r){
+                o.cut=true; o.sliced=true; o.sliceAlpha=1; splash(o.x,o.y,o.color);
+                if(o.isBomb){ addMiss(); addMiss(); }
+                else{ 
+                    currentCut++; 
+                    document.getElementById('hud-cut').textContent=currentCut;
+                    document.getElementById('lv-fill').style.width = Math.min(100, (currentCut/cutTarget)*100) + '%';
+                    if(currentCut>=cutTarget) setTimeout(()=>{ gameState='paused'; window.showModal('complete-modal'); }, 250);
+                }
+                objects.splice(i,1);
+                if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+    }
+
+    function addMiss(){
+        if(gameState!=='playing') return;
+        missCount++; let el = document.getElementById('s'+missCount); if(el) el.classList.add('x-active');
+        if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+        if(missCount>=3){ gameState='paused'; window.showModal('over-modal'); }
+    }
+
+    function drawBlade(){
+        if(sliceTrail.length<2)return;
+        let now=Date.now(); sliceTrail=sliceTrail.filter(p=>now-p.time<140);
+        ctx.beginPath(); ctx.moveTo(sliceTrail[0].x,sliceTrail[0].y);
+        for(let i=1;i<sliceTrail.length;i++) ctx.lineTo(sliceTrail[i].x,sliceTrail[i].y);
+        ctx.lineJoin='round'; ctx.lineCap='round';
+        ctx.lineWidth=16; ctx.strokeStyle='rgba(0,220,255,0.25)'; ctx.stroke();
+        ctx.lineWidth=8; ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.stroke();
+        ctx.lineWidth=3; ctx.strokeStyle='#ffffff'; ctx.stroke();
+    }
+
+    window.loop = function(){
+        ctx.clearRect(0,0,W,H);
+        let rate = gameState==='menu' ? 55 : Math.max(28,65 - window.G.stage*2);
+        if(Math.random()<1/rate) objects.push(new FruitObj(gameState==='menu'));
+        
+        for(let i=objects.length-1;i>=0;i--){
+            let o=objects[i]; o.update(); o.draw();
+            if(o.y>H+o.r){ if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss(); objects.splice(i,1); }
+        }
+        for(let i=particles.length-1;i>=0;i--){ let p=particles[i]; p.update(); p.draw(); if(p.life<=0) particles.splice(i,1); }
+        if(gameState==='playing') drawBlade();
+        requestAnimationFrame(window.loop);
+    };
+
+    window.tryStartGame = function(){
+        if(window.G.tokens<=0){ showToast('❌ No tokens! Wait for refill.'); return; }
+        window.G.tokens--; window.G.gamesPlayed++; window.saveState();
+        
+        document.getElementById('menu-screen').style.display='none';
+        document.getElementById('game-hud').style.display='flex';
+        document.getElementById('strikes').style.display='flex';
+        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
+        cutTarget = 8 + window.G.stage*2; pendingReward = 20 + window.G.stage*5;
+        document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
+        document.getElementById('comp-reward').textContent=pendingReward;
+        document.getElementById('hud-target').textContent=cutTarget;
+        document.getElementById('hud-cut').textContent='0';
+        document.getElementById('hud-lv').textContent='Lv '+window.G.stage;
+        document.getElementById('hud-reward').textContent=pendingReward;
+        document.getElementById('lv-fill').style.width='0%';
+        gameState='playing';
+    };
+
+    window.claimReward = async function(watchAd){
+        window.hideModal('complete-modal');
+        if(watchAd){
+            document.getElementById('ad-loader').style.display='flex';
+            setTimeout(async ()=>{
+                document.getElementById('ad-loader').style.display='none';
+                window.G.coins+=pendingReward*2; window.G.stage++; await window.saveState(); window.tryStartGame();
+            }, 3000); // simulated ad delay
         } else {
-            document.getElementById('token-timer').textContent = '';
+            window.G.coins+=pendingReward; window.G.stage++; await window.saveState(); window.tryStartGame();
         }
-    }, 1000);
-}
+    };
 
-// ====================== MODAL ======================
-function showModal(id){
-    document.getElementById(id).style.display='flex';
-    if(id==='wallet-modal') document.getElementById('w-gems').textContent=G.gems;
-}
-function hideModal(id){ document.getElementById(id).style.display='none'; }
+    window.retryGame = function(){ window.hideModal('over-modal'); window.tryStartGame(); };
+    window.backToMenu = function(){
+        window.hideModal('over-modal'); document.getElementById('game-hud').style.display='none';
+        document.getElementById('strikes').style.display='none'; document.getElementById('menu-screen').style.display='flex';
+        objects=[]; gameState='menu'; window.updateUI();
+    };
 
-function showToast(msg){
-    let t = document.getElementById('token-toast');
-    t.textContent = msg;
-    t.style.display = 'block';
-    setTimeout(()=>{ t.style.display='none'; }, 3000);
-}
-
-// ====================== GAME VARS ======================
-const canvas = document.getElementById('gc');
-const ctx = canvas.getContext('2d');
-let W, H;
-function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize); resize();
-
-let gameState = 'menu';
-let objects=[], particles=[], sliceTrail=[];
-let isSlicing=false, mouse={x:0,y:0};
-let cutTarget=0, currentCut=0, missCount=0, pendingReward=0;
-let frameCount=0;
-
-const FRUITS_HALF = [
-    {emoji:'🍉', color:'#ff4444'},
-    {emoji:'🍓', color:'#ff2244'},
-    {emoji:'🥝', color:'#66bb00'},
-    {emoji:'🍊', color:'#ff9900'},
-    {emoji:'🍋', color:'#ffee00'},
-    {emoji:'🍑', color:'#ff8866'},
-    {emoji:'🍐', color:'#88cc44'},
-    {emoji:'🍍', color:'#ffcc00'},
-    {emoji:'🍈', color:'#aaddaa'},
-];
-
-// ====================== SPAWNING ======================
-class FruitObj {
-    constructor(isMenu=false){
-        this.isBomb = !isMenu && Math.random() < Math.min(0.05+G.stage*0.008, 0.12);
-        let f = FRUITS_HALF[Math.floor(Math.random()*FRUITS_HALF.length)];
-        this.emoji = this.isBomb ? '💣' : f.emoji;
-        this.color = this.isBomb ? '#ff0000' : f.color;
-        this.r = 40 + Math.random()*18;
-        this.x = 80 + Math.random()*(W-160);
-        this.y = H + this.r;
-        this.vx = (Math.random()-0.5) * (isMenu?2:4);
-        let jH = isMenu ? (9+Math.random()*4) : (13+Math.random()*4+Math.min(G.stage*0.1,3));
-        this.vy = -jH;
-        this.grav = isMenu ? 0.05 : 0.14;
-        this.rot = 0; this.rotSpd = (Math.random()-0.5)*0.12;
-        this.cut = false; this.isMenu = isMenu;
-        this.sliced = false; // show slice effect
-        this.sliceAlpha = 0;
-    }
-    update(){
-        this.x+=this.vx; this.y+=this.vy; this.vy+=this.grav; this.rot+=this.rotSpd;
-        if(this.sliced) this.sliceAlpha = Math.max(0, this.sliceAlpha-0.05);
-    }
-    draw(){
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rot);
-        // Shadow
-        ctx.shadowColor='rgba(0,0,0,0.3)'; ctx.shadowBlur=8; ctx.shadowOffsetY=4;
-        ctx.font = `${this.r*1.6}px Arial`;
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        if(this.isBomb){ ctx.shadowColor='#ff0000'; ctx.shadowBlur=20; }
-        ctx.fillText(this.emoji, 0, 0);
-        ctx.restore();
-
-        // Slice line overlay when sliced
-        if(this.sliced && this.sliceAlpha>0){
-            ctx.save();
-            ctx.translate(this.x,this.y);
-            ctx.globalAlpha=this.sliceAlpha;
-            ctx.strokeStyle='rgba(255,255,255,0.9)';
-            ctx.lineWidth=3;
-            ctx.beginPath();
-            ctx.moveTo(-this.r*0.8, -this.r*0.3);
-            ctx.lineTo(this.r*0.8, this.r*0.3);
-            ctx.stroke();
-            ctx.restore();
+    /* -------------------------------------------------------------------------
+       Spin Wheel Logic
+    ------------------------------------------------------------------------- */
+    const PRIZES = [{l:'50💎',v:50,t:'gem'}, {l:'20💎',v:20,t:'gem'}, {l:'80💎',v:80,t:'gem'}, {l:'10💎',v:10,t:'gem'}, {l:'100💎',v:100,t:'gem'}, {l:'🎮+1',v:1,t:'tok'}];
+    let wheelAngle=0, spinning=false;
+    
+    window.drawWheel = function(){
+        let wc=document.getElementById('wheel-canvas'); if(!wc) return; let x=wc.getContext('2d');
+        let cx=130,cy=130,r=120, n=PRIZES.length, arc=2*Math.PI/n; x.clearRect(0,0,260,260);
+        x.beginPath(); x.arc(cx,cy,r+8,0,2*Math.PI); x.fillStyle='#ff8f00'; x.fill();
+        let cols=['#4caf50','#66bb00','#e53935','#ff9800','#388e3c','#2196f3'];
+        for(let i=0;i<n;i++){
+            x.beginPath(); x.moveTo(cx,cy); x.arc(cx,cy,r, i*arc, (i+1)*arc); x.fillStyle=cols[i]; x.fill();
+            x.strokeStyle='#fff'; x.lineWidth=2; x.stroke();
+            x.save(); x.translate(cx+Math.cos(i*arc+arc/2)*r*0.65, cy+Math.sin(i*arc+arc/2)*r*0.65);
+            x.rotate(i*arc+arc/2+Math.PI/2); x.fillStyle='#fff'; x.font='bold 16px Nunito'; x.textAlign='center';
+            x.fillText(PRIZES[i].l,0,0); x.restore();
         }
-    }
-}
+        x.beginPath(); x.arc(cx,cy,28,0,2*Math.PI); x.fillStyle='#fff'; x.fill();
+    };
 
-class Particle {
-    constructor(x,y,color){
-        this.x=x; this.y=y;
-        this.vx=(Math.random()-0.5)*16; this.vy=(Math.random()-0.5)*16;
-        this.color=color; this.life=1;
-        this.decay=0.02+Math.random()*0.03;
-        this.sz=Math.random()*8+4;
-    }
-    update(){ this.x+=this.vx; this.y+=this.vy; this.vy+=0.35; this.life-=this.decay; }
-    draw(){
-        ctx.globalAlpha=this.life*0.8;
-        ctx.fillStyle=this.color;
-        ctx.beginPath(); ctx.arc(this.x,this.y,this.sz,0,Math.PI*2); ctx.fill();
-        ctx.globalAlpha=1;
-    }
-}
+    window.updateSpinTimer = function(){
+        let canSpin = Date.now() - window.G.dailySpin > 24*3600*1000;
+        let info = document.getElementById('spin-timer-info');
+        if(canSpin){ info.textContent = '🎯 Tap the center button to spin!'; info.style.color='#7de'; } 
+        else { let l=24*3600*1000-(Date.now()-window.G.dailySpin); info.textContent = `⏰ Next spin in ${Math.floor(l/3600000)}h`; info.style.color='#f88'; }
+    };
 
-function splash(x,y,color){
-    for(let i=0;i<22;i++) particles.push(new Particle(x,y,color));
-    // Also add juice droplets
-    for(let i=0;i<8;i++){
-        let p=new Particle(x,y,color);
-        p.sz=Math.random()*4+2; p.decay=0.04; particles.push(p);
-    }
-}
+    window.spinWheel = async function(){
+        if(spinning) return;
+        if(Date.now() - window.G.dailySpin < 24*3600*1000){ showToast('⏰ Come back tomorrow.'); return; }
+        spinning=true; let target=Math.floor(Math.random()*PRIZES.length);
+        let cv = document.getElementById('wheel-canvas');
+        let targetRot = 360*5 + (270 - (target*(360/PRIZES.length)));
+        cv.style.transform = `rotate(${targetRot}deg)`;
+        
+        setTimeout(async ()=>{
+            spinning=false; window.G.dailySpin=Date.now();
+            let pz = PRIZES[target];
+            if(pz.t==='gem') window.G.gems+=pz.v; else window.G.tokens=Math.min(10, window.G.tokens+1);
+            
+            await updateDoc(doc(db, 'users', currentUser.id), { dailySpin: window.G.dailySpin, gems: window.G.gems, tokens: window.G.tokens });
+            window.updateUI(); window.updateSpinTimer();
+            document.getElementById('spin-result').textContent='🎉 You won: '+pz.l;
+            showToast('🎊 Reward: '+pz.l); cv.style.transition='none'; cv.style.transform='rotate(0deg)';
+            setTimeout(()=>cv.style.transition='transform 4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 50);
+        }, 4000);
+    };
 
-function spawnFruit(isMenu=false){
-    let rate = isMenu ? 55 : Math.max(28,65 - G.stage*2);
-    if(Math.random()<1/rate) objects.push(new FruitObj(isMenu));
-}
-
-// ====================== SLICING ======================
-function getPos(e){ let t=e.touches?e.touches[0]:e; return {x:t.clientX,y:t.clientY}; }
-function onStart(e){ if(gameState!=='playing')return; isSlicing=true; sliceTrail=[]; let p=getPos(e); mouse.x=p.x; mouse.y=p.y; }
-function onMove(e){
-    if(!isSlicing||gameState!=='playing')return;
-    let p=getPos(e); mouse.x=p.x; mouse.y=p.y;
-    sliceTrail.push({x:p.x,y:p.y,time:Date.now()});
-    checkCuts();
-}
-function onEnd(){ isSlicing=false; setTimeout(()=>sliceTrail=[],120); }
-
-canvas.addEventListener('mousedown',onStart);
-canvas.addEventListener('mousemove',onMove);
-window.addEventListener('mouseup',onEnd);
-canvas.addEventListener('touchstart',onStart,{passive:false});
-canvas.addEventListener('touchmove',onMove,{passive:false});
-window.addEventListener('touchend',onEnd);
-
-function checkCuts(){
-    for(let i=objects.length-1;i>=0;i--){
-        let o=objects[i];
-        if(!o.cut && Math.hypot(o.x-mouse.x, o.y-mouse.y)<o.r){
-            o.cut=true; o.sliced=true; o.sliceAlpha=1;
-            splash(o.x,o.y,o.color);
-            if(o.isBomb){ addMiss(); addMiss(); }
-            else{ currentCut++; updateHUD(); if(currentCut>=cutTarget) setTimeout(levelDone,250); }
-            objects.splice(i,1);
+    // Make snow effect
+    (function(){
+        let wrap=document.getElementById('snowflakes');
+        for(let i=0;i<8;i++){
+            let s=document.createElement('div'); s.className='snowflake'; s.textContent='❄';
+            s.style.cssText=`left:${Math.random()*100}vw;animation-duration:${6+Math.random()*6}s;animation-delay:${Math.random()*4}s;font-size:${14+Math.random()*14}px;`;
+            wrap.appendChild(s);
         }
-    }
-}
+    })();
 
-function addMiss(){
-    if(gameState!=='playing') return;
-    missCount++;
-    let el = document.getElementById('s'+missCount);
-    if(el) el.classList.add('x-active');
-    if(G.vib && navigator.vibrate) navigator.vibrate([60]);
-    // screen shake
-    canvas.style.transform='translate(4px,4px)';
-    setTimeout(()=>canvas.style.transform='translate(-4px,-4px)',50);
-    setTimeout(()=>canvas.style.transform='',100);
-    if(missCount>=3){ gameState='paused'; showModal('over-modal'); }
-}
+    // Boot App
+    window.onload = initApp;
 
-// ====================== BLADE TRAIL ======================
-function drawBlade(){
-    if(sliceTrail.length<2)return;
-    let now=Date.now();
-    sliceTrail=sliceTrail.filter(p=>now-p.time<140);
-    ctx.beginPath();
-    ctx.moveTo(sliceTrail[0].x,sliceTrail[0].y);
-    for(let i=1;i<sliceTrail.length;i++) ctx.lineTo(sliceTrail[i].x,sliceTrail[i].y);
-    ctx.lineJoin='round'; ctx.lineCap='round';
-    ctx.lineWidth=16; ctx.strokeStyle='rgba(0,220,255,0.25)'; ctx.stroke();
-    ctx.lineWidth=8; ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.stroke();
-    ctx.lineWidth=3; ctx.strokeStyle='#ffffff'; ctx.stroke();
-}
-
-// ====================== MAIN LOOP ======================
-function loop(){
-    ctx.clearRect(0,0,W,H);
-    frameCount++;
-    let isMenu = gameState==='menu';
-    spawnFruit(isMenu);
-
-    for(let i=objects.length-1;i>=0;i--){
-        let o=objects[i];
-        o.update(); o.draw();
-        if(o.y>H+o.r){
-            if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss();
-            objects.splice(i,1);
-        }
-    }
-    for(let i=particles.length-1;i>=0;i--){
-        let p=particles[i];
-        p.update(); p.draw();
-        if(p.life<=0) particles.splice(i,1);
-    }
-    if(gameState==='playing') drawBlade();
-    requestAnimationFrame(loop);
-}
-
-// ====================== GAME FLOW ======================
-function tryStartGame(){
-    if(G.tokens<=0){
-        showToast('❌ No tokens! Wait for refill or buy from Shop.');
-        return;
-    }
-    G.tokens--;
-    if(G.tokenRefill===0) G.tokenRefill=Date.now();
-    save();
-    startGame();
-}
-
-function startGame(){
-    document.getElementById('menu-screen').style.display='none';
-    document.getElementById('game-hud').style.display='flex';
-    document.getElementById('strikes').style.display='flex';
-    objects=[]; particles=[]; sliceTrail=[];
-    currentCut=0; missCount=0;
-    cutTarget = 8 + G.stage*2;
-    pendingReward = 20 + G.stage*5;
-    document.getElementById('s1').classList.remove('x-active');
-    document.getElementById('s2').classList.remove('x-active');
-    document.getElementById('s3').classList.remove('x-active');
-    document.getElementById('comp-reward').textContent=pendingReward;
-    updateHUD();
-    gameState='playing';
-}
-
-function updateHUD(){
-    document.getElementById('hud-cut').textContent=currentCut;
-    document.getElementById('hud-target').textContent=cutTarget;
-    document.getElementById('hud-lv').textContent='Lv '+G.stage;
-    document.getElementById('hud-reward').textContent=pendingReward;
-    let pct=Math.min(100,Math.round(currentCut/cutTarget*100));
-    document.getElementById('lv-fill').style.width=pct+'%';
-}
-
-function levelDone(){
-    gameState='paused';
-    startConfetti();
-    showModal('complete-modal');
-}
-
-function claimReward(watchAd){
-    hideModal('complete-modal');
-    stopConfetti();
-    if(watchAd){
-        simAd(()=>{ G.coins+=pendingReward*2; G.stage++; save(); startGame(); });
-    } else {
-        G.coins+=pendingReward; G.stage++; save(); startGame();
-    }
-}
-
-function retryGame(){
-    hideModal('over-modal');
-    if(G.tokens<=0){ showToast('❌ No tokens!'); backToMenu(); return; }
-    G.tokens--; save();
-    startGame();
-}
-
-function backToMenu(){
-    hideModal('over-modal');
-    document.getElementById('game-hud').style.display='none';
-    document.getElementById('strikes').style.display='none';
-    document.getElementById('menu-screen').style.display='flex';
-    objects=[]; gameState='menu';
-    updateUI();
-}
-
-// ====================== SHOP ======================
-function buyItem(type){
-    if(type==='gem1'){
-        if(G.coins<500){ showToast('❌ Need 500 Coins!'); return; }
-        G.coins-=500; G.gems+=1; save(); showToast('💎 +1 Diamond!');
-    } else if(type==='gem5'){
-        if(G.coins<2000){ showToast('❌ Need 2000 Coins!'); return; }
-        G.coins-=2000; G.gems+=5; save(); showToast('💎 +5 Diamonds!');
-    } else if(type==='token'){
-        if(G.tokens>=3){ showToast('Tokens already full!'); return; }
-        if(G.coins<200){ showToast('❌ Need 200 Coins!'); return; }
-        G.coins-=200; G.tokens++; save(); showToast('🎮 +1 Token!');
-    }
-}
-
-// ====================== WALLET ======================
-function doWithdraw(){
-    let method = document.getElementById('w-method').value;
-    let addr = document.getElementById('w-address').value.trim();
-    if(!addr){ showToast('❌ Please enter address!'); return; }
-    let mins = {bkash:500, nagad:500, ton:500, binance:1000};
-    let min = mins[method]||500;
-    if(G.gems<min){ showToast(`❌ Need ${min}💎 for ${method}!`); return; }
-    if(G.gems<500){ showToast('❌ Minimum 500 Diamonds to withdraw!'); return; }
-    G.gems-=min; save();
-    hideModal('wallet-modal');
-    showToast('✅ Withdrawal pending! Processing in 24-48 hours.');
-}
-
-// ====================== ADS ======================
-function watchAdForCoins(){
-    simAd(()=>{ G.coins+=100; save(); showToast('✅ +100 Coins from Ad!'); });
-}
-
-function simAd(cb){
-    document.getElementById('ad-loader').style.display='flex';
-    setTimeout(()=>{
-        document.getElementById('ad-loader').style.display='none';
-        cb();
-    }, 5000);
-}
-
-// ====================== REFER ======================
-function copyRefer(){
-    let txt = 'https://fruitcut.game/?ref='+G.referCode;
-    if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>{ document.getElementById('copy-status').textContent='✅ Copied!'; setTimeout(()=>document.getElementById('copy-status').textContent='',2000); }); }
-    else{ showToast('Copy: '+txt); }
-}
-function shareNative(){
-    if(navigator.share){
-        navigator.share({title:'Fruit Cut Game',text:'Play Fruit Cut and earn rewards! Use my referral: '+G.referCode,url:'https://fruitcut.game/?ref='+G.referCode});
-    } else { copyRefer(); }
-}
-// Simulate referral tracking (in real app this would be server-side)
-function checkReferral(){
-    let url=new URL(window.location.href||'https://x.com');
-    // let ref=url.searchParams.get('ref');
-    // if(ref && ref!==G.referCode){ G.coins+=50; G.tokens=Math.min(3,G.tokens+5); save(); }
-}
-
-// ====================== SETTINGS ======================
-function toggleSound(){ G.sound=!G.sound; save(); }
-function toggleVib(){ G.vib=!G.vib; save(); }
-function showTokenInfo(){ showToast('🎮 Tokens: 1 token = 1 game. Refills +1 every 30 minutes!'); }
-function resetAll(){
-    localStorage.removeItem('fc_data');
-    G={coins:0,gems:0,stage:1,tokens:3,referCode:'',referCount:0,sound:true,vib:true,dailySpin:0,tokenRefill:0};
-    save(); hideModal('setting-modal'); showToast('Data reset!');
-}
-
-// ====================== SPIN WHEEL ======================
-const SPIN_PRIZES = [
-    {label:'50🪙', coins:50, color:'#4caf50'},
-    {label:'20🪙', coins:20, color:'#66bb00'},
-    {label:'80🪙', coins:80, color:'#e53935'},
-    {label:'10🪙', coins:10, color:'#4caf50'},
-    {label:'100🪙', coins:100, color:'#66bb00'},
-    {label:'10🪙', coins:10, color:'#ff9800'},
-    {label:'20🪙', coins:20, color:'#ff9800'},
-    {label:'🔓', coins:0, color:'#2196f3', unlock:true},
-];
-let wheelAngle=0, spinning=false;
-
-function drawWheel(){
-    let wc=document.getElementById('wheel-canvas');
-    let wctx=wc.getContext('2d');
-    let cx=130,cy=130,r=120;
-    let n=SPIN_PRIZES.length;
-    let arc=2*Math.PI/n;
-    wctx.clearRect(0,0,260,260);
-    // Outer ring
-    wctx.beginPath(); wctx.arc(cx,cy,r+6,0,2*Math.PI);
-    let grad=wctx.createLinearGradient(0,0,260,260);
-    grad.addColorStop(0,'#ffd54f'); grad.addColorStop(1,'#ff8f00');
-    wctx.fillStyle=grad; wctx.fill();
-    // Segments
-    for(let i=0;i<n;i++){
-        let start=wheelAngle+i*arc-Math.PI/2;
-        let end=start+arc;
-        wctx.beginPath(); wctx.moveTo(cx,cy);
-        wctx.arc(cx,cy,r,start,end);
-        wctx.fillStyle=SPIN_PRIZES[i].color; wctx.fill();
-        wctx.strokeStyle='#fff'; wctx.lineWidth=2; wctx.stroke();
-    }
-    // Labels
-    wctx.fillStyle='#fff'; wctx.font='bold 13px Nunito';
-    wctx.textAlign='center'; wctx.textBaseline='middle';
-    for(let i=0;i<n;i++){
-        let a=wheelAngle+i*arc+arc/2-Math.PI/2;
-        let tx=cx+Math.cos(a)*r*0.65;
-        let ty=cy+Math.sin(a)*r*0.65;
-        wctx.save(); wctx.translate(tx,ty); wctx.rotate(a+Math.PI/2);
-        wctx.fillText(SPIN_PRIZES[i].label,0,0); wctx.restore();
-    }
-    // Center circle
-    wctx.beginPath(); wctx.arc(cx,cy,28,0,2*Math.PI);
-    wctx.fillStyle='#fff'; wctx.fill();
-    wctx.beginPath(); wctx.arc(cx,cy,22,0,2*Math.PI);
-    wctx.fillStyle='#ffd700'; wctx.fill();
-}
-
-function spinWheel(){
-    if(spinning) return;
-    let canSpin = Date.now() - G.dailySpin > 24*3600*1000;
-    if(!canSpin){ showToast('⏰ Daily spin done! Come back tomorrow.'); return; }
-    spinning=true;
-    G.dailySpin=Date.now();
-    let targetIdx=Math.floor(Math.random()*SPIN_PRIZES.length);
-    let arc=2*Math.PI/SPIN_PRIZES.length;
-    let extraSpins=5+Math.random()*3;
-    let targetAngle=-targetIdx*arc+Math.random()*arc*0.6;
-    let totalRot=extraSpins*2*Math.PI+targetAngle-wheelAngle;
-    let duration=4000, start=null;
-    function anim(ts){
-        if(!start)start=ts;
-        let prog=Math.min((ts-start)/duration,1);
-        let ease=1-Math.pow(1-prog,4);
-        wheelAngle=totalRot*ease+(wheelAngle-totalRot*(1-1));
-        drawWheel();
-        if(prog<1){ requestAnimationFrame(anim); }
-        else{
-            spinning=false;
-            let prize=SPIN_PRIZES[targetIdx];
-            if(prize.coins){ G.coins+=prize.coins; save(); }
-            document.getElementById('spin-result').textContent='🎉 You won: '+prize.label+'!';
-            save();
-        }
-    }
-    // Reset angle reference properly
-    let startAngle=wheelAngle;
-    let startTime=null;
-    let totalRotation=extraSpins*2*Math.PI;
-    function animate(ts){
-        if(!startTime)startTime=ts;
-        let p=Math.min((ts-startTime)/duration,1);
-        let ease=1-Math.pow(1-p,4);
-        wheelAngle=startAngle+totalRotation*ease;
-        drawWheel();
-        if(p<1){ requestAnimationFrame(animate); }
-        else{
-            spinning=false;
-            let prize=SPIN_PRIZES[targetIdx];
-            document.getElementById('spin-result').textContent='🎉 You won: '+prize.label+'!';
-            if(prize.coins){ G.coins+=prize.coins; save(); }
-        }
-    }
-    requestAnimationFrame(animate);
-}
-
-// ====================== CONFETTI ======================
-function startConfetti(){
-    let wrap=document.getElementById('confetti-wrap');
-    wrap.style.display='block'; wrap.innerHTML='';
-    let colors=['#fce18a','#ff726d','#b48def','#4cef50','#4facfe','#ff3355'];
-    for(let i=0;i<40;i++){
-        let d=document.createElement('div');
-        d.className='cp';
-        d.style.cssText=`left:${Math.random()*100}vw;top:-20px;background:${colors[i%colors.length]};
-            width:${8+Math.random()*8}px;height:${12+Math.random()*8}px;
-            animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*2}s;border-radius:2px;`;
-        wrap.appendChild(d);
-    }
-}
-function stopConfetti(){
-    document.getElementById('confetti-wrap').style.display='none';
-}
-
-// ====================== SNOWFLAKES ======================
-function makeSnow(){
-    let wrap=document.getElementById('snowflakes');
-    for(let i=0;i<8;i++){
-        let s=document.createElement('div');
-        s.className='snowflake'; s.textContent='❄';
-        s.style.cssText=`left:${Math.random()*100}vw;animation-duration:${6+Math.random()*6}s;animation-delay:${Math.random()*4}s;font-size:${14+Math.random()*14}px;`;
-        wrap.appendChild(s);
-    }
-}
-
-// ====================== INIT ======================
-load(); makeSnow(); drawWheel();
-requestAnimationFrame(loop);
 </script>
 </body>
 </html>
