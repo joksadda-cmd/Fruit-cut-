@@ -10,6 +10,8 @@
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <!-- Monetag SDK -->
     <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
+    <!-- GigaPub SDK -->
+    <script src="https://ad.gigapub.tech/script?id=6350"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
 
@@ -403,6 +405,67 @@
         .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
         
         .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
+
+        /* ===== LOTTERY SYSTEM ===== */
+        .lottery-wrap{
+            background:linear-gradient(135deg,rgba(100,0,150,0.3),rgba(50,0,100,0.3));
+            border:2px solid rgba(180,100,255,0.4);border-radius:18px;padding:16px;margin-bottom:12px;text-align:center;
+        }
+        .lottery-title{font-family:'Luckiest Guy',cursive;font-size:22px;color:#cf6fef;margin-bottom:6px;}
+        .lottery-slots{
+            display:flex;justify-content:center;gap:10px;margin:14px 0;
+        }
+        .lottery-slot{
+            width:70px;height:90px;background:rgba(0,0,0,0.5);border:3px solid rgba(255,200,0,0.5);
+            border-radius:14px;display:flex;align-items:center;justify-content:center;
+            font-size:28px;font-family:'Luckiest Guy',cursive;color:#ffcc00;
+            position:relative;overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .lottery-slot.spinning{animation:slotSpin 0.12s linear infinite;}
+        @keyframes slotSpin{0%{transform:translateY(0);}50%{transform:translateY(-6px);}100%{transform:translateY(0);}}
+        .lottery-slot.win{border-color:#ffcc00;box-shadow:0 0 20px #ffcc00,inset 0 0 20px rgba(255,200,0,0.2);}
+        .lottery-free-badge{
+            background:linear-gradient(135deg,#ff3355,#cc0033);color:#fff;
+            font-size:11px;font-weight:900;padding:3px 10px;border-radius:10px;display:inline-block;
+            margin-bottom:8px;animation:badgePulse 1s infinite;
+        }
+        .lottery-prizes-grid{
+            display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;
+        }
+        .lottery-prize-item{
+            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+            border-radius:10px;padding:6px 8px;text-align:center;
+        }
+        .lottery-prize-name{font-size:12px;color:#ffcc00;font-weight:800;}
+        .lottery-prize-chance{font-size:10px;color:#888;}
+        .lottery-spin-btn{
+            background:linear-gradient(180deg,#ff3355,#cc0033);
+            border:3px solid rgba(255,255,255,0.5);border-radius:16px;
+            padding:12px 32px;font-family:'Luckiest Guy',cursive;font-size:22px;color:#fff;
+            cursor:pointer;box-shadow:0 5px 0 #880022;margin-top:4px;
+            transition:transform 0.1s,box-shadow 0.1s;
+        }
+        .lottery-spin-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #880022;}
+        .lottery-spin-btn:disabled{background:linear-gradient(180deg,#555,#333);box-shadow:0 5px 0 #111;cursor:not-allowed;}
+        .lottery-result{
+            min-height:32px;font-size:16px;font-weight:900;color:#7dff00;
+            text-align:center;margin:8px 0;
+        }
+        .lottery-price-row{
+            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+            border-radius:10px;padding:8px 14px;margin-bottom:8px;
+            font-size:12px;color:#aaa;text-align:center;
+        }
+        .lottery-earn-stats{
+            background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.2);
+            border-radius:12px;padding:10px;margin-bottom:10px;text-align:center;
+        }
+        .lottery-earn-val{font-size:20px;font-family:'Luckiest Guy',cursive;color:#4caf50;}
+        .lottery-earn-label{font-size:11px;color:#888;}
+
+        /* Refer stats update */
+        .refer-diamonds{font-size:22px;font-family:'Luckiest Guy',cursive;color:#4af;}
+        .refer-diamonds-label{font-size:11px;color:#aaa;}
     </style>
 </head>
 <body>
@@ -458,8 +521,8 @@
 
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
         <div class="start-btn ptr" onclick="window.tryStartGame()">▶ START</div>
-        <div class="spin-btn ptr" onclick="window.showModal('spin-modal')">
-            🎡 DAILY SPIN
+        <div class="spin-btn ptr" onclick="window.showModal('lottery-modal')">
+            🎰 777 LOTTERY
             <span class="spin-badge" id="spin-badge">FREE</span>
         </div>
     </div>
@@ -509,20 +572,51 @@
 </div>
 
 <!-- ========== MODALS ========== -->
-<div class="overlay ptr" id="spin-modal">
+<!-- ========== LOTTERY MODAL ========== -->
+<div class="overlay ptr" id="lottery-modal">
+    <div class="modal">
+        <div class="mh mh-purple">🎰 777 Lottery</div>
+
+        <!-- Free ticket badge -->
+        <div id="lottery-free-badge" style="text-align:center;margin-bottom:6px;"></div>
+
+        <!-- Slot Display -->
+        <div class="lottery-wrap">
+            <div class="lottery-slots">
+                <div class="lottery-slot" id="slot-0">❓</div>
+                <div class="lottery-slot" id="slot-1">❓</div>
+                <div class="lottery-slot" id="slot-2">❓</div>
+            </div>
+            <div class="lottery-result" id="lottery-result"></div>
+
+            <!-- Spin price info -->
+            <div class="lottery-price-row">
+                🎰 Spin Cost: <strong style="color:#ffcc00;">FREE (First time)</strong> · Then: <strong style="color:#4af;">1 Diamond</strong> for 3💎 win chance, or <strong style="color:#ffcc00;">Gold = Points</strong>
+            </div>
+
+            <button class="lottery-spin-btn" id="lottery-spin-btn" onclick="window.spinLottery()">🎰 SPIN!</button>
+        </div>
+
+        <!-- Earn Stats -->
+        <div class="lottery-earn-stats">
+            <div style="display:flex;justify-content:space-around;">
+                <div><div class="lottery-earn-val" id="lottery-total-earned">0</div><div class="lottery-earn-label">💎 Diamonds Earned</div></div>
+                <div><div class="lottery-earn-val" id="lottery-total-spins">0</div><div class="lottery-earn-label">Total Spins</div></div>
+            </div>
+        </div>
+
+        <!-- Prize Table -->
+        <div style="font-size:12px;color:#aaa;font-weight:800;margin-bottom:6px;">🏆 Prize Table (10 Rewards)</div>
+        <div class="lottery-prizes-grid" id="lottery-prizes-grid"></div>
+
+        <button class="btn btn-grey" onclick="window.hideModal('lottery-modal')">CLOSE</button>
+    </div>
+</div>
+
+<!-- Keep old spin modal HTML for compatibility but hidden -->
+<div class="overlay ptr" id="spin-modal" style="display:none!important;">
     <div class="modal">
         <div class="mh mh-purple">🎡 Lucky Spin Wheel</div>
-        <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;font-weight:800;">
-            <span style="color:#4caf50">🟢 50💎</span> <span style="color:#66bb00">🟩 20💎</span> <span style="color:#e53935">🟥 80💎</span>
-            <span style="color:#ff9800">🟧 10💎</span> <span style="color:#ffcc00">⭐ 100💎</span> <span style="color:#2196f3">🔵 Token</span>
-        </div>
-        <div id="spin-canvas-wrap">
-            <div class="spin-pointer"></div>
-            <canvas id="wheel-canvas" width="260" height="260"></canvas>
-            <div class="spin-wheel-btn ptr" id="spin-center" onclick="window.spinWheel()">🎯</div>
-        </div>
-        <div id="spin-result" style="text-align:center;font-size:16px;font-weight:800;color:#ffcc00;min-height:28px;margin-bottom:6px;"></div>
-        <div class="info-text" id="spin-timer-info"></div>
         <button class="btn btn-purple" onclick="window.hideModal('spin-modal')">CLOSE</button>
     </div>
 </div>
@@ -531,17 +625,17 @@
     <div class="modal">
         <div class="mh mh-gold">🛍️ Shop</div>
         <div class="shop-grid">
-            <div class="shop-card ptr" onclick="window.buyItem('gem10')">
-                <div class="shop-icon">💎</div><div class="shop-price">500 🪙</div><div class="shop-desc">10 Diamonds</div>
+            <div class="shop-card ptr" onclick="window.buyItem('token5')">
+                <div class="shop-icon">🎮🎮</div><div class="shop-price">250 🪙</div><div class="shop-desc">5 Game Tokens</div>
             </div>
-            <div class="shop-card ptr" onclick="window.buyItem('gem50')">
-                <div class="shop-icon">💎💎</div><div class="shop-price">2000 🪙</div><div class="shop-desc">50 Diamonds</div>
+            <div class="shop-card ptr" onclick="window.buyItem('diamond1')">
+                <div class="shop-icon">💎</div><div class="shop-price">1000 🪙</div><div class="shop-desc">1 Diamond</div>
             </div>
             <div class="shop-card ptr" onclick="window.buyItem('token')">
                 <div class="shop-icon">🎮</div><div class="shop-price">200 🪙</div><div class="shop-desc">+1 Token</div>
             </div>
             <div class="shop-card ptr" onclick="window.showModal('ads-modal');window.hideModal('shop-modal')">
-                <div class="shop-icon">📺</div><div class="shop-price">Watch Ad</div><div class="shop-desc">+150 Points</div>
+                <div class="shop-icon">📺</div><div class="shop-price">Watch Ad</div><div class="shop-desc">+50 Points</div>
             </div>
         </div>
         <div class="info-text">💎 Min 100 Diamonds to withdraw</div>
@@ -578,12 +672,20 @@
     <div class="modal">
         <div class="mh mh-green">🔗 Refer & Earn</div>
         <div class="refer-stats">
-            <div class="refer-count" id="refer-count-display">0</div>
-            <div class="refer-count-label">Total Valid Referrals</div>
+            <div style="display:flex;justify-content:space-around;">
+                <div>
+                    <div class="refer-count" id="refer-count-display">0</div>
+                    <div class="refer-count-label">Total Referrals</div>
+                </div>
+                <div>
+                    <div class="refer-diamonds" id="refer-diamonds-display">0</div>
+                    <div class="refer-diamonds-label">💎 Diamonds Earned</div>
+                </div>
+            </div>
         </div>
         <div class="mrow">
-            <span class="mrow-label">Per Referral</span>
-            <span class="mrow-val">💎5 + 🎮2 tokens</span>
+            <span class="mrow-label">Per Referral Reward</span>
+            <span class="mrow-val">💎5 + 🎮3 tokens</span>
         </div>
         <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
         <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
@@ -619,7 +721,7 @@
         <div class="mh mh-red">📺 Earn with Ads</div>
         <div class="lootbox-wrap">
             <div style="font-size:16px;font-weight:900;color:#ffcc00;margin-bottom:4px;">🎁 Lootbox</div>
-            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Collect 600 points to claim!</div>
+            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Collect 600 points to claim! (Max 600 pts)</div>
             <div class="lootbox-bar-bg"><div class="lootbox-bar-fill" id="lootbox-fill" style="width:0%"></div></div>
             <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 600 pts</span></div>
             <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD (50💎)</button>
@@ -627,14 +729,14 @@
 
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">⚡ <strong>Adsgram Ads</strong> (+150 pts)<br><span id="adsgram-left">0/5 remaining</span></div>
+                <div class="ads-info">⚡ <strong>Adsgram Ads</strong> (+50 pts)<br><span id="adsgram-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+50 pts)<br><span id="monetag-left">0/10 remaining</span></div>
-                <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
+                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+50 pts)<br><span id="gigapub-left">20/20 remaining</span></div>
+                <button class="watch-ad-btn" id="gigapub-btn" onclick="window.watchGigaPubAd()">▶ Watch</button>
             </div>
         </div>
         <div class="info-text">Resets daily at midnight 🕛</div>
@@ -667,7 +769,8 @@
         <span class="big-emoji">😵</span>
         <div class="mh mh-red">GAME OVER</div>
         <div style="text-align:center;color:#aaa;margin-bottom:10px;">You missed too many fruits!</div>
-        <button class="btn btn-gold" onclick="window.retryGame()">🔁 RETRY</button>
+        <button class="btn btn-gold" onclick="window.retryGame()">🔁 RETRY (Uses Token)</button>
+        <button class="btn btn-red" onclick="window.skipStageWithAd()">📺 Watch Ad → Skip Stage</button>
         <button class="btn btn-grey" onclick="window.backToMenu()">🏠 MAIN MENU</button>
     </div>
 </div>
@@ -709,12 +812,15 @@
     window.G = {
         coins: 0, gems: 0, stage: 1, tokens: 3, referCode: '', referCount: 0,
         sound: true, vib: true, dailySpin: 0, tokenRefill: 0, adsDayStamp: '',
-        adsgramCount: 0, monetagCount: 0, lootboxPoints: 0, completedTasks: [], gamesPlayed: 0
+        adsgramCount: 0, gigapubCount: 0, lootboxPoints: 0, completedTasks: [], gamesPlayed: 0,
+        lotteryFreeUsed: false, lotteryTotalSpins: 0, lotteryDiamondsEarned: 0, referDiamonds: 0
     };
 
     const DEFAULT_TASKS = [
-        {id:'join_channel', icon:'📢', name:'Join Telegram Channel', reward:'💎 20 Diamonds', link:'https://t.me/FruitCutGame', gems:20, coins:0},
-        {id:'play_10', icon:'🎮', name:'Play 10 Games', reward:'💎 30 Diamonds', link:null, coins:0, gems:30, playReq:10},
+        {id:'join_channel', icon:'📢', name:'Join Telegram Channel', reward:'🪙 100 Points', link:'https://t.me/FruitCutGame', gems:0, coins:100},
+        {id:'play_10', icon:'🎮', name:'Play 10 Games', reward:'🪙 100 Points', link:null, coins:100, gems:0, playReq:10},
+        {id:'watch_ads_5', icon:'📺', name:'Watch 5 Ads', reward:'🪙 100 Points', link:null, coins:100, gems:0, adsReq:5},
+        {id:'refer_1', icon:'🔗', name:'Refer 1 Friend', reward:'🪙 100 Points', link:null, coins:100, gems:0, referReq:1},
     ];
 
     function getTodayStr() { return new Date().toDateString(); }
@@ -730,9 +836,9 @@
         let today = getTodayStr();
         if(window.G.adsDayStamp !== today) {
             window.G.adsDayStamp = today;
-            window.G.adsgramCount = 0; window.G.monetagCount = 0;
+            window.G.adsgramCount = 0; window.G.gigapubCount = 0;
             if(currentUser) {
-                await updateDoc(doc(db, 'users', currentUser.id), { adsDayStamp: today, adsgramCount: 0, monetagCount: 0 });
+                await updateDoc(doc(db, 'users', currentUser.id), { adsDayStamp: today, adsgramCount: 0, gigapubCount: 0 });
             }
         }
     }
@@ -745,7 +851,12 @@
                 coins: window.G.coins, gems: window.G.gems, stage: window.G.stage,
                 tokens: window.G.tokens, lootboxPoints: window.G.lootboxPoints,
                 gamesPlayed: window.G.gamesPlayed, completedTasks: window.G.completedTasks,
-                tokenRefill: window.G.tokenRefill
+                tokenRefill: window.G.tokenRefill,
+                lotteryFreeUsed: window.G.lotteryFreeUsed,
+                lotteryTotalSpins: window.G.lotteryTotalSpins,
+                lotteryDiamondsEarned: window.G.lotteryDiamondsEarned,
+                referDiamonds: window.G.referDiamonds,
+                gigapubCount: window.G.gigapubCount
             });
         } catch(e) { console.error("Save error", e); }
     };
@@ -759,8 +870,10 @@
         document.getElementById('snd-toggle').textContent = window.G.sound ? '🔊' : '🔇';
         document.getElementById('vib-toggle').textContent = window.G.vib ? '📳' : '🔕';
         document.getElementById('refer-count-display').textContent = window.G.referCount || 0;
-        let canSpin = Date.now() - window.G.dailySpin > 24*3600*1000;
-        document.getElementById('spin-badge').textContent = canSpin ? 'FREE' : 'DONE';
+        let rd = document.getElementById('refer-diamonds-display');
+        if(rd) rd.textContent = window.G.referDiamonds || 0;
+        let canLottery = !window.G.lotteryFreeUsed;
+        document.getElementById('spin-badge').textContent = canLottery ? 'FREE' : 'SPIN';
     };
 
     // Firebase Auth & Init
@@ -784,8 +897,8 @@
                 if (startParam && startParam !== `FC${userId}`) {
                     referredBy = startParam.replace('FC', '');
                     try {
-                        // Reward Referrer
-                        await updateDoc(doc(db, 'users', referredBy), { referCount: increment(1), gems: increment(5), tokens: increment(2) });
+                        // Reward Referrer: 5 diamonds + 3 tokens
+                        await updateDoc(doc(db, 'users', referredBy), { referCount: increment(1), gems: increment(5), tokens: increment(3), referDiamonds: increment(5) });
                     } catch(e){}
                 }
 
@@ -824,7 +937,6 @@
             
             // Start Canvas Game Loop
             startTokenTimer();
-            window.drawWheel();
             requestAnimationFrame(window.loop);
 
         } catch (error) {
@@ -837,7 +949,7 @@
         setInterval(()=>{
             if(window.G.tokens < 10){
                 let elapsed = Date.now() - window.G.tokenRefill;
-                let left = 30*60*1000 - elapsed;
+                let left = 60*60*1000 - elapsed; // 1 hour
                 if(left <= 0){
                     window.G.tokens = Math.min(10, window.G.tokens+1);
                     window.G.tokenRefill = Date.now();
@@ -859,21 +971,22 @@
     window.showModal = function(id){
         document.getElementById(id).style.display='flex';
         if(id==='ads-modal'){ checkDailyReset().then(()=>{ updateAdsUI(); }); }
-        if(id==='spin-modal'){ window.updateSpinTimer(); }
+        if(id==='lottery-modal'){ window.renderLotteryModal(); }
         if(id==='task-modal'){ window.renderTasks(); }
+        if(id==='share-modal'){ window.updateUI(); }
     };
     window.hideModal = function(id){ document.getElementById(id).style.display='none'; };
-    window.showTokenInfo = function(){ showToast('🎮 Tokens: 1 token = 1 game. Max 10. Refills +1 every 30m!'); };
+    window.showTokenInfo = function(){ showToast('🎮 Tokens: 1 token = 1 game. Max 10. Refills +1 every 1 hour!'); };
     window.toggleSound = function(){ window.G.sound=!window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
     window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
     window.buyItem = function(type){
-        if(type==='gem10'){
-            if(window.G.coins<500){ showToast('❌ Need 500 Coins!'); return; }
-            window.G.coins-=500; window.G.gems+=10; window.saveState(); showToast('💎 +10 Diamonds!');
-        } else if(type==='gem50'){
-            if(window.G.coins<2000){ showToast('❌ Need 2000 Coins!'); return; }
-            window.G.coins-=2000; window.G.gems+=50; window.saveState(); showToast('💎 +50 Diamonds!');
+        if(type==='token5'){
+            if(window.G.coins<250){ showToast('❌ Need 250 Coins!'); return; }
+            window.G.coins-=250; window.G.tokens=Math.min(10, window.G.tokens+5); window.saveState(); showToast('🎮 +5 Tokens!');
+        } else if(type==='diamond1'){
+            if(window.G.coins<1000){ showToast('❌ Need 1000 Coins!'); return; }
+            window.G.coins-=1000; window.G.gems+=1; window.saveState(); showToast('💎 +1 Diamond!');
         } else if(type==='token'){
             if(window.G.tokens>=10){ showToast('Tokens full!'); return; }
             if(window.G.coins<200){ showToast('❌ Need 200 Coins!'); return; }
@@ -890,7 +1003,7 @@
     };
     window.shareToTelegram = function(){
         let link = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
-        let text = '🎮 Play Fruit Cut & Earn! Join with my link:';
+        let text = `🎮 Join me on Fruit Cut & Earn real rewards! 🍉🍓\n💎 Get 5 FREE Diamonds + 3 Game Tokens when you join!\n🎰 Play, refer friends & withdraw via bKash or TON!`;
         if(tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
         else window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
     };
@@ -900,54 +1013,82 @@
     ------------------------------------------------------------------------- */
     function updateAdsUI(){
         let agLeft = 5 - window.G.adsgramCount;
-        let mtLeft = 10 - window.G.monetagCount;
-        document.getElementById('adsgram-left').textContent = `${agLeft}/5 remaining`;
-        document.getElementById('monetag-left').textContent = `${mtLeft}/10 remaining`;
+        let gpLeft = 20 - window.G.gigapubCount;
+        document.getElementById('adsgram-left').textContent = `${Math.max(0,agLeft)}/5 remaining`;
+        document.getElementById('gigapub-left').textContent = `${Math.max(0,gpLeft)}/20 remaining`;
         document.getElementById('adsgram-btn').disabled = agLeft <= 0;
-        document.getElementById('monetag-btn').disabled = mtLeft <= 0;
+        document.getElementById('gigapub-btn').disabled = gpLeft <= 0;
 
-        let pct = Math.min(100, (window.G.lootboxPoints/600)*100);
+        let pts = window.G.lootboxPoints;
+        let pct = Math.min(100, (pts/600)*100);
         document.getElementById('lootbox-fill').style.width = pct + '%';
-        document.getElementById('lootbox-pts').textContent = window.G.lootboxPoints;
-        document.getElementById('lootbox-claim-btn').disabled = window.G.lootboxPoints < 600;
+        document.getElementById('lootbox-pts').textContent = pts;
+        let claimBtn = document.getElementById('lootbox-claim-btn');
+        claimBtn.disabled = pts < 600;
     }
 
     window.claimLootbox = async function(){
-        if(window.G.lootboxPoints < 600) return;
+        if(window.G.lootboxPoints < 600){ showToast('❌ Need 600 points first!'); return; }
+        // Show an ad before claiming
+        document.getElementById('ad-loader').style.display='flex';
+        try {
+            let AdC = Adsgram.init({ blockId: "int-28067" });
+            await AdC.show();
+        } catch(e){ /* fallback: just wait */ await new Promise(r=>setTimeout(r,2000)); }
+        document.getElementById('ad-loader').style.display='none';
         window.G.lootboxPoints = 0; window.G.gems += 50;
         await window.saveState();
         updateAdsUI(); showToast('🎁 Lootbox claimed! +50 Diamonds!');
         if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     };
 
+    function addLootboxPoints(pts){
+        // Do not exceed 600 — excess is discarded
+        if(window.G.lootboxPoints >= 600){
+            showToast('⚠️ Lootbox full! Claim first before earning more.');
+            return false;
+        }
+        window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints + pts);
+        return true;
+    }
+
     window.watchAdsgramAd = async function(){
-        if(window.G.adsgramCount >= 5){ showToast('Limit reached!'); return; }
+        if(window.G.adsgramCount >= 5){ showToast('✋ Daily Adsgram limit reached!'); return; }
+        if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
         try {
-            let AdC = Adsgram.init({ blockId: "28066" });
+            let AdC = Adsgram.init({ blockId: "int-28067" });
             await AdC.show();
-            window.G.adsgramCount++; window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints+150);
-            await updateDoc(doc(db, 'users', currentUser.id), { adsgramCount: window.G.adsgramCount });
-            window.saveState(); updateAdsUI(); showToast('✅ +150 Points!');
-        } catch(e) { simAd(150, 'adsgramCount'); } // Fallback for testing
+            window.G.adsgramCount++;
+            addLootboxPoints(50);
+            await updateDoc(doc(db, 'users', currentUser.id), { adsgramCount: window.G.adsgramCount, lootboxPoints: window.G.lootboxPoints });
+            window.saveState(); updateAdsUI(); showToast('✅ +50 Points!');
+        } catch(e) { simAd(50, 'adsgramCount'); }
     };
 
-    window.watchMonetagAd = async function(){
-        if(window.G.monetagCount >= 10){ showToast('Limit reached!'); return; }
+    window.watchGigaPubAd = async function(){
+        if(window.G.gigapubCount >= 20){ showToast('✋ Daily GigaPub limit reached!'); return; }
+        if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
         try {
-            await show_10893505();
-            window.G.monetagCount++; window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints+50);
-            await updateDoc(doc(db, 'users', currentUser.id), { monetagCount: window.G.monetagCount });
+            await window.showGiga();
+            window.G.gigapubCount++;
+            addLootboxPoints(50);
+            await updateDoc(doc(db, 'users', currentUser.id), { gigapubCount: window.G.gigapubCount, lootboxPoints: window.G.lootboxPoints });
             window.saveState(); updateAdsUI(); showToast('✅ +50 Points!');
-        } catch(e) { simAd(50, 'monetagCount'); } // Fallback for testing
+        } catch(e) { simAd(50, 'gigapubCount'); }
     };
 
     function simAd(pts, type){
         document.getElementById('ad-loader').style.display='flex';
         setTimeout(async ()=>{
             document.getElementById('ad-loader').style.display='none';
-            window.G[type]++; window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints+pts);
-            await updateDoc(doc(db, 'users', currentUser.id), { [type]: window.G[type] });
-            window.saveState(); updateAdsUI(); showToast(`✅ +${pts} Points!`);
+            if(window.G.lootboxPoints < 600){
+                window.G[type]++;
+                addLootboxPoints(pts);
+                await updateDoc(doc(db, 'users', currentUser.id), { [type]: window.G[type], lootboxPoints: window.G.lootboxPoints });
+                window.saveState(); updateAdsUI(); showToast(`✅ +${pts} Points!`);
+            } else {
+                showToast('⚠️ Claim your Lootbox first!');
+            }
         }, 2000);
     }
 
@@ -958,11 +1099,14 @@
         let c = document.getElementById('task-list'); c.innerHTML='';
         DEFAULT_TASKS.forEach(t => {
             let done = window.G.completedTasks.includes(t.id);
-            if(t.playReq && window.G.gamesPlayed >= t.playReq && !done) done = false;
+            let progress = '';
+            if(!done && t.playReq) progress = ` (${Math.min(window.G.gamesPlayed,t.playReq)}/${t.playReq})`;
+            if(!done && t.referReq) progress = ` (${Math.min(window.G.referCount,t.referReq)}/${t.referReq})`;
+            if(!done && t.adsReq) progress = ` (${Math.min(window.G.adsgramCount,t.adsReq)}/${t.adsReq})`;
             c.innerHTML += `
                 <div class="task-card">
                     <div class="task-icon">${t.icon}</div>
-                    <div class="task-info"><div class="task-name">${t.name}</div><div class="task-reward">${t.reward}</div></div>
+                    <div class="task-info"><div class="task-name">${t.name}${progress}</div><div class="task-reward">${t.reward}</div></div>
                     <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}')" ${done?'disabled':''}>
                         ${done ? '✅ Done' : '▶ Go'}
                     </button>
@@ -972,7 +1116,10 @@
 
     window.doTask = async function(id){
         let t = DEFAULT_TASKS.find(x=>x.id===id);
+        if(window.G.completedTasks.includes(id)){ showToast('✅ Already done!'); return; }
         if(t.playReq && window.G.gamesPlayed < t.playReq){ showToast(`❌ Play ${t.playReq} games! (${window.G.gamesPlayed}/${t.playReq})`); return; }
+        if(t.referReq && window.G.referCount < t.referReq){ showToast(`❌ Refer ${t.referReq} friend(s)! (${window.G.referCount}/${t.referReq})`); return; }
+        if(t.adsReq && window.G.adsgramCount < t.adsReq){ showToast(`❌ Watch ${t.adsReq} ads! (${window.G.adsgramCount}/${t.adsReq})`); return; }
         if(t.link){ if(tg?.openLink) tg.openLink(t.link); else window.open(t.link, '_blank'); }
         
         setTimeout(async ()=>{
@@ -1039,8 +1186,8 @@
             let rIdx = Math.floor(Math.random()*emojis.length);
             this.emoji = this.isBomb ? '💣' : emojis[rIdx]; this.color = this.isBomb ? '#ff0000' : colors[rIdx];
             this.r = 40 + Math.random()*18; this.x = 80 + Math.random()*(W-160); this.y = H + this.r;
-            this.vx = (Math.random()-0.5)*(isMenu?2:4); this.vy = -(isMenu?(9+Math.random()*4):(13+Math.random()*4+Math.min(window.G.stage*0.1,3)));
-            this.grav = isMenu ? 0.05 : 0.14; this.rot = 0; this.rotSpd = (Math.random()-0.5)*0.12;
+            this.vx = (Math.random()-0.5)*(isMenu?2:3); this.vy = -(isMenu?(9+Math.random()*4):(11+Math.random()*3+Math.min(window.G.stage*0.08,2)));
+            this.grav = isMenu ? 0.05 : 0.10; this.rot = 0; this.rotSpd = (Math.random()-0.5)*0.10;
             this.cut=false; this.sliced=false; this.sliceAlpha=0;
         }
         update(){ this.x+=this.vx; this.y+=this.vy; this.vy+=this.grav; this.rot+=this.rotSpd; if(this.sliced) this.sliceAlpha=Math.max(0,this.sliceAlpha-0.05); }
@@ -1126,15 +1273,22 @@
         requestAnimationFrame(window.loop);
     };
 
-    window.tryStartGame = function(){
-        if(window.G.tokens<=0){ showToast('❌ No tokens! Wait for refill.'); return; }
-        window.G.tokens--; window.G.gamesPlayed++; window.saveState();
+    window.tryStartGame = function(forceStart=false){
+        if(window.G.tokens<=0 && !forceStart){
+            // No tokens — offer to watch ad to play
+            window.showNoTokenModal();
+            return;
+        }
+        if(!forceStart){ window.G.tokens--; }
+        window.G.gamesPlayed++; window.saveState();
         
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
         document.getElementById('strikes').style.display='flex';
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        cutTarget = 8 + window.G.stage*2; pendingReward = 20 + window.G.stage*5;
+        // Longer stages: base 15 fruits + 3 per stage (easier progression)
+        cutTarget = 15 + window.G.stage*3;
+        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage; // 8-15 points based on star
         document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
         document.getElementById('comp-reward').textContent=pendingReward;
         document.getElementById('hud-target').textContent=cutTarget;
@@ -1145,20 +1299,63 @@
         gameState='playing';
     };
 
+    window.showNoTokenModal = function(){
+        // Show ad-to-play option
+        let existing = document.getElementById('no-token-modal');
+        if(existing){ existing.style.display='flex'; return; }
+        let div = document.createElement('div');
+        div.className='overlay ptr'; div.id='no-token-modal'; div.style.display='flex';
+        div.innerHTML=`<div class="modal">
+            <span class="big-emoji">🎮</span>
+            <div class="mh mh-red">No Tokens!</div>
+            <div style="text-align:center;color:#aaa;margin-bottom:10px;">Tokens refill every 1 hour, or watch an ad to play now!</div>
+            <button class="btn btn-red" onclick="window.watchAdForGame()">📺 Watch Ad → Play Free</button>
+            <button class="btn btn-grey" onclick="window.hideModal('no-token-modal')">🏠 Back</button>
+        </div>`;
+        document.body.appendChild(div);
+    };
+
+    window.watchAdForGame = async function(){
+        document.getElementById('ad-loader').style.display='flex';
+        try {
+            let AdC = Adsgram.init({ blockId: "int-28067" });
+            await AdC.show();
+        } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        document.getElementById('ad-loader').style.display='none';
+        window.hideModal('no-token-modal');
+        window.tryStartGame(true); // forceStart - no token deducted
+    };
+
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
         if(watchAd){
             document.getElementById('ad-loader').style.display='flex';
-            setTimeout(async ()=>{
-                document.getElementById('ad-loader').style.display='none';
-                window.G.coins+=pendingReward*2; window.G.stage++; await window.saveState(); window.tryStartGame();
-            }, 3000); // simulated ad delay
+            try {
+                let AdC = Adsgram.init({ blockId: "int-28067" });
+                await AdC.show();
+            } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
+            document.getElementById('ad-loader').style.display='none';
+            window.G.coins+=pendingReward*2; window.G.stage++; await window.saveState(); window.tryStartGame();
         } else {
             window.G.coins+=pendingReward; window.G.stage++; await window.saveState(); window.tryStartGame();
         }
     };
 
     window.retryGame = function(){ window.hideModal('over-modal'); window.tryStartGame(); };
+
+    window.skipStageWithAd = async function(){
+        window.hideModal('over-modal');
+        document.getElementById('ad-loader').style.display='flex';
+        try {
+            let AdC = Adsgram.init({ blockId: "int-28067" });
+            await AdC.show();
+        } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
+        document.getElementById('ad-loader').style.display='none';
+        // Skip: advance stage without spending token
+        window.G.stage++; await window.saveState(); window.tryStartGame(true);
+        showToast('⏭️ Stage skipped!');
+    };
+
     window.backToMenu = function(){
         window.hideModal('over-modal'); document.getElementById('game-hud').style.display='none';
         document.getElementById('strikes').style.display='none'; document.getElementById('menu-screen').style.display='flex';
@@ -1166,52 +1363,172 @@
     };
 
     /* -------------------------------------------------------------------------
-       Spin Wheel Logic
+       777 Lottery System
     ------------------------------------------------------------------------- */
-    const PRIZES = [{l:'50💎',v:50,t:'gem'}, {l:'20💎',v:20,t:'gem'}, {l:'80💎',v:80,t:'gem'}, {l:'10💎',v:10,t:'gem'}, {l:'100💎',v:100,t:'gem'}, {l:'🎮+1',v:1,t:'tok'}];
-    let wheelAngle=0, spinning=false;
-    
-    window.drawWheel = function(){
-        let wc=document.getElementById('wheel-canvas'); if(!wc) return; let x=wc.getContext('2d');
-        let cx=130,cy=130,r=120, n=PRIZES.length, arc=2*Math.PI/n; x.clearRect(0,0,260,260);
-        x.beginPath(); x.arc(cx,cy,r+8,0,2*Math.PI); x.fillStyle='#ff8f00'; x.fill();
-        let cols=['#4caf50','#66bb00','#e53935','#ff9800','#388e3c','#2196f3'];
-        for(let i=0;i<n;i++){
-            x.beginPath(); x.moveTo(cx,cy); x.arc(cx,cy,r, i*arc, (i+1)*arc); x.fillStyle=cols[i]; x.fill();
-            x.strokeStyle='#fff'; x.lineWidth=2; x.stroke();
-            x.save(); x.translate(cx+Math.cos(i*arc+arc/2)*r*0.65, cy+Math.sin(i*arc+arc/2)*r*0.65);
-            x.rotate(i*arc+arc/2+Math.PI/2); x.fillStyle='#fff'; x.font='bold 16px Nunito'; x.textAlign='center';
-            x.fillText(PRIZES[i].l,0,0); x.restore();
-        }
-        x.beginPath(); x.arc(cx,cy,28,0,2*Math.PI); x.fillStyle='#fff'; x.fill();
-    };
+    // 10 prizes with weighted chances (total weight = 100)
+    const LOTTERY_PRIZES = [
+        { id:1,  label:'1 💎',      icon:'💎',  type:'gem',   val:1,    weight:3  },
+        { id:2,  label:'10 🪙',     icon:'🪙',  type:'coin',  val:10,   weight:10 },
+        { id:3,  label:'20 🪙',     icon:'🪙',  type:'coin',  val:20,   weight:10 },
+        { id:4,  label:'50 🪙',     icon:'🪙',  type:'coin',  val:50,   weight:10 },
+        { id:5,  label:'1 🎮',      icon:'🎮',  type:'token', val:1,    weight:10 },
+        { id:6,  label:'0.1 💎',    icon:'💠',  type:'gem',   val:0.1,  weight:10 },
+        { id:7,  label:'0.5 💎',    icon:'💎',  type:'gem',   val:0.5,  weight:4  },
+        { id:8,  label:'0.8 💎',    icon:'💎',  type:'gem',   val:0.8,  weight:3  },
+        { id:9,  label:'100 🪙',    icon:'🪙',  type:'coin',  val:100,  weight:10 },
+        { id:10, label:'200 🪙',    icon:'🪙',  type:'coin',  val:200,  weight:10 },
+    ];
+    // Slot symbols shown while spinning
+    const SLOT_SYMBOLS = ['💎','🍋','🎰','7️⃣','⭐','🎮','💠','🪙','🔔','🍒'];
 
-    window.updateSpinTimer = function(){
-        let canSpin = Date.now() - window.G.dailySpin > 24*3600*1000;
-        let info = document.getElementById('spin-timer-info');
-        if(canSpin){ info.textContent = '🎯 Tap the center button to spin!'; info.style.color='#7de'; } 
-        else { let l=24*3600*1000-(Date.now()-window.G.dailySpin); info.textContent = `⏰ Next spin in ${Math.floor(l/3600000)}h`; info.style.color='#f88'; }
-    };
+    function weightedRandom(){
+        let total = LOTTERY_PRIZES.reduce((a,p)=>a+p.weight,0);
+        let r = Math.random()*total, acc=0;
+        for(let p of LOTTERY_PRIZES){ acc+=p.weight; if(r<acc) return p; }
+        return LOTTERY_PRIZES[LOTTERY_PRIZES.length-1];
+    }
 
-    window.spinWheel = async function(){
-        if(spinning) return;
-        if(Date.now() - window.G.dailySpin < 24*3600*1000){ showToast('⏰ Come back tomorrow.'); return; }
-        spinning=true; let target=Math.floor(Math.random()*PRIZES.length);
-        let cv = document.getElementById('wheel-canvas');
-        let targetRot = 360*5 + (270 - (target*(360/PRIZES.length)));
-        cv.style.transform = `rotate(${targetRot}deg)`;
+    // Determine winning combination for slots display
+    function getSlotResult(prize){
+        // 3 diamonds = jackpot (1 diamond prize)
+        if(prize.type==='gem' && prize.val>=1) return ['💎','💎','💎'];
+        if(prize.type==='gem' && prize.val===0.5) return ['💎','💎','🌟'];
+        if(prize.type==='gem' && prize.val===0.8) return ['💎','💎','⭐'];
+        if(prize.type==='gem' && prize.val===0.1) return ['💠','💠','💠'];
+        if(prize.type==='token') return ['🎮','🎮','🎮'];
+        if(prize.val>=200) return ['🪙','🪙','🪙'];
+        if(prize.val>=100) return ['🔔','🔔','🔔'];
+        if(prize.val>=50)  return ['⭐','⭐','⭐'];
+        if(prize.val>=20)  return ['🍒','🍒','7️⃣'];
+        return ['🍋','🍋','🎰'];
+    }
+
+    let lotterySpinning = false;
+
+    window.renderLotteryModal = function(){
+        // Render prizes grid
+        let grid = document.getElementById('lottery-prizes-grid');
+        if(grid) grid.innerHTML = LOTTERY_PRIZES.map(p=>`
+            <div class="lottery-prize-item">
+                <div class="lottery-prize-name">${p.icon} ${p.label}</div>
+                <div class="lottery-prize-chance">${p.weight}% chance</div>
+            </div>`).join('');
         
+        // Update stats
+        let earned = document.getElementById('lottery-total-earned');
+        let spins = document.getElementById('lottery-total-spins');
+        if(earned) earned.textContent = window.G.lotteryDiamondsEarned||0;
+        if(spins) spins.textContent = window.G.lotteryTotalSpins||0;
+
+        // Free badge
+        let badge = document.getElementById('lottery-free-badge');
+        if(badge){
+            if(!window.G.lotteryFreeUsed){
+                badge.innerHTML = '<span class="lottery-free-badge">🎁 FREE First Spin!</span>';
+            } else {
+                badge.innerHTML = '<span style="font-size:12px;color:#aaa;">Cost: 1 💎 per spin</span>';
+            }
+        }
+
+        // Reset slots
+        ['slot-0','slot-1','slot-2'].forEach((id,i)=>{
+            let el = document.getElementById(id);
+            if(el){ el.textContent='❓'; el.classList.remove('spinning','win'); }
+        });
+        let res = document.getElementById('lottery-result');
+        if(res) res.textContent='';
+
+        let btn = document.getElementById('lottery-spin-btn');
+        if(btn) btn.disabled = false;
+    };
+
+    window.spinLottery = async function(){
+        if(lotterySpinning) return;
+
+        // Check cost
+        if(window.G.lotteryFreeUsed){
+            if(window.G.gems < 1){ showToast('❌ Need 1 💎 to spin!'); return; }
+            window.G.gems -= 1;
+        }
+
+        lotterySpinning = true;
+        let btn = document.getElementById('lottery-spin-btn');
+        if(btn) btn.disabled = true;
+
+        // Start spinning animation
+        let slots = ['slot-0','slot-1','slot-2'];
+        slots.forEach(id=>{ let el=document.getElementById(id); if(el){ el.classList.add('spinning'); el.textContent='🎰'; } });
+
+        let result = document.getElementById('lottery-result');
+        if(result) result.textContent='🎰 Spinning...';
+
+        // Animate random symbols during spin
+        let symbolInterval = setInterval(()=>{
+            slots.forEach(id=>{
+                let el=document.getElementById(id);
+                if(el) el.textContent = SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)];
+            });
+        }, 100);
+
+        // Pick winner
+        let prize = weightedRandom();
+        let finalSymbols = getSlotResult(prize);
+
+        // Reveal slots one by one
+        setTimeout(()=>{ clearInterval(symbolInterval);
+            let el0=document.getElementById('slot-0');
+            if(el0){ el0.classList.remove('spinning'); el0.textContent=finalSymbols[0]; }
+        }, 1200);
+        setTimeout(()=>{
+            let el1=document.getElementById('slot-1');
+            if(el1){ el1.classList.remove('spinning'); el1.textContent=finalSymbols[1]; }
+        }, 1800);
         setTimeout(async ()=>{
-            spinning=false; window.G.dailySpin=Date.now();
-            let pz = PRIZES[target];
-            if(pz.t==='gem') window.G.gems+=pz.v; else window.G.tokens=Math.min(10, window.G.tokens+1);
-            
-            await updateDoc(doc(db, 'users', currentUser.id), { dailySpin: window.G.dailySpin, gems: window.G.gems, tokens: window.G.tokens });
-            window.updateUI(); window.updateSpinTimer();
-            document.getElementById('spin-result').textContent='🎉 You won: '+pz.l;
-            showToast('🎊 Reward: '+pz.l); cv.style.transition='none'; cv.style.transform='rotate(0deg)';
-            setTimeout(()=>cv.style.transition='transform 4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 50);
-        }, 4000);
+            let el2=document.getElementById('slot-2');
+            if(el2){ el2.classList.remove('spinning'); el2.textContent=finalSymbols[2]; }
+
+            // Check win (3 same = highlight)
+            if(finalSymbols[0]===finalSymbols[1] && finalSymbols[1]===finalSymbols[2]){
+                slots.forEach(id=>{ let el=document.getElementById(id); if(el) el.classList.add('win'); });
+            }
+
+            // Apply reward
+            let rewardMsg = '';
+            if(prize.type==='gem'){
+                let gemVal = prize.val;
+                window.G.gems = parseFloat((window.G.gems + gemVal).toFixed(1));
+                window.G.lotteryDiamondsEarned = parseFloat(((window.G.lotteryDiamondsEarned||0)+gemVal).toFixed(1));
+                rewardMsg = `🎉 You won: ${prize.label}`;
+            } else if(prize.type==='token'){
+                window.G.tokens = Math.min(10, window.G.tokens + prize.val);
+                rewardMsg = `🎉 You won: ${prize.label}`;
+            } else if(prize.type==='coin'){
+                window.G.coins += prize.val;
+                rewardMsg = `🎉 You won: ${prize.label}`;
+            }
+
+            window.G.lotteryFreeUsed = true;
+            window.G.lotteryTotalSpins = (window.G.lotteryTotalSpins||0) + 1;
+
+            // Update stats display
+            let earned = document.getElementById('lottery-total-earned');
+            let spins = document.getElementById('lottery-total-spins');
+            if(earned) earned.textContent = window.G.lotteryDiamondsEarned||0;
+            if(spins) spins.textContent = window.G.lotteryTotalSpins;
+
+            let badge = document.getElementById('lottery-free-badge');
+            if(badge) badge.innerHTML = '<span style="font-size:12px;color:#aaa;">Cost: 1 💎 per spin</span>';
+
+            if(result) result.textContent = rewardMsg;
+            showToast(rewardMsg);
+
+            await window.saveState();
+            window.updateUI();
+            lotterySpinning = false;
+            if(btn) btn.disabled = false;
+
+            if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }, 2600);
     };
 
     // Make snow effect
