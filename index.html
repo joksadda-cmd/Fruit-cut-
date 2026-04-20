@@ -200,13 +200,15 @@
         }
         .lv-bar-wrap{flex:1;height:14px;background:rgba(0,0,0,0.4);border-radius:10px;overflow:hidden;}
         .lv-bar-fill{height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00);border-radius:10px;transition:width 0.3s;}
-        .get-btn{
+        
+        .pause-btn, .get-btn{
             background:linear-gradient(180deg,#ffe040,#ff8c00);
             border:2px solid #fff;border-radius:14px;
-            padding:8px 16px;display:flex;align-items:center;gap:5px;
+            padding:8px 12px;display:flex;align-items:center;gap:5px;
             font-family:'Luckiest Guy',cursive;font-size:15px;color:#fff;cursor:pointer;
             box-shadow:0 4px 0 #cc6600;pointer-events:auto;
         }
+        .pause-btn{ background:linear-gradient(180deg,#00bcd4,#00838f); box-shadow:0 4px 0 #005662; }
 
         /* Strikes */
         #strikes{position:fixed;top:70px;right:16px;z-index:13;display:none;gap:6px;}
@@ -551,12 +553,7 @@
 
 <!-- GAME HUD -->
 <div id="game-hud" class="ptr">
-    <div class="pass-reward-box">
-        <div>
-            <div class="pr-label">PASS REWARD</div>
-            <div class="pr-val">🪙 <span id="hud-reward">0</span></div>
-        </div>
-    </div>
+    <div class="pause-btn" onclick="window.pauseGame()">⏸️</div>
     <div class="lv-progress">
         <span id="hud-cut">0</span>/<span id="hud-target">10</span>
         <div class="lv-bar-wrap"><div class="lv-bar-fill" id="lv-fill" style="width:0%"></div></div>
@@ -572,6 +569,17 @@
 </div>
 
 <!-- ========== MODALS ========== -->
+
+<!-- PAUSE MODAL -->
+<div class="overlay ptr" id="pause-modal">
+    <div class="modal">
+        <div class="mh mh-gold">⏸️ GAME PAUSED</div>
+        <button class="btn btn-gold" onclick="window.resumeGame()">▶ RESUME</button>
+        <button class="btn btn-blue" onclick="window.retryGame(true)">🔁 RESTART STAGE</button>
+        <button class="btn btn-grey" onclick="window.backToMenu()">🏠 MAIN MENU</button>
+    </div>
+</div>
+
 <!-- ========== LOTTERY MODAL ========== -->
 <div class="overlay ptr" id="lottery-modal">
     <div class="modal">
@@ -613,13 +621,6 @@
     </div>
 </div>
 
-<!-- Keep old spin modal HTML for compatibility but hidden -->
-<div class="overlay ptr" id="spin-modal" style="display:none!important;">
-    <div class="modal">
-        <div class="mh mh-purple">🎡 Lucky Spin Wheel</div>
-        <button class="btn btn-purple" onclick="window.hideModal('spin-modal')">CLOSE</button>
-    </div>
-</div>
 
 <div class="overlay ptr" id="shop-modal">
     <div class="modal">
@@ -696,10 +697,12 @@
                 </div>
             </div>
         </div>
-        <div class="mrow">
-            <span class="mrow-label">Per Referral Reward</span>
-            <span class="mrow-val">💎5 + 🎮3 tokens</span>
+        <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:10px; margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:4px;">🎁 Rewards:</div>
+            <div style="font-size:12px;color:#ddd;margin-bottom:2px;">• Normal Refer: <strong style="color:#ffcc00;">+1 Token</strong> (Instantly)</div>
+            <div style="font-size:12px;color:#ddd;">• Valid Refer (Friend earns 10💎): <strong style="color:#4af;">+5 Diamonds</strong> & <strong style="color:#ffcc00;">+3 Tokens</strong></div>
         </div>
+        
         <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
         <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
         <div style="font-size:12px;color:#7de;margin-bottom:6px;" id="copy-status"></div>
@@ -714,7 +717,7 @@
         <div class="mh mh-gold">⚙️ Settings</div>
         <div id="tg-user-info" class="tg-info"></div>
         <div class="mrow">
-            <span class="mrow-label">Sound</span>
+            <span class="mrow-label">Sound & Music</span>
             <span class="mrow-val ptr" id="snd-toggle" onclick="window.toggleSound()">🔊</span>
         </div>
         <div class="mrow">
@@ -722,8 +725,8 @@
             <span class="mrow-val ptr" id="vib-toggle" onclick="window.toggleVib()">📳</span>
         </div>
         <div class="mrow">
-            <span class="mrow-label">Version (Firebase)</span>
-            <span class="mrow-val" style="font-size:14px;color:#7ab;">v4.0.0</span>
+            <span class="mrow-label">Version</span>
+            <span class="mrow-val" style="font-size:14px;color:#7ab;">v5.0.0 (Updated)</span>
         </div>
         <button class="btn btn-grey" onclick="window.hideModal('setting-modal')">CLOSE</button>
     </div>
@@ -748,7 +751,7 @@
             </div>
         </div>
 
-        <!-- AD SLOT 2: Adsgram Daily Interstitial - 5x/day, 50 gold each -->
+        <!-- AD SLOT 2: Adsgram Daily Interstitial -->
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+50 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
@@ -764,7 +767,7 @@
             </div>
         </div>
 
-        <!-- AD SLOT 4: Monetag - 10x/day, 50 gold each -->
+        <!-- AD SLOT 4: Monetag -->
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">💰 <strong>Monetag Ads</strong> (+50 Gold)<br><span id="monetag-left">10/10 remaining</span></div>
@@ -803,7 +806,7 @@
         <div class="mh mh-red">GAME OVER</div>
         <div style="text-align:center;color:#aaa;margin-bottom:10px;">You missed too many fruits!</div>
         <div style="text-align:center;color:#ffcc00;font-size:13px;margin-bottom:10px;">Tokens: <span id="over-tokens">0</span> / 10</div>
-        <button class="btn btn-gold" onclick="window.retryGame()">🔁 RETRY (Uses Token)</button>
+        <button class="btn btn-gold" onclick="window.retryGame(false)">🔁 RETRY (Uses Token)</button>
         <button class="btn btn-red" onclick="window.skipStageWithAd()">📺 Watch Ad → Skip Stage</button>
         <button class="btn btn-blue" onclick="window.watchAdForGameRetry()">📺 Watch Ad → Play Free</button>
         <button class="btn btn-grey" onclick="window.backToMenu()">🏠 MAIN MENU</button>
@@ -851,12 +854,57 @@
         lootboxPoints: 0, completedTasks: [], gamesPlayed: 0,
         lotteryFreeUsed: false, lotteryTotalSpins: 0, lotteryDailySpins: 0,
         lotteryDiamondsEarned: 0, referDiamonds: 0,
-        shopTokenBought: 0, shopDiamondExchanged: 0
+        shopTokenBought: 0, shopDiamondExchanged: 0,
+        referredBy: null, hasTriggeredValidRefer: false
     };
 
-    // Tasks come from Firebase admin panel — no hardcoded defaults
-    // Admin adds tasks in Firestore 'tasks' collection
     let ADMIN_TASKS = [];
+
+    // Audio system update
+    const SOUNDS = {};
+    const SOUND_FILES = {
+        menu:     'assets/sounds/menu.mp3',
+        slice:    'assets/sounds/slice.mp3',
+        gameover: 'assets/sounds/gameover.mp3',
+        win:      'assets/sounds/win.mp3'
+    };
+
+    // Load Audios
+    const menuMusic = new Audio("assets/sounds/menu.mp3");
+    menuMusic.loop = true;
+    menuMusic.volume = 0.4;
+    
+    Object.entries(SOUND_FILES).forEach(([key, src]) => {
+        if(key !== 'menu'){
+            const audio = new Audio(src);
+            audio.preload = 'auto';
+            audio.volume = 0.7;
+            SOUNDS[key] = audio;
+        }
+    });
+
+    function playSound(name) {
+        if(!window.G.sound) return;
+        if(name === 'menu') return; // menu is handled separately
+        const snd = SOUNDS[name];
+        if(!snd) return;
+        const clone = snd.cloneNode();
+        clone.volume = snd.volume;
+        clone.play().catch(()=>{});
+    }
+
+    function openAppAudio(){
+        if(window.G.sound) menuMusic.play().catch(()=>{});
+    }
+    function startGameAudio(){
+        menuMusic.pause();
+    }
+    function openAdsAudio(){
+        menuMusic.pause();
+    }
+    function openSectionAudio(){
+        if(window.G.sound && gameState === 'menu') menuMusic.play().catch(()=>{});
+    }
 
     function getTodayStr() { return new Date().toDateString(); }
 
@@ -888,9 +936,27 @@
         }
     }
 
+    // Valid referral logic (Update 2)
+    async function checkValidReferral() {
+        if (window.G.referredBy && window.G.hasTriggeredValidRefer === false && window.G.gems >= 10) {
+            window.G.hasTriggeredValidRefer = true;
+            try {
+                await updateDoc(doc(db, 'users', currentUser.id), { hasTriggeredValidRefer: true });
+                // Reward Referrer (Valid refer -> 5 Gems + 3 Tokens)
+                await updateDoc(doc(db, 'users', window.G.referredBy), { 
+                    referDiamonds: increment(5), 
+                    gems: increment(5), 
+                    tokens: increment(3) 
+                });
+            } catch(e) { console.error(e); }
+        }
+    }
+
     window.saveState = async function() {
         if(!currentUser) return;
         window.updateUI();
+        await checkValidReferral(); // Call valid check whenever state saves
+        
         try {
             await updateDoc(doc(db, 'users', currentUser.id), {
                 coins: window.G.coins, gems: window.G.gems, stage: window.G.stage,
@@ -907,7 +973,8 @@
                 adsgramDailyCount: window.G.adsgramDailyCount,
                 monetagCount: window.G.monetagCount,
                 shopTokenBought: window.G.shopTokenBought,
-                shopDiamondExchanged: window.G.shopDiamondExchanged
+                shopDiamondExchanged: window.G.shopDiamondExchanged,
+                hasTriggeredValidRefer: window.G.hasTriggeredValidRefer
             });
         } catch(e) { console.error("Save error", e); }
     };
@@ -927,7 +994,6 @@
         document.getElementById('spin-badge').textContent = canLottery ? 'FREE' : 'SPIN';
     };
 
-    // Firebase Auth & Init
     async function initApp() {
         let tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) {
@@ -948,15 +1014,19 @@
                 if (startParam && startParam !== `FC${userId}`) {
                     referredBy = startParam.replace('FC', '');
                     try {
-                        // Reward Referrer: 5 diamonds + 3 tokens
-                        await updateDoc(doc(db, 'users', referredBy), { referCount: increment(1), gems: increment(5), tokens: increment(3), referDiamonds: increment(5) });
+                        // Normal Refer Reward: Just +1 Token, no diamonds until valid
+                        await updateDoc(doc(db, 'users', referredBy), { 
+                            referCount: increment(1), 
+                            tokens: increment(1) 
+                        });
                     } catch(e){}
                 }
 
                 const initialData = {
                     telegramId: userId, username: tgUser.username || 'unknown',
-                    coins: 0, gems: (referredBy ? 5 : 0), stage: 1, tokens: (referredBy ? 5 : 3),
-                    referCode: `FC${userId}`, referCount: 0, referredBy: referredBy,
+                    coins: 0, gems: 0, stage: 1, tokens: (referredBy ? 4 : 3),
+                    referCode: `FC${userId}`, referCount: 0, 
+                    referredBy: referredBy, hasTriggeredValidRefer: false,
                     dailySpin: 0, tokenRefill: Date.now(), adsDayStamp: getTodayStr(),
                     adsgramCount: 0, adsgramDailyCount: 0, monetagCount: 0,
                     gigapubCount: 0, lootboxPoints: 0, completedTasks: [], gamesPlayed: 0,
@@ -966,15 +1036,13 @@
                 };
                 await setDoc(userRef, initialData);
                 currentUser = { id: userId, ...initialData };
-                if(referredBy) showToast('🎉 Joined via referral! Bonus +5💎 & +2🎮');
+                if(referredBy) showToast('🎉 Joined via referral! Play to earn diamonds for your friend!');
             } else {
                 currentUser = { id: snap.id, ...snap.data() };
             }
 
-            // Sync Database with Local G object
             Object.assign(window.G, currentUser);
 
-            // Load settings from local storage
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
 
@@ -986,16 +1054,14 @@
 
             document.getElementById('refer-link').textContent = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
             
-            // Hide Loader, Show Menu
             document.getElementById('fullscreen-loader').style.display = 'none';
             document.getElementById('menu-screen').style.display = 'flex';
             
-            // Start Canvas Game Loop
             startTokenTimer();
             requestAnimationFrame(window.loop);
 
-            // Start background music (requires user interaction — Telegram WebApp counts)
-            setTimeout(() => { if(window.G.sound) playSound('start'); }, 500);
+            // Open app music
+            setTimeout(() => { openAppAudio(); }, 500);
 
         } catch (error) {
             document.getElementById('loader-text').textContent = 'Error connecting to database. Please reload.';
@@ -1007,7 +1073,7 @@
         setInterval(()=>{
             if(window.G.tokens < 10){
                 let elapsed = Date.now() - window.G.tokenRefill;
-                let left = 60*60*1000 - elapsed; // 1 hour
+                let left = 60*60*1000 - elapsed;
                 if(left <= 0){
                     window.G.tokens = Math.min(10, window.G.tokens+1);
                     window.G.tokenRefill = Date.now();
@@ -1023,21 +1089,36 @@
         }, 1000);
     }
 
-    /* -------------------------------------------------------------------------
-       Expose standard UI interaction functions to Window (for HTML onclicks)
-    ------------------------------------------------------------------------- */
     window.showModal = function(id){
         document.getElementById(id).style.display='flex';
-        if(id==='ads-modal'){ checkDailyReset().then(()=>{ updateAdsUI(); }); }
-        if(id==='lottery-modal'){ window.renderLotteryModal(); }
+        if(id==='ads-modal'){ openAdsAudio(); checkDailyReset().then(()=>{ updateAdsUI(); }); }
+        else { openSectionAudio(); }
+        
+        if(id==='lottery-modal'){ checkDailyReset().then(()=>{ window.renderLotteryModal(); }); }
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
         if(id==='shop-modal'){ checkDailyReset().then(()=>{ updateShopUI(); }); }
         if(id==='over-modal'){ let el=document.getElementById('over-tokens'); if(el) el.textContent=window.G.tokens; }
     };
-    window.hideModal = function(id){ document.getElementById(id).style.display='none'; };
+    window.hideModal = function(id){ 
+        document.getElementById(id).style.display='none'; 
+        if(gameState === 'menu') openSectionAudio();
+    };
     window.showTokenInfo = function(){ showToast('🎮 Tokens: 1 token = 1 game. Max 10. Refills +1 every 1 hour!'); };
-    // toggleSound and toggleVib are defined later with sound system
+
+    window.toggleSound = function(){
+        window.G.sound = !window.G.sound;
+        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
+        if(!window.G.sound) { menuMusic.pause(); } 
+        else { if(gameState === 'menu') menuMusic.play().catch(()=>{}); }
+        window.updateUI();
+    };
+
+    window.toggleVib = function(){
+        window.G.vib=!window.G.vib;
+        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
+        window.updateUI();
+    };
 
     window.buyTokenShop = function(qty){
         let bought = window.G.shopTokenBought || 0;
@@ -1069,13 +1150,6 @@
         showToast(`💎 +${canExchange} Diamond(s) exchanged!`);
     };
 
-    // Keep for backwards compatibility
-    window.buyItem = function(type){
-        if(type==='token5'){ window.buyTokenShop(5); }
-        else if(type==='diamond1'){ window.exchangeDiamond(1); }
-        else if(type==='token'){ window.buyTokenShop(1); }
-    };
-
     window.copyRefer = function(){
         let txt = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
         navigator.clipboard?.writeText(txt).then(()=>{
@@ -1085,14 +1159,11 @@
     };
     window.shareToTelegram = function(){
         let link = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
-        let text = `🎮 Join me on Fruit Cut & Earn real rewards! 🍉🍓\n💎 Get 5 FREE Diamonds + 3 Game Tokens when you join!\n🎰 Play, refer friends & withdraw via bKash or TON!`;
+        let text = `🎮 Join me on Fruit Cut & Earn real rewards! 🍉🍓\n💎 Play, refer friends & withdraw via bKash or TON!`;
         if(tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
         else window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
     };
 
-    /* -------------------------------------------------------------------------
-       Ads & Lootbox (Firebase Sync)
-    ------------------------------------------------------------------------- */
     function updateAdsUI(){
         let agLeft = 5 - window.G.adsgramCount;
         let agDailyLeft = 5 - (window.G.adsgramDailyCount||0);
@@ -1130,15 +1201,10 @@
 
     window.claimLootbox = async function(){
         if(window.G.lootboxPoints < 300){ showToast('❌ Need at least 300 points to claim!'); return; }
-        // Calculate reward: proportional diamonds (300pts=15💎, 600pts=30💎, 1000pts=50💎)
         let pts = window.G.lootboxPoints;
-        let diamondReward = Math.floor(pts / 20); // 20pts = 1 diamond
-        // Show an ad before claiming
+        let diamondReward = Math.floor(pts / 20); 
         document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ /* fallback: just wait */ await new Promise(r=>setTimeout(r,2000)); }
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
         document.getElementById('ad-loader').style.display='none';
         window.G.lootboxPoints = 0; window.G.gems += diamondReward;
         await window.saveState();
@@ -1147,11 +1213,7 @@
     };
 
     function addLootboxPoints(pts){
-        // Do not exceed 1000 — excess is discarded
-        if(window.G.lootboxPoints >= 1000){
-            showToast('⚠️ Lootbox full! Claim first before earning more.');
-            return false;
-        }
+        if(window.G.lootboxPoints >= 1000){ showToast('⚠️ Lootbox full! Claim first before earning more.'); return false; }
         window.G.lootboxPoints = Math.min(1000, window.G.lootboxPoints + pts);
         return true;
     }
@@ -1160,11 +1222,8 @@
         if(window.G.adsgramCount >= 5){ showToast('✋ Daily Adsgram limit reached!'); return; }
         if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
         try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-            window.G.adsgramCount++;
-            window.G.coins += 50;
-            addLootboxPoints(50);
+            let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
+            window.G.adsgramCount++; window.G.coins += 50; addLootboxPoints(50);
             await updateDoc(doc(db, 'users', currentUser.id), { adsgramCount: window.G.adsgramCount, coins: window.G.coins, lootboxPoints: window.G.lootboxPoints });
             window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
         } catch(e) { simAdGold(50, 'adsgramCount'); }
@@ -1175,9 +1234,7 @@
         if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
         try {
             await window.showGiga();
-            window.G.gigapubCount++;
-            window.G.coins += 50;
-            addLootboxPoints(50);
+            window.G.gigapubCount++; window.G.coins += 50; addLootboxPoints(50);
             await updateDoc(doc(db, 'users', currentUser.id), { gigapubCount: window.G.gigapubCount, coins: window.G.coins, lootboxPoints: window.G.lootboxPoints });
             window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
         } catch(e) { simAdGold(50, 'gigapubCount'); }
@@ -1187,11 +1244,8 @@
         if((window.G.adsgramDailyCount||0) >= 5){ showToast('✋ Daily Adsgram Daily limit reached!'); return; }
         if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
         try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-            window.G.adsgramDailyCount = (window.G.adsgramDailyCount||0) + 1;
-            window.G.coins += 50;
-            addLootboxPoints(50);
+            let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
+            window.G.adsgramDailyCount = (window.G.adsgramDailyCount||0) + 1; window.G.coins += 50; addLootboxPoints(50);
             await updateDoc(doc(db, 'users', currentUser.id), { adsgramDailyCount: window.G.adsgramDailyCount, coins: window.G.coins, lootboxPoints: window.G.lootboxPoints });
             window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
         } catch(e) { simAdGold(50, 'adsgramDailyCount'); }
@@ -1202,9 +1256,7 @@
         if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
         try {
             await show_10893505();
-            window.G.monetagCount = (window.G.monetagCount||0) + 1;
-            window.G.coins += 50;
-            addLootboxPoints(50);
+            window.G.monetagCount = (window.G.monetagCount||0) + 1; window.G.coins += 50; addLootboxPoints(50);
             await updateDoc(doc(db, 'users', currentUser.id), { monetagCount: window.G.monetagCount, coins: window.G.coins, lootboxPoints: window.G.lootboxPoints });
             window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
         } catch(e) { simAdGold(50, 'monetagCount'); }
@@ -1215,123 +1267,14 @@
         setTimeout(async ()=>{
             document.getElementById('ad-loader').style.display='none';
             if(window.G.lootboxPoints < 600){
-                window.G[type] = (window.G[type]||0) + 1;
-                window.G.coins += pts;
-                addLootboxPoints(pts);
+                window.G[type] = (window.G[type]||0) + 1; window.G.coins += pts; addLootboxPoints(pts);
                 await updateDoc(doc(db, 'users', currentUser.id), { [type]: window.G[type], coins: window.G.coins, lootboxPoints: window.G.lootboxPoints });
                 window.saveState(); updateAdsUI(); showToast(`✅ +${pts} Gold!`);
-            } else {
-                showToast('⚠️ Claim your Lootbox first!');
-            }
+            } else { showToast('⚠️ Claim your Lootbox first!'); }
         }, 2000);
     }
 
-    /* -------------------------------------------------------------------------
-       Tasks System — Admin driven from Firebase 'tasks' collection
-    ------------------------------------------------------------------------- */
-    window.renderTasks = async function(){
-        let c = document.getElementById('task-list');
-        c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">⏳ Loading tasks...</div>';
-        try {
-            const { getDocs, collection: col, query, orderBy } = await import("https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js");
-            const qSnap = await getDocs(query(col(db, 'tasks'), orderBy('order','asc')));
-            ADMIN_TASKS = [];
-            qSnap.forEach(d => ADMIN_TASKS.push({ id: d.id, ...d.data() }));
-        } catch(e) {
-            console.warn('Tasks load error', e);
-        }
-
-        if(!ADMIN_TASKS.length){
-            c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">📋 No tasks available yet.<br>Check back soon!</div>';
-            return;
-        }
-
-        c.innerHTML = '';
-        ADMIN_TASKS.forEach(t => {
-            let done = (window.G.completedTasks||[]).includes(t.id);
-            let rewardText = '';
-            if(t.coins) rewardText += `🪙 ${t.coins} `;
-            if(t.gems) rewardText += `💎 ${t.gems} `;
-            rewardText = rewardText.trim() || '🎁 Reward';
-            c.innerHTML += `
-                <div class="task-card">
-                    <div class="task-icon">${t.icon||'📋'}</div>
-                    <div class="task-info">
-                        <div class="task-name">${t.name||'Task'}</div>
-                        <div class="task-reward">${rewardText}</div>
-                    </div>
-                    <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}')" ${done?'disabled':''}>
-                        ${done ? '✅ Done' : '▶ Go'}
-                    </button>
-                </div>`;
-        });
-    };
-
-    window.doTask = async function(id){
-        let t = ADMIN_TASKS.find(x=>x.id===id);
-        if(!t){ showToast('❌ Task not found!'); return; }
-        if((window.G.completedTasks||[]).includes(id)){ showToast('✅ Already done!'); return; }
-
-        // Open link if task has one
-        if(t.link){
-            if(tg?.openLink) tg.openLink(t.link);
-            else window.open(t.link, '_blank');
-        }
-
-        setTimeout(async ()=>{
-            if(!(window.G.completedTasks||[]).includes(id)){
-                window.G.completedTasks.push(id);
-                if(t.gems) window.G.gems += t.gems;
-                if(t.coins) window.G.coins += t.coins;
-                await window.saveState();
-                window.renderTasks();
-                let rewardText = '';
-                if(t.coins) rewardText += `🪙 ${t.coins} `;
-                if(t.gems) rewardText += `💎 ${t.gems}`;
-                showToast(`✅ Task done! ${rewardText.trim()}`);
-            }
-        }, 2000);
-    };
-
-    /* -------------------------------------------------------------------------
-       Withdrawal System
-    ------------------------------------------------------------------------- */
-    window.doWithdraw = async function(){
-        let method = document.getElementById('w-method').value;
-        let addr = document.getElementById('w-address').value.trim();
-        let amount = parseInt(document.getElementById('w-amount').value)||0;
-        
-        if(!addr) return showToast('❌ Enter address!');
-        if(amount < 100) return showToast(`❌ Min 100 💎!`);
-        if(window.G.gems < amount) return showToast('❌ Not enough Diamonds!');
-        
-        let btn = document.getElementById('btn-withdraw');
-        btn.disabled = true; btn.textContent = "Processing...";
-
-        try {
-            await runTransaction(db, async (t) => {
-                const uRef = doc(db, 'users', currentUser.id);
-                const uDoc = await t.get(uRef);
-                if(uDoc.data().gems < amount) throw new Error("Insufficient");
-                
-                t.update(uRef, { gems: increment(-amount) });
-                t.set(doc(collection(db, 'withdrawals')), {
-                    userId: currentUser.id, username: currentUser.username,
-                    method, address: addr, amount, status: 'pending', createdAt: serverTimestamp()
-                });
-            });
-            window.G.gems -= amount; window.updateUI();
-            window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!');
-        } catch(e) {
-            showToast('❌ Server error. Try again.');
-        } finally {
-            btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
-        }
-    };
-
-    /* -------------------------------------------------------------------------
-       Game Logic & Canvas
-    ------------------------------------------------------------------------- */
+    // GAME LOOP LOGIC AND CANVAS (Pause & State Fixes)
     const canvas = document.getElementById('gc'); const ctx = canvas.getContext('2d');
     let W, H; function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
     window.addEventListener('resize', resize); resize();
@@ -1391,11 +1334,14 @@
                 o.cut=true; o.sliced=true; o.sliceAlpha=1; splash(o.x,o.y,o.color);
                 if(o.isBomb){ addMiss(); addMiss(); }
                 else{ 
-                    playSound('slice'); // Play slice sound when fruit is cut
+                    playSound('slice');
                     currentCut++; 
                     document.getElementById('hud-cut').textContent=currentCut;
                     document.getElementById('lv-fill').style.width = Math.min(100, (currentCut/cutTarget)*100) + '%';
-                    if(currentCut>=cutTarget) setTimeout(()=>{ gameState='paused'; playSound('win'); window.showModal('complete-modal'); }, 250);
+                    if(currentCut>=cutTarget) {
+                        gameState='gameover'; // freeze background
+                        setTimeout(()=>{ playSound('win'); window.showModal('complete-modal'); }, 250);
+                    }
                 }
                 objects.splice(i,1);
                 if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -1407,7 +1353,11 @@
         if(gameState!=='playing') return;
         missCount++; let el = document.getElementById('s'+missCount); if(el) el.classList.add('x-active');
         if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-        if(missCount>=3){ gameState='paused'; playSound('gameover'); window.showModal('over-modal'); }
+        if(missCount>=3){ 
+            gameState='gameover'; // freeze background
+            playSound('gameover'); 
+            window.showModal('over-modal'); 
+        }
     }
 
     function drawBlade(){
@@ -1423,108 +1373,53 @@
 
     window.loop = function(){
         ctx.clearRect(0,0,W,H);
-        let rate = gameState==='menu' ? 55 : Math.max(28,65 - window.G.stage*2);
-        if(Math.random()<1/rate) objects.push(new FruitObj(gameState==='menu'));
-        
-        for(let i=objects.length-1;i>=0;i--){
-            let o=objects[i]; o.update(); o.draw();
-            if(o.y>H+o.r){ if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss(); objects.splice(i,1); }
+
+        // Update logic only runs if playing or in menu
+        if(gameState === 'playing' || gameState === 'menu') {
+            let rate = gameState==='menu' ? 55 : Math.max(28,65 - window.G.stage*2);
+            if(Math.random()<1/rate) objects.push(new FruitObj(gameState==='menu'));
+            
+            for(let i=objects.length-1;i>=0;i--){
+                let o=objects[i]; o.update(); o.draw();
+                if(o.y>H+o.r){ 
+                    if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss(); 
+                    objects.splice(i,1); 
+                }
+            }
+        } else if (gameState === 'paused' || gameState === 'gameover') {
+            // Freeze objects during pause/gameover modals
+            for(let i=objects.length-1;i>=0;i--){ objects[i].draw(); }
         }
+
         for(let i=particles.length-1;i>=0;i--){ let p=particles[i]; p.update(); p.draw(); if(p.life<=0) particles.splice(i,1); }
         if(gameState==='playing') drawBlade();
         requestAnimationFrame(window.loop);
     };
 
-    /* -------------------------------------------------------------------------
-       Sound System
-    ------------------------------------------------------------------------- */
-    const SOUNDS = {};
-    const SOUND_FILES = {
-        start:    'assets/sounds/start.mp3',
-        slice:    'assets/sounds/slice.mp3',
-        gameover: 'assets/sounds/gameover.mp3',
-        win:      'assets/sounds/win.mp3'
+    window.pauseGame = function(){
+        if(gameState !== 'playing') return;
+        gameState = 'paused';
+        window.showModal('pause-modal');
     };
 
-    // Preload all sounds
-    Object.entries(SOUND_FILES).forEach(([key, src]) => {
-        const audio = new Audio(src);
-        audio.preload = 'auto';
-        if(key === 'start') { audio.loop = true; audio.volume = 0.5; }
-        else { audio.volume = 0.7; }
-        SOUNDS[key] = audio;
-    });
-
-    // Background music state
-    let bgMusicStarted = false;
-
-    function playSound(name) {
-        if(!window.G.sound) return;
-        const snd = SOUNDS[name];
-        if(!snd) return;
-        if(name === 'start') {
-            // Background music: play from start if not playing
-            if(snd.paused) {
-                snd.currentTime = 0;
-                snd.play().catch(()=>{});
-                bgMusicStarted = true;
-            }
-        } else {
-            // SFX: clone so overlapping works
-            const clone = snd.cloneNode();
-            clone.volume = snd.volume;
-            clone.play().catch(()=>{});
-        }
-    }
-
-    function stopSound(name) {
-        const snd = SOUNDS[name];
-        if(!snd) return;
-        snd.pause(); snd.currentTime = 0;
-    }
-
-    function stopBgMusic() {
-        stopSound('start');
-        bgMusicStarted = false;
-    }
-
-    // Override toggleSound to handle bg music
-    window.toggleSound = function(){
-        window.G.sound = !window.G.sound;
-        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
-        if(!window.G.sound) {
-            stopBgMusic();
-        } else {
-            // If on menu, restart bg music
-            if(gameState === 'menu') playSound('start');
-        }
-        window.updateUI();
-    };
-
-    window.toggleVib = function(){
-        window.G.vib=!window.G.vib;
-        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
-        window.updateUI();
+    window.resumeGame = function(){
+        window.hideModal('pause-modal');
+        gameState = 'playing';
     };
 
     window.tryStartGame = function(forceStart=false){
-        if(window.G.tokens<=0 && !forceStart){
-            // No tokens — offer to watch ad to play
-            window.showNoTokenModal();
-            return;
-        }
+        if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
         if(!forceStart){ window.G.tokens--; }
         window.G.gamesPlayed++; window.saveState();
         
-        stopBgMusic(); // Stop menu music when game starts
+        startGameAudio(); // Stop menu music
         
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
         document.getElementById('strikes').style.display='flex';
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        // Longer stages: base 15 fruits + 3 per stage (easier progression)
         cutTarget = 15 + window.G.stage*3;
-        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage; // 8-15 points based on star
+        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage; 
         document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
         document.getElementById('comp-reward').textContent=pendingReward;
         document.getElementById('hud-target').textContent=cutTarget;
@@ -1536,7 +1431,6 @@
     };
 
     window.showNoTokenModal = function(){
-        // Show ad-to-play option
         let existing = document.getElementById('no-token-modal');
         if(existing){ existing.style.display='flex'; return; }
         let div = document.createElement('div');
@@ -1553,53 +1447,25 @@
 
     window.watchAdForGame = async function(){
         document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
         document.getElementById('ad-loader').style.display='none';
         window.hideModal('no-token-modal');
-        window.tryStartGame(true); // forceStart - no token deducted
+        window.tryStartGame(true); 
     };
 
     window.watchAdForGameRetry = async function(){
         window.hideModal('over-modal');
         document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
         document.getElementById('ad-loader').style.display='none';
-        // Restart without token
-        document.getElementById('menu-screen').style.display='none';
-        document.getElementById('game-hud').style.display='flex';
-        document.getElementById('strikes').style.display='flex';
-        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        cutTarget = 15 + window.G.stage * 3;
-        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage;
-        document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
-        document.getElementById('hud-target').textContent = cutTarget;
-        document.getElementById('hud-cut').textContent = '0';
-        document.getElementById('hud-lv').textContent = 'Lv ' + window.G.stage;
-        document.getElementById('hud-reward').textContent = pendingReward;
-        document.getElementById('lv-fill').style.width = '0%';
-        gameState = 'playing';
-        playSound('start');
+        window.tryStartGame(true);
     };
 
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
-        // Ensure game HUD stays visible and no stale state
-        document.getElementById('menu-screen').style.display='none';
-        document.getElementById('game-hud').style.display='flex';
-        document.getElementById('strikes').style.display='flex';
-
         if(watchAd){
             document.getElementById('ad-loader').style.display='flex';
-            try {
-                let AdC = Adsgram.init({ blockId: "int-28067" });
-                await AdC.show();
-            } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
+            try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
             document.getElementById('ad-loader').style.display='none';
             window.G.coins += pendingReward * 2;
         } else {
@@ -1607,89 +1473,43 @@
         }
         window.G.stage++;
         await window.saveState();
-
-        stopBgMusic(); // Keep bg music off during game
-
-        // Reset game state and restart immediately — no menu, no back button
-        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        cutTarget = 15 + window.G.stage * 3;
-        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage;
-        document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
-        document.getElementById('comp-reward').textContent = pendingReward;
-        document.getElementById('hud-target').textContent = cutTarget;
-        document.getElementById('hud-cut').textContent = '0';
-        document.getElementById('hud-lv').textContent = 'Lv ' + window.G.stage;
-        document.getElementById('hud-reward').textContent = pendingReward;
-        document.getElementById('lv-fill').style.width = '0%';
-        gameState = 'playing';
+        window.tryStartGame(true); // Proceed to next level without taking token
     };
 
-    window.retryGame = function(){
+    window.retryGame = function(forceRestart=false){
         window.hideModal('over-modal');
-        if(window.G.tokens <= 0){ window.showNoTokenModal(); return; }
-        window.G.tokens--;
-        window.G.gamesPlayed++;
-        window.saveState();
-        stopBgMusic();
-        // Reset and restart in-place, no menu flash
-        document.getElementById('menu-screen').style.display='none';
-        document.getElementById('game-hud').style.display='flex';
-        document.getElementById('strikes').style.display='flex';
-        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        cutTarget = 15 + window.G.stage * 3;
-        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage;
-        document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
-        document.getElementById('hud-target').textContent = cutTarget;
-        document.getElementById('hud-cut').textContent = '0';
-        document.getElementById('hud-lv').textContent = 'Lv ' + window.G.stage;
-        document.getElementById('hud-reward').textContent = pendingReward;
-        document.getElementById('lv-fill').style.width = '0%';
-        gameState = 'playing';
+        window.hideModal('pause-modal');
+        
+        if(!forceRestart && window.G.tokens <= 0){ window.showNoTokenModal(); return; }
+        window.tryStartGame(forceRestart); // Restart level
     };
 
     window.skipStageWithAd = async function(){
         window.hideModal('over-modal');
         document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
         document.getElementById('ad-loader').style.display='none';
         window.G.stage++;
         await window.saveState();
-        // Restart cleanly
-        document.getElementById('menu-screen').style.display='none';
-        document.getElementById('game-hud').style.display='flex';
-        document.getElementById('strikes').style.display='flex';
-        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        cutTarget = 15 + window.G.stage * 3;
-        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage;
-        document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
-        document.getElementById('hud-target').textContent = cutTarget;
-        document.getElementById('hud-cut').textContent = '0';
-        document.getElementById('hud-lv').textContent = 'Lv ' + window.G.stage;
-        document.getElementById('hud-reward').textContent = pendingReward;
-        document.getElementById('lv-fill').style.width = '0%';
-        gameState = 'playing';
         showToast('⏭️ Stage skipped!');
+        window.tryStartGame(true);
     };
 
     window.backToMenu = function(){
         window.hideModal('over-modal');
         window.hideModal('complete-modal');
         window.hideModal('no-token-modal');
+        window.hideModal('pause-modal');
         document.getElementById('game-hud').style.display='none';
         document.getElementById('strikes').style.display='none';
         document.getElementById('menu-screen').style.display='flex';
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
         gameState='menu';
-        playSound('start'); // Resume menu music
+        openAppAudio(); // Resume menu music
         window.updateUI();
     };
 
-    /* -------------------------------------------------------------------------
-       777 Lottery System — Daily 10 spins via watching ads (random ad provider)
-    ------------------------------------------------------------------------- */
+    // LOTTERY LOGIC
     const LOTTERY_PRIZES = [
         { id:1,  label:'1 💎',      icon:'💎',  type:'gem',   val:1,    weight:3  },
         { id:2,  label:'10 🪙',     icon:'🪙',  type:'coin',  val:10,   weight:10 },
@@ -1724,21 +1544,14 @@
         return ['🍋','🍋','🎰'];
     }
 
-    // Play a random ad from any of the 3 providers (GigaPub, Monetag, Adsgram)
     async function playRandomLotteryAd(){
         let providers = ['adsgram', 'monetag', 'gigapub'];
         let pick = providers[Math.floor(Math.random() * providers.length)];
         try {
-            if(pick === 'adsgram'){
-                let AdC = Adsgram.init({ blockId: "int-28067" });
-                await AdC.show();
-            } else if(pick === 'monetag'){
-                await show_10893505();
-            } else {
-                await window.showGiga();
-            }
+            if(pick === 'adsgram'){ let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } 
+            else if(pick === 'monetag'){ await show_10893505(); } 
+            else { await window.showGiga(); }
         } catch(e){
-            // Fallback: simulate ad
             document.getElementById('ad-loader').style.display='flex';
             await new Promise(r=>setTimeout(r,2000));
             document.getElementById('ad-loader').style.display='none';
@@ -1768,12 +1581,8 @@
         let spinsLeftEl = document.getElementById('lottery-spins-left');
         if(spinsLeftEl) spinsLeftEl.textContent = Math.max(0, dailyLeft);
 
-        ['slot-0','slot-1','slot-2'].forEach(id=>{
-            let el = document.getElementById(id);
-            if(el){ el.textContent='❓'; el.classList.remove('spinning','win'); }
-        });
-        let res = document.getElementById('lottery-result');
-        if(res) res.textContent='';
+        ['slot-0','slot-1','slot-2'].forEach(id=>{ let el = document.getElementById(id); if(el){ el.textContent='❓'; el.classList.remove('spinning','win'); } });
+        let res = document.getElementById('lottery-result'); if(res) res.textContent='';
 
         let btn = document.getElementById('lottery-spin-btn');
         if(btn){ btn.disabled = dailyLeft <= 0; btn.textContent = dailyLeft <= 0 ? '🚫 Daily Limit Reached' : '📺 Watch Ad & SPIN!'; }
@@ -1788,40 +1597,26 @@
         let btn = document.getElementById('lottery-spin-btn');
         if(btn){ btn.disabled = true; btn.textContent = '⏳ Loading Ad...'; }
 
-        // Play random ad first
         await playRandomLotteryAd();
 
-        // Start spinning animation
         let slots = ['slot-0','slot-1','slot-2'];
         slots.forEach(id=>{ let el=document.getElementById(id); if(el){ el.classList.add('spinning'); el.textContent='🎰'; } });
         let result = document.getElementById('lottery-result');
         if(result) result.textContent='🎰 Spinning...';
 
         let symbolInterval = setInterval(()=>{
-            slots.forEach(id=>{
-                let el=document.getElementById(id);
-                if(el) el.textContent = SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)];
-            });
+            slots.forEach(id=>{ let el=document.getElementById(id); if(el) el.textContent = SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)]; });
         }, 100);
 
-        let prize = weightedRandom();
-        let finalSymbols = getSlotResult(prize);
+        let prize = weightedRandom(); let finalSymbols = getSlotResult(prize);
 
-        setTimeout(()=>{ clearInterval(symbolInterval);
-            let el0=document.getElementById('slot-0');
-            if(el0){ el0.classList.remove('spinning'); el0.textContent=finalSymbols[0]; }
-        }, 1200);
-        setTimeout(()=>{
-            let el1=document.getElementById('slot-1');
-            if(el1){ el1.classList.remove('spinning'); el1.textContent=finalSymbols[1]; }
-        }, 1800);
+        setTimeout(()=>{ clearInterval(symbolInterval); let el0=document.getElementById('slot-0'); if(el0){ el0.classList.remove('spinning'); el0.textContent=finalSymbols[0]; } }, 1200);
+        setTimeout(()=>{ let el1=document.getElementById('slot-1'); if(el1){ el1.classList.remove('spinning'); el1.textContent=finalSymbols[1]; } }, 1800);
         setTimeout(async ()=>{
             let el2=document.getElementById('slot-2');
             if(el2){ el2.classList.remove('spinning'); el2.textContent=finalSymbols[2]; }
 
-            if(finalSymbols[0]===finalSymbols[1] && finalSymbols[1]===finalSymbols[2]){
-                slots.forEach(id=>{ let el=document.getElementById(id); if(el) el.classList.add('win'); });
-            }
+            if(finalSymbols[0]===finalSymbols[1] && finalSymbols[1]===finalSymbols[2]){ slots.forEach(id=>{ let el=document.getElementById(id); if(el) el.classList.add('win'); }); }
 
             let rewardMsg = '';
             if(prize.type==='gem'){
@@ -1846,7 +1641,6 @@
             if(earned) earned.textContent = window.G.lotteryDiamondsEarned||0;
             if(spins) spins.textContent = window.G.lotteryTotalSpins;
 
-            // Update spins left display
             let newLeft = 10 - window.G.lotteryDailySpins;
             let spinsLeftEl = document.getElementById('lottery-spins-left');
             if(spinsLeftEl) spinsLeftEl.textContent = Math.max(0, newLeft);
@@ -1859,19 +1653,102 @@
             await window.saveState();
             window.updateUI();
             lotterySpinning = false;
-            if(btn){
-                btn.disabled = newLeft <= 0;
-                btn.textContent = newLeft <= 0 ? '🚫 Daily Limit Reached' : '📺 Watch Ad & SPIN!';
-            }
-
+            if(btn){ btn.disabled = newLeft <= 0; btn.textContent = newLeft <= 0 ? '🚫 Daily Limit Reached' : '📺 Watch Ad & SPIN!'; }
             if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }, 2600);
     };
 
-    // Keep old spinLottery alias for compatibility
-    window.spinLottery = window.spinLotteryWithAd;
+    window.doWithdraw = async function(){
+        let method = document.getElementById('w-method').value;
+        let addr = document.getElementById('w-address').value.trim();
+        let amount = parseInt(document.getElementById('w-amount').value)||0;
+        
+        if(!addr) return showToast('❌ Enter address!');
+        if(amount < 100) return showToast(`❌ Min 100 💎!`);
+        if(window.G.gems < amount) return showToast('❌ Not enough Diamonds!');
+        
+        let btn = document.getElementById('btn-withdraw');
+        btn.disabled = true; btn.textContent = "Processing...";
 
-    // Make snow effect
+        try {
+            await runTransaction(db, async (t) => {
+                const uRef = doc(db, 'users', currentUser.id);
+                const uDoc = await t.get(uRef);
+                if(uDoc.data().gems < amount) throw new Error("Insufficient");
+                
+                t.update(uRef, { gems: increment(-amount) });
+                t.set(doc(collection(db, 'withdrawals')), {
+                    userId: currentUser.id, username: currentUser.username,
+                    method, address: addr, amount, status: 'pending', createdAt: serverTimestamp()
+                });
+            });
+            window.G.gems -= amount; window.updateUI();
+            window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!');
+        } catch(e) {
+            showToast('❌ Server error. Try again.');
+        } finally {
+            btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
+        }
+    };
+
+    window.renderTasks = async function(){
+        let c = document.getElementById('task-list');
+        c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">⏳ Loading tasks...</div>';
+        try {
+            const { getDocs, collection: col, query, orderBy } = await import("https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js");
+            const qSnap = await getDocs(query(col(db, 'tasks'), orderBy('order','asc')));
+            ADMIN_TASKS = [];
+            qSnap.forEach(d => ADMIN_TASKS.push({ id: d.id, ...d.data() }));
+        } catch(e) { console.warn('Tasks load error', e); }
+
+        if(!ADMIN_TASKS.length){
+            c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">📋 No tasks available yet.<br>Check back soon!</div>';
+            return;
+        }
+
+        c.innerHTML = '';
+        ADMIN_TASKS.forEach(t => {
+            let done = (window.G.completedTasks||[]).includes(t.id);
+            let rewardText = '';
+            if(t.coins) rewardText += `🪙 ${t.coins} `;
+            if(t.gems) rewardText += `💎 ${t.gems} `;
+            rewardText = rewardText.trim() || '🎁 Reward';
+            c.innerHTML += `
+                <div class="task-card">
+                    <div class="task-icon">${t.icon||'📋'}</div>
+                    <div class="task-info">
+                        <div class="task-name">${t.name||'Task'}</div>
+                        <div class="task-reward">${rewardText}</div>
+                    </div>
+                    <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}')" ${done?'disabled':''}>
+                        ${done ? '✅ Done' : '▶ Go'}
+                    </button>
+                </div>`;
+        });
+    };
+
+    window.doTask = async function(id){
+        let t = ADMIN_TASKS.find(x=>x.id===id);
+        if(!t){ showToast('❌ Task not found!'); return; }
+        if((window.G.completedTasks||[]).includes(id)){ showToast('✅ Already done!'); return; }
+
+        if(t.link){
+            if(tg?.openLink) tg.openLink(t.link);
+            else window.open(t.link, '_blank');
+        }
+
+        setTimeout(async ()=>{
+            if(!(window.G.completedTasks||[]).includes(id)){
+                window.G.completedTasks.push(id);
+                if(t.gems) window.G.gems += t.gems;
+                if(t.coins) window.G.coins += t.coins;
+                await window.saveState();
+                window.renderTasks();
+                showToast(`✅ Task done!`);
+            }
+        }, 2000);
+    };
+
     (function(){
         let wrap=document.getElementById('snowflakes');
         for(let i=0;i<8;i++){
@@ -1881,7 +1758,6 @@
         }
     })();
 
-    // Boot App
     window.onload = initApp;
 
 </script>
