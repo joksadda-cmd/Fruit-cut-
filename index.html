@@ -651,11 +651,6 @@
             </div>
         </div>
 
-        <!-- Watch Ad -->
-        <div class="shop-card ptr" onclick="window.showModal('ads-modal');window.hideModal('shop-modal')" style="margin-bottom:4px;">
-            <div class="shop-icon">📺</div><div class="shop-price">Watch Ad</div><div class="shop-desc">+50 Gold Points</div>
-        </div>
-
         <div class="info-text">💎 Min 100 Diamonds to withdraw</div>
         <button class="btn btn-grey" onclick="window.hideModal('shop-modal')">CLOSE</button>
     </div>
@@ -739,10 +734,10 @@
         <div class="mh mh-red">📺 Earn with Ads</div>
         <div class="lootbox-wrap">
             <div style="font-size:16px;font-weight:900;color:#ffcc00;margin-bottom:4px;">🎁 Lootbox</div>
-            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Collect 600 points to claim! (Max 600 pts)</div>
+            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Min 300 pts to claim! Max 1000 pts per cycle</div>
             <div class="lootbox-bar-bg"><div class="lootbox-bar-fill" id="lootbox-fill" style="width:0%"></div></div>
-            <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 600 pts</span></div>
-            <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD (50💎)</button>
+            <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 1000 pts</span></div>
+            <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD</button>
         </div>
 
         <!-- AD SLOT 1: Adsgram Special Block -->
@@ -807,8 +802,10 @@
         <span class="big-emoji">😵</span>
         <div class="mh mh-red">GAME OVER</div>
         <div style="text-align:center;color:#aaa;margin-bottom:10px;">You missed too many fruits!</div>
+        <div style="text-align:center;color:#ffcc00;font-size:13px;margin-bottom:10px;">Tokens: <span id="over-tokens">0</span> / 10</div>
         <button class="btn btn-gold" onclick="window.retryGame()">🔁 RETRY (Uses Token)</button>
         <button class="btn btn-red" onclick="window.skipStageWithAd()">📺 Watch Ad → Skip Stage</button>
+        <button class="btn btn-blue" onclick="window.watchAdForGameRetry()">📺 Watch Ad → Play Free</button>
         <button class="btn btn-grey" onclick="window.backToMenu()">🏠 MAIN MENU</button>
     </div>
 </div>
@@ -997,6 +994,9 @@
             startTokenTimer();
             requestAnimationFrame(window.loop);
 
+            // Start background music (requires user interaction — Telegram WebApp counts)
+            setTimeout(() => { if(window.G.sound) playSound('start'); }, 500);
+
         } catch (error) {
             document.getElementById('loader-text').textContent = 'Error connecting to database. Please reload.';
             console.error(error);
@@ -1033,11 +1033,11 @@
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
         if(id==='shop-modal'){ checkDailyReset().then(()=>{ updateShopUI(); }); }
+        if(id==='over-modal'){ let el=document.getElementById('over-tokens'); if(el) el.textContent=window.G.tokens; }
     };
     window.hideModal = function(id){ document.getElementById(id).style.display='none'; };
     window.showTokenInfo = function(){ showToast('🎮 Tokens: 1 token = 1 game. Max 10. Refills +1 every 1 hour!'); };
-    window.toggleSound = function(){ window.G.sound=!window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
-    window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
+    // toggleSound and toggleVib are defined later with sound system
 
     window.buyTokenShop = function(qty){
         let bought = window.G.shopTokenBought || 0;
@@ -1110,11 +1110,13 @@
         document.getElementById('monetag-btn').disabled = mtLeft <= 0;
 
         let pts = window.G.lootboxPoints;
-        let pct = Math.min(100, (pts/600)*100);
+        let pct = Math.min(100, (pts/1000)*100);
         document.getElementById('lootbox-fill').style.width = pct + '%';
         document.getElementById('lootbox-pts').textContent = pts;
         let claimBtn = document.getElementById('lootbox-claim-btn');
-        claimBtn.disabled = pts < 600;
+        claimBtn.disabled = pts < 300;
+        let diamondPreview = Math.floor(pts / 20);
+        claimBtn.textContent = pts >= 300 ? `🎁 CLAIM REWARD (+${diamondPreview}💎)` : `🎁 CLAIM REWARD (Need 300 pts)`;
     }
 
     function updateShopUI(){
@@ -1127,7 +1129,10 @@
     }
 
     window.claimLootbox = async function(){
-        if(window.G.lootboxPoints < 600){ showToast('❌ Need 600 points first!'); return; }
+        if(window.G.lootboxPoints < 300){ showToast('❌ Need at least 300 points to claim!'); return; }
+        // Calculate reward: proportional diamonds (300pts=15💎, 600pts=30💎, 1000pts=50💎)
+        let pts = window.G.lootboxPoints;
+        let diamondReward = Math.floor(pts / 20); // 20pts = 1 diamond
         // Show an ad before claiming
         document.getElementById('ad-loader').style.display='flex';
         try {
@@ -1135,19 +1140,19 @@
             await AdC.show();
         } catch(e){ /* fallback: just wait */ await new Promise(r=>setTimeout(r,2000)); }
         document.getElementById('ad-loader').style.display='none';
-        window.G.lootboxPoints = 0; window.G.gems += 50;
+        window.G.lootboxPoints = 0; window.G.gems += diamondReward;
         await window.saveState();
-        updateAdsUI(); showToast('🎁 Lootbox claimed! +50 Diamonds!');
+        updateAdsUI(); showToast(`🎁 Lootbox claimed! +${diamondReward} 💎 Diamonds!`);
         if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     };
 
     function addLootboxPoints(pts){
-        // Do not exceed 600 — excess is discarded
-        if(window.G.lootboxPoints >= 600){
+        // Do not exceed 1000 — excess is discarded
+        if(window.G.lootboxPoints >= 1000){
             showToast('⚠️ Lootbox full! Claim first before earning more.');
             return false;
         }
-        window.G.lootboxPoints = Math.min(600, window.G.lootboxPoints + pts);
+        window.G.lootboxPoints = Math.min(1000, window.G.lootboxPoints + pts);
         return true;
     }
 
@@ -1386,10 +1391,11 @@
                 o.cut=true; o.sliced=true; o.sliceAlpha=1; splash(o.x,o.y,o.color);
                 if(o.isBomb){ addMiss(); addMiss(); }
                 else{ 
+                    playSound('slice'); // Play slice sound when fruit is cut
                     currentCut++; 
                     document.getElementById('hud-cut').textContent=currentCut;
                     document.getElementById('lv-fill').style.width = Math.min(100, (currentCut/cutTarget)*100) + '%';
-                    if(currentCut>=cutTarget) setTimeout(()=>{ gameState='paused'; window.showModal('complete-modal'); }, 250);
+                    if(currentCut>=cutTarget) setTimeout(()=>{ gameState='paused'; playSound('win'); window.showModal('complete-modal'); }, 250);
                 }
                 objects.splice(i,1);
                 if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -1401,7 +1407,7 @@
         if(gameState!=='playing') return;
         missCount++; let el = document.getElementById('s'+missCount); if(el) el.classList.add('x-active');
         if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-        if(missCount>=3){ gameState='paused'; window.showModal('over-modal'); }
+        if(missCount>=3){ gameState='paused'; playSound('gameover'); window.showModal('over-modal'); }
     }
 
     function drawBlade(){
@@ -1429,6 +1435,78 @@
         requestAnimationFrame(window.loop);
     };
 
+    /* -------------------------------------------------------------------------
+       Sound System
+    ------------------------------------------------------------------------- */
+    const SOUNDS = {};
+    const SOUND_FILES = {
+        start:    'assets/sounds/start.mp3',
+        slice:    'assets/sounds/slice.mp3',
+        gameover: 'assets/sounds/gameover.mp3',
+        win:      'assets/sounds/win.mp3'
+    };
+
+    // Preload all sounds
+    Object.entries(SOUND_FILES).forEach(([key, src]) => {
+        const audio = new Audio(src);
+        audio.preload = 'auto';
+        if(key === 'start') { audio.loop = true; audio.volume = 0.5; }
+        else { audio.volume = 0.7; }
+        SOUNDS[key] = audio;
+    });
+
+    // Background music state
+    let bgMusicStarted = false;
+
+    function playSound(name) {
+        if(!window.G.sound) return;
+        const snd = SOUNDS[name];
+        if(!snd) return;
+        if(name === 'start') {
+            // Background music: play from start if not playing
+            if(snd.paused) {
+                snd.currentTime = 0;
+                snd.play().catch(()=>{});
+                bgMusicStarted = true;
+            }
+        } else {
+            // SFX: clone so overlapping works
+            const clone = snd.cloneNode();
+            clone.volume = snd.volume;
+            clone.play().catch(()=>{});
+        }
+    }
+
+    function stopSound(name) {
+        const snd = SOUNDS[name];
+        if(!snd) return;
+        snd.pause(); snd.currentTime = 0;
+    }
+
+    function stopBgMusic() {
+        stopSound('start');
+        bgMusicStarted = false;
+    }
+
+    // Override toggleSound to handle bg music
+    window.toggleSound = function(){
+        window.G.sound = !window.G.sound;
+        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
+        if(!window.G.sound) {
+            stopBgMusic();
+        } else {
+            // If on menu, restart bg music
+            if(gameState === 'menu') playSound('start');
+        }
+        window.updateUI();
+    };
+
+    window.toggleVib = function(){
+        window.G.vib=!window.G.vib;
+        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
+        window.updateUI();
+    };
+
     window.tryStartGame = function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){
             // No tokens — offer to watch ad to play
@@ -1437,6 +1515,8 @@
         }
         if(!forceStart){ window.G.tokens--; }
         window.G.gamesPlayed++; window.saveState();
+        
+        stopBgMusic(); // Stop menu music when game starts
         
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
@@ -1482,6 +1562,31 @@
         window.tryStartGame(true); // forceStart - no token deducted
     };
 
+    window.watchAdForGameRetry = async function(){
+        window.hideModal('over-modal');
+        document.getElementById('ad-loader').style.display='flex';
+        try {
+            let AdC = Adsgram.init({ blockId: "int-28067" });
+            await AdC.show();
+        } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        document.getElementById('ad-loader').style.display='none';
+        // Restart without token
+        document.getElementById('menu-screen').style.display='none';
+        document.getElementById('game-hud').style.display='flex';
+        document.getElementById('strikes').style.display='flex';
+        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
+        cutTarget = 15 + window.G.stage * 3;
+        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage;
+        document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
+        document.getElementById('hud-target').textContent = cutTarget;
+        document.getElementById('hud-cut').textContent = '0';
+        document.getElementById('hud-lv').textContent = 'Lv ' + window.G.stage;
+        document.getElementById('hud-reward').textContent = pendingReward;
+        document.getElementById('lv-fill').style.width = '0%';
+        gameState = 'playing';
+        playSound('start');
+    };
+
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
         // Ensure game HUD stays visible and no stale state
@@ -1503,6 +1608,8 @@
         window.G.stage++;
         await window.saveState();
 
+        stopBgMusic(); // Keep bg music off during game
+
         // Reset game state and restart immediately — no menu, no back button
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
         cutTarget = 15 + window.G.stage * 3;
@@ -1523,6 +1630,7 @@
         window.G.tokens--;
         window.G.gamesPlayed++;
         window.saveState();
+        stopBgMusic();
         // Reset and restart in-place, no menu flash
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
@@ -1567,9 +1675,16 @@
     };
 
     window.backToMenu = function(){
-        window.hideModal('over-modal'); document.getElementById('game-hud').style.display='none';
-        document.getElementById('strikes').style.display='none'; document.getElementById('menu-screen').style.display='flex';
-        objects=[]; gameState='menu'; window.updateUI();
+        window.hideModal('over-modal');
+        window.hideModal('complete-modal');
+        window.hideModal('no-token-modal');
+        document.getElementById('game-hud').style.display='none';
+        document.getElementById('strikes').style.display='none';
+        document.getElementById('menu-screen').style.display='flex';
+        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
+        gameState='menu';
+        playSound('start'); // Resume menu music
+        window.updateUI();
     };
 
     /* -------------------------------------------------------------------------
