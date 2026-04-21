@@ -293,16 +293,64 @@
         }
 
         /* Shop */
-        .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
-        .shop-card{
-            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
-            border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;
-            transition:transform 0.15s;
+        .shop-tabs{display:flex;gap:8px;margin-bottom:14px;}
+        .shop-tab{
+            flex:1;padding:10px;border-radius:12px;border:2px solid rgba(255,255,255,0.15);
+            background:rgba(255,255,255,0.06);color:#aaa;font-family:'Nunito',sans-serif;
+            font-size:13px;font-weight:900;cursor:pointer;text-align:center;transition:all 0.2s;
         }
-        .shop-card:active{transform:scale(0.95);}
-        .shop-icon{font-size:32px;margin-bottom:4px;}
-        .shop-price{font-size:12px;color:#ffcc00;font-weight:800;}
-        .shop-desc{font-size:11px;color:#aaa;margin-top:2px;}
+        .shop-tab.active{background:linear-gradient(180deg,#ffe040,#ff8c00);border-color:#ff8c00;color:#fff;}
+        .shop-panel{display:none;}
+        .shop-panel.active{display:block;}
+
+        /* Token shop cards */
+        .token-shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+        .token-shop-card{
+            background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08));
+            border:2px solid rgba(255,180,0,0.3);border-radius:16px;padding:14px 10px;
+            text-align:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;
+            position:relative;overflow:hidden;
+        }
+        .token-shop-card:active{transform:scale(0.95);}
+        .token-shop-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#ffcc00,transparent);}
+        .tsc-icon{font-size:36px;margin-bottom:6px;display:block;}
+        .tsc-amount{font-family:'Luckiest Guy',cursive;font-size:20px;color:#fff;line-height:1;}
+        .tsc-price{font-size:12px;color:#ffcc00;font-weight:800;margin-top:4px;}
+        .tsc-badge{
+            position:absolute;top:6px;right:6px;background:#ff3355;color:#fff;
+            font-size:9px;font-weight:900;padding:2px 6px;border-radius:8px;
+        }
+
+        /* Gold Exchange cards */
+        .gold-exchange-info{
+            background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1));
+            border:2px solid rgba(100,160,255,0.35);border-radius:16px;padding:14px;margin-bottom:12px;
+            text-align:center;
+        }
+        .gei-rate{font-family:'Luckiest Guy',cursive;font-size:26px;color:#4af;line-height:1.1;}
+        .gei-label{font-size:11px;color:#7ab;margin-top:4px;}
+        .exchange-input-wrap{
+            background:rgba(255,255,255,0.06);border:2px solid rgba(100,160,255,0.25);
+            border-radius:14px;padding:14px;margin-bottom:10px;
+        }
+        .exchange-input-wrap label{font-size:12px;color:#aaa;font-weight:800;display:block;margin-bottom:6px;}
+        .exchange-presets{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+        .exchange-preset-btn{
+            flex:1;min-width:60px;padding:7px 4px;border-radius:10px;
+            border:2px solid rgba(100,160,255,0.3);background:rgba(100,160,255,0.1);
+            color:#4af;font-size:12px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;
+            transition:all 0.15s;text-align:center;
+        }
+        .exchange-preset-btn:active{background:rgba(100,160,255,0.3);}
+        .exchange-result-preview{
+            background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25);
+            border-radius:10px;padding:8px;text-align:center;margin-bottom:8px;
+            font-size:13px;color:#4caf50;font-weight:900;
+        }
+        .shop-daily-info{
+            background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+            border-radius:10px;padding:8px 12px;font-size:11px;color:#888;text-align:center;margin-bottom:8px;
+        }
 
         /* Refer */
         .refer-link{
@@ -602,29 +650,71 @@
 <div class="overlay ptr" id="shop-modal">
     <div class="modal">
         <div class="mh mh-gold">🛍️ Shop</div>
-        <div style="background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.3);border-radius:14px;padding:12px;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:900;color:#ffcc00;margin-bottom:8px;">🎮 Buy Game Tokens</div>
-            <div style="font-size:11px;color:#aaa;margin-bottom:8px;">Per token: <strong style="color:#fff;">50 🪙</strong> · Daily limit: <strong style="color:#ffcc00;" id="shop-token-left">10</strong>/10 remaining</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <div class="shop-card ptr" style="flex:1;min-width:80px;" onclick="window.buyTokenShop(1)">
-                    <div class="shop-icon">🎮</div><div class="shop-price">50 🪙</div><div class="shop-desc">1 Token</div>
+
+        <!-- Tabs -->
+        <div class="shop-tabs">
+            <div class="shop-tab active ptr" onclick="window.switchShopTab('tokens')" id="tab-tokens">🎮 Tokens</div>
+            <div class="shop-tab ptr" onclick="window.switchShopTab('exchange')" id="tab-exchange">💎 Exchange</div>
+        </div>
+
+        <!-- Token Buy Panel -->
+        <div class="shop-panel active" id="shop-panel-tokens">
+            <div class="shop-daily-info">
+                🎮 Per Token: <strong style="color:#ffcc00;">50 🪙 Gold</strong> &nbsp;|&nbsp; Daily Limit: <strong style="color:#fff;" id="shop-token-left">10</strong>/10 remaining
+            </div>
+            <div class="token-shop-grid">
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(1)">
+                    <span class="tsc-icon">🎮</span>
+                    <div class="tsc-amount">×1 Token</div>
+                    <div class="tsc-price">50 🪙</div>
                 </div>
-                <div class="shop-card ptr" style="flex:1;min-width:80px;" onclick="window.buyTokenShop(5)">
-                    <div class="shop-icon">🎮🎮</div><div class="shop-price">250 🪙</div><div class="shop-desc">5 Tokens</div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(3)">
+                    <span class="tsc-badge">SAVE</span>
+                    <span class="tsc-icon">🎮🎮</span>
+                    <div class="tsc-amount">×3 Token</div>
+                    <div class="tsc-price">150 🪙</div>
                 </div>
-                <div class="shop-card ptr" style="flex:1;min-width:80px;" onclick="window.buyTokenShop(10)">
-                    <div class="shop-icon">🎮🎮🎮</div><div class="shop-price">500 🪙</div><div class="shop-desc">10 Tokens</div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)">
+                    <span class="tsc-badge">HOT</span>
+                    <span class="tsc-icon">🎮🎮🎮</span>
+                    <div class="tsc-amount">×5 Token</div>
+                    <div class="tsc-price">250 🪙</div>
+                </div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)">
+                    <span class="tsc-badge">MAX</span>
+                    <span class="tsc-icon">🎮🎮🎮🎮</span>
+                    <div class="tsc-amount">×10 Token</div>
+                    <div class="tsc-price">500 🪙</div>
                 </div>
             </div>
+            <div class="info-text">🎮 Token দিয়ে game খেলুন · Max 10 token · প্রতি ঘণ্টায় +1 auto refill</div>
         </div>
-        <div style="background:rgba(100,180,255,0.08);border:1px solid rgba(100,180,255,0.3);border-radius:14px;padding:12px;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:900;color:#4af;margin-bottom:8px;">💎 Diamond Exchange</div>
-            <div style="font-size:11px;color:#aaa;margin-bottom:8px;">1000 🪙 = 1 💎 · Daily limit: <strong style="color:#4af;" id="shop-diamond-left">20</strong>/20 remaining</div>
-            <div class="shop-card ptr" onclick="window.exchangeDiamond(1)">
-                <div class="shop-icon">💎</div><div class="shop-price">1000 🪙</div><div class="shop-desc">+1 Diamond</div>
+
+        <!-- Gold → Diamond Exchange Panel -->
+        <div class="shop-panel" id="shop-panel-exchange">
+            <div class="gold-exchange-info">
+                <div class="gei-rate">5,000 🪙 = 5 💎</div>
+                <div class="gei-label">Gold → Diamond Exchange Rate</div>
             </div>
+            <div class="exchange-input-wrap">
+                <label>Quick Select (Diamonds আপনি পেতে চান):</label>
+                <div class="exchange-presets">
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(5)">5 💎</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(10)">10 💎</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(20)">20 💎</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(50)">50 💎</div>
+                </div>
+                <div class="exchange-result-preview" id="exchange-preview">
+                    Select amount above to see cost
+                </div>
+                <div class="shop-daily-info">
+                    Daily limit: <strong style="color:#4af;" id="shop-diamond-left">20</strong>/20 remaining &nbsp;|&nbsp; Min: <strong style="color:#ffcc00;">5,000 🪙</strong>
+                </div>
+                <button class="btn btn-blue" id="exchange-confirm-btn" onclick="window.confirmExchange()" disabled>💎 Exchange Now</button>
+            </div>
+            <div class="info-text">💎 Min 100 Diamonds to withdraw · Exchange করার পর undo হবে না</div>
         </div>
-        <div class="info-text">💎 Min 100 Diamonds to withdraw</div>
+
         <button class="btn btn-grey" onclick="window.hideModal('shop-modal')">CLOSE</button>
     </div>
 </div>
@@ -715,7 +805,7 @@
 
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">⚡ <strong>Adsgram Special</strong> (+50 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
+                <div class="ads-info">⚡ <strong>Adsgram Special</strong> (+50~150 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
@@ -1056,6 +1146,43 @@
         showToast(`💎 +${canExchange} Diamond(s) exchanged!`);
     };
 
+    // New Gold Exchange System: 5000 gold = 5 diamonds (minimum 5000)
+    let pendingExchangeQty = 0;
+    window.setExchangeQty = function(diamonds){
+        pendingExchangeQty = diamonds;
+        let goldCost = diamonds * 1000; // 5000 gold per 5 diamonds = 1000 per diamond
+        let preview = document.getElementById('exchange-preview');
+        let btn = document.getElementById('exchange-confirm-btn');
+        if(preview) preview.textContent = `${diamonds} 💎 Diamond = ${goldCost.toLocaleString()} 🪙 Gold`;
+        if(btn) btn.disabled = false;
+    };
+    window.confirmExchange = async function(){
+        if(!pendingExchangeQty) return;
+        let exchanged = window.G.shopDiamondExchanged || 0;
+        let canExchange = Math.min(pendingExchangeQty, 20 - exchanged);
+        if(canExchange <= 0){ showToast('✋ Daily exchange limit reached (20/day)!'); return; }
+        let cost = canExchange * 1000; // 1000 gold per 1 diamond (5000 for 5)
+        if(cost < 5000 && canExchange < 5){ showToast(`❌ Minimum 5,000 🪙 (5 diamonds) required!`); return; }
+        if(window.G.coins < cost){ showToast(`❌ Need ${cost.toLocaleString()} 🪙 Gold!`); return; }
+        window.G.coins -= cost;
+        await window.addGems(canExchange);
+        window.G.shopDiamondExchanged = exchanged + canExchange;
+        await window.saveState();
+        updateShopUI();
+        pendingExchangeQty = 0;
+        let preview = document.getElementById('exchange-preview');
+        let btn = document.getElementById('exchange-confirm-btn');
+        if(preview) preview.textContent = 'Select amount above to see cost';
+        if(btn) btn.disabled = true;
+        showToast(`💎 +${canExchange} Diamonds exchanged! (${cost.toLocaleString()} 🪙 used)`);
+    };
+    window.switchShopTab = function(tab){
+        document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.shop-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('shop-panel-' + tab).classList.add('active');
+    };
+
     window.copyRefer = function(){
         let txt = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
         navigator.clipboard?.writeText(txt).then(()=>{
@@ -1141,9 +1268,14 @@
         try {
             let AdC = Adsgram.init({ blockId: "int-28067" });
             await AdC.show();
-            window.G.adsgramCount++; window.G.coins += 50; addLootboxPoints(50);
-            window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
-        } catch(e) { simAdGold(50, 'adsgramCount'); }
+            // Adsgram Special: random 50-150 gold reward
+            let reward = Math.floor(Math.random() * 101) + 50; // 50 to 150
+            window.G.adsgramCount++; window.G.coins += reward; addLootboxPoints(reward);
+            window.saveState(); updateAdsUI(); showToast(`✅ +${reward} Gold! (Adsgram Special)`);
+        } catch(e) { 
+            let reward = Math.floor(Math.random() * 101) + 50;
+            simAdGold(reward, 'adsgramCount'); 
+        }
     };
 
     window.watchGigaPubAd = async function(){
@@ -1186,25 +1318,52 @@
             document.getElementById('ad-loader').style.display='none';
             if(window.G.lootboxPoints < 600){
                 window.G[type] = (window.G[type]||0) + 1; window.G.coins += pts; addLootboxPoints(pts);
-                window.saveState(); updateAdsUI(); showToast(`✅ +${pts} Gold!`);
+                window.saveState(); updateAdsUI(); 
+                showToast(type === 'adsgramCount' ? `✅ +${pts} Gold! (Adsgram Special)` : `✅ +${pts} Gold!`);
             } else { showToast('⚠️ Claim your Lootbox first!'); }
         }, 2000);
     }
 
     /* -------------------------------------------------------------------------
-       Tasks System
+       Tasks System — GitHub/API based from admin panel
+       Admin panel: https://fruit-cut-eight.vercel.app
     ------------------------------------------------------------------------- */
+    // Task cache
+    let taskCache = null;
+    let taskCacheTime = 0;
+    const TASK_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
     window.renderTasks = async function(){
         let c = document.getElementById('task-list');
         c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">⏳ Loading tasks...</div>';
+        
         try {
-            const { getDocs, collection: col, query, orderBy } = await import("https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js");
-            const qSnap = await getDocs(query(col(db, 'tasks'), orderBy('order','asc')));
-            ADMIN_TASKS = [];
-            qSnap.forEach(d => ADMIN_TASKS.push({ id: d.id, ...d.data() }));
-        } catch(e) { console.warn('Tasks load error', e); }
+            // Try fetching from admin panel API (vercel domain)
+            let tasks = await fetchTasksFromAPI();
+            
+            // Fallback to Firebase if API fails
+            if(!tasks || !tasks.length){
+                const { getDocs, collection: col, query, orderBy } = await import("https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js");
+                const qSnap = await getDocs(query(col(db, 'tasks'), orderBy('order','asc')));
+                ADMIN_TASKS = [];
+                qSnap.forEach(d => ADMIN_TASKS.push({ id: d.id, ...d.data() }));
+            } else {
+                ADMIN_TASKS = tasks;
+            }
+        } catch(e) { 
+            // Final fallback to Firebase only
+            try {
+                const { getDocs, collection: col, query, orderBy } = await import("https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js");
+                const qSnap = await getDocs(query(col(db, 'tasks'), orderBy('order','asc')));
+                ADMIN_TASKS = [];
+                qSnap.forEach(d => ADMIN_TASKS.push({ id: d.id, ...d.data() }));
+            } catch(e2) { console.warn('Tasks load error', e2); }
+        }
 
-        if(!ADMIN_TASKS.length){ c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">📋 No tasks available yet.<br>Check back soon!</div>'; return; }
+        if(!ADMIN_TASKS.length){ 
+            c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">📋 No tasks available yet.<br>Check back soon!</div>'; 
+            return; 
+        }
 
         c.innerHTML = '';
         ADMIN_TASKS.forEach(t => {
@@ -1225,6 +1384,34 @@
                 </div>`;
         });
     };
+
+    // Fetch tasks from admin panel API (https://fruit-cut-eight.vercel.app)
+    async function fetchTasksFromAPI(){
+        let now = Date.now();
+        if(taskCache && (now - taskCacheTime) < TASK_CACHE_TTL){
+            return taskCache;
+        }
+        try {
+            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                signal: AbortSignal.timeout(5000)
+            });
+            if(!res.ok) return null;
+            let data = await res.json();
+            // Support both array format and { tasks: [] } format
+            let tasks = Array.isArray(data) ? data : (data.tasks || null);
+            if(tasks && tasks.length){
+                taskCache = tasks;
+                taskCacheTime = now;
+                return tasks;
+            }
+            return null;
+        } catch(e){
+            console.warn('API task fetch failed, using Firebase fallback');
+            return null;
+        }
+    }
 
     window.doTask = async function(id){
         let t = ADMIN_TASKS.find(x=>x.id===id);
@@ -1408,10 +1595,11 @@
     ------------------------------------------------------------------------- */
     const SOUNDS = {};
     const SOUND_FILES = {
-        menu:     'assets/sounds/menu.mp3', // Replaced start.mp3 with menu.mp3
+        menu:     'assets/sounds/menu.mp3',
         slice:    'assets/sounds/slice.mp3',
         gameover: 'assets/sounds/gameover.mp3',
-        win:      'assets/sounds/win.mp3'
+        win:      'assets/sounds/win.mp3',
+        spin:     'assets/sounds/spin.mp3'
     };
 
     Object.entries(SOUND_FILES).forEach(([key, src]) => {
@@ -1678,6 +1866,9 @@
 
         stopSound('menu'); // Pause sound for ad viewing
         await playRandomLotteryAd();
+
+        // Play spin sound after ad
+        playSound('spin');
 
         let slots = ['slot-0','slot-1','slot-2'];
         slots.forEach(id=>{ let el=document.getElementById(id); if(el){ el.classList.add('spinning'); el.textContent='🎰'; } });
