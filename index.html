@@ -4,170 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fruit Cut - Slice Mania (TON)</title>
-    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Adsgram SDK -->
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    <!-- Monetag SDK -->
     <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
-    <!-- GigaPub SDK -->
     <script src="https://ad.gigapub.tech/script?id=6350"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
-
         *{ margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent; }
-
-        :root{
-            --teal1:#00c6d4; --teal2:#007a8a;
-            --gold:#ffcc00; --gold2:#e6a800;
-            --red:#ff3355; --red2:#cc0033;
-            --green:#4caf50; --green2:#2e7d32;
-            --purple:#9c27b0; --purple2:#6a0080;
-            --orange:#ff6600; --orange2:#cc4400;
-            --panel-bg:rgba(10,40,50,0.88);
-            --btn-shadow:0 6px 0;
-        }
-
-        body{
-            font-family:'Nunito',sans-serif;
-            background:linear-gradient(180deg,#0a8fa0 0%,#006070 40%,#004050 100%);
-            overflow:hidden;touch-action:none;width:100vw;height:100vh;position:relative;
-        }
-
-        .bg-stripes{
-            position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;
-            background:repeating-linear-gradient(180deg,rgba(255,255,255,0.04) 0px,rgba(255,255,255,0.04) 30px,transparent 30px,transparent 60px);
-        }
-        .bg-left-shelf,.bg-right-shelf{
-            position:fixed;bottom:0;width:80px;height:60%;z-index:1;pointer-events:none;
-        }
+        :root{ --teal1:#00c6d4; --teal2:#007a8a; --gold:#ffcc00; --gold2:#e6a800; --red:#ff3355; --red2:#cc0033; --green:#4caf50; --green2:#2e7d32; --purple:#9c27b0; --purple2:#6a0080; --orange:#ff6600; --orange2:#cc4400; --panel-bg:rgba(10,40,50,0.88); --btn-shadow:0 6px 0; }
+        body{ font-family:'Nunito',sans-serif; background:linear-gradient(180deg,#0a8fa0 0%,#006070 40%,#004050 100%); overflow:hidden;touch-action:none;width:100vw;height:100vh;position:relative; }
+        .bg-stripes{ position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none; background:repeating-linear-gradient(180deg,rgba(255,255,255,0.04) 0px,rgba(255,255,255,0.04) 30px,transparent 30px,transparent 60px); }
+        .bg-left-shelf,.bg-right-shelf{ position:fixed;bottom:0;width:80px;height:60%;z-index:1;pointer-events:none; }
         .bg-left-shelf{left:0;background:linear-gradient(90deg,#d4800a,#e8a020);}
         .bg-right-shelf{right:0;background:linear-gradient(270deg,#d4800a,#e8a020);}
-        .bg-floor{
-            position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none;
-            background:linear-gradient(180deg,#c97a00,#b36800);
-        }
-        .floor-arch{
-            position:fixed;bottom:0;z-index:2;pointer-events:none;
-            width:33.3%;height:70px;background:#b36800;border-radius:50% 50% 0 0 / 100% 100% 0 0;
-            border-top:6px solid #d4800a;
-        }
-        .floor-arch:nth-child(1){left:0;}
-        .floor-arch:nth-child(2){left:33.3%;}
-        .floor-arch:nth-child(3){left:66.6%;}
-
-        .snowflake{
-            position:fixed;top:-30px;color:#fff;font-size:22px;opacity:0.5;pointer-events:none;z-index:2;
-            animation:snow linear infinite;
-        }
+        .bg-floor{ position:fixed;bottom:0;left:0;width:100%;height:80px;z-index:1;pointer-events:none; background:linear-gradient(180deg,#c97a00,#b36800); }
+        .floor-arch{ position:fixed;bottom:0;z-index:2;pointer-events:none; width:33.3%;height:70px;background:#b36800;border-radius:50% 50% 0 0 / 100% 100% 0 0; border-top:6px solid #d4800a; }
+        .floor-arch:nth-child(1){left:0;} .floor-arch:nth-child(2){left:33.3%;} .floor-arch:nth-child(3){left:66.6%;}
+        .snowflake{ position:fixed;top:-30px;color:#fff;font-size:22px;opacity:0.5;pointer-events:none;z-index:2; animation:snow linear infinite; }
         @keyframes snow{to{transform:translateY(110vh) rotate(360deg);}}
-
         canvas{display:block;width:100%;height:100%;position:fixed;top:0;left:0;z-index:3;}
-
         #ui{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none;}
         .ptr{pointer-events:auto;}
-
-        /* Top Bar */
-        #top-bar{
-            display:flex;justify-content:space-between;align-items:center;
-            padding:12px 16px;gap:8px;
-        }
-        .coin-box{
-            background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px;
-            padding:6px 14px;display:flex;align-items:center;gap:6px;
-            box-shadow:0 4px 0 #c48000,0 6px 12px rgba(0,0,0,0.3);
-        }
+        #top-bar{ display:flex;justify-content:space-between;align-items:center; padding:12px 16px;gap:8px; }
+        .coin-box{ background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #c48000,0 6px 12px rgba(0,0,0,0.3); }
         .coin-label{font-size:11px;color:#6b4400;font-weight:800;line-height:1;}
         .coin-value{font-size:20px;color:#3d2000;font-weight:900;font-family:'Luckiest Guy',cursive;}
-        .lv-box{
-            background:linear-gradient(180deg,#ffee00,#ffaa00);
-            border:3px solid #ff8800;border-radius:10px;padding:5px 18px;
-            font-family:'Luckiest Guy',cursive;font-size:18px;color:#333;
-            box-shadow:0 4px 0 #cc6600,0 6px 12px rgba(0,0,0,0.3);min-width:80px;text-align:center;
-        }
-        .diamond-box{
-            background:rgba(180,220,255,0.95);border:3px solid #4af;border-radius:16px;
-            padding:6px 14px;display:flex;align-items:center;gap:6px;
-            box-shadow:0 4px 0 #0077bb,0 6px 12px rgba(0,0,0,0.3);
-        }
+        .lv-box{ background:linear-gradient(180deg,#ffee00,#ffaa00); border:3px solid #ff8800;border-radius:10px;padding:5px 18px; font-family:'Luckiest Guy',cursive;font-size:18px;color:#333; box-shadow:0 4px 0 #cc6600,0 6px 12px rgba(0,0,0,0.3);min-width:80px;text-align:center; }
+        .diamond-box{ background:rgba(180,220,255,0.95);border:3px solid #4af;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #0077bb,0 6px 12px rgba(0,0,0,0.3); }
         .diamond-value{font-size:20px;color:#003366;font-weight:900;font-family:'Luckiest Guy',cursive;}
-
-        /* MENU */
-        #menu-screen{
-            position:fixed;top:0;left:0;width:100%;height:100%;z-index:12;
-            display:none;flex-direction:column;align-items:center;justify-content:space-between;
-            padding:10px 10px 0 10px;
-        }
-
-        .game-title{
-            display:flex;flex-direction:column;align-items:center;
-            margin-top:80px;animation:floatLogo 3s ease-in-out infinite;
-        }
+        #menu-screen{ position:fixed;top:0;left:0;width:100%;height:100%;z-index:12; display:none;flex-direction:column;align-items:center;justify-content:space-between; padding:10px 10px 0 10px; }
+        .game-title{ display:flex;flex-direction:column;align-items:center; margin-top:80px;animation:floatLogo 3s ease-in-out infinite; }
         @keyframes floatLogo{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
         .title-fruits{font-size:50px;letter-spacing:-4px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));}
-        .title-main{
-            font-family:'Luckiest Guy',cursive;font-size:62px;line-height:0.9;
-            text-align:center;letter-spacing:2px;
-        }
+        .title-main{ font-family:'Luckiest Guy',cursive;font-size:62px;line-height:0.9; text-align:center;letter-spacing:2px; }
         .title-fruit{color:#7dff00;-webkit-text-stroke:3px #2a7000;text-shadow:0 6px 0 #2a7000,0 10px 20px rgba(0,0,0,0.5);}
         .title-cut{color:#ffcc00;-webkit-text-stroke:3px #996600;text-shadow:0 6px 0 #996600,0 10px 20px rgba(0,0,0,0.5);}
         .title-sub{font-size:13px;color:rgba(255,255,255,0.8);font-weight:800;letter-spacing:3px;margin-top:4px;}
-
         .menu-knife{font-size:70px;margin:10px 0;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));animation:knifeFloat 2s ease-in-out infinite;}
         @keyframes knifeFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-8px) rotate(5deg);}}
-
-        #token-bar{
-            background:rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2);
-            border-radius:20px;padding:6px 16px;display:flex;align-items:center;gap:8px;
-            font-size:14px;color:#fff;font-weight:800;margin-bottom:6px;
-        }
+        #token-bar{ background:rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2); border-radius:20px;padding:6px 16px;display:flex;align-items:center;gap:8px; font-size:14px;color:#fff;font-weight:800;margin-bottom:6px; }
         .token-refill{font-size:11px;color:#ffcc00;}
-
-        .start-btn{
-            background:linear-gradient(180deg,#ffe040,#ff8c00);
-            border:4px solid #fff;border-radius:20px;
-            width:240px;padding:16px 0;text-align:center;
-            font-family:'Luckiest Guy',cursive;font-size:38px;color:#fff;
-            text-shadow:2px 3px 0 rgba(0,0,0,0.3);
-            box-shadow:0 8px 0 #cc6600,0 12px 25px rgba(0,0,0,0.4);
-            cursor:pointer;transition:transform 0.1s,box-shadow 0.1s;
-            animation:pulsBtn 1.5s ease-in-out infinite;
-        }
+        .start-btn{ background:linear-gradient(180deg,#ffe040,#ff8c00); border:4px solid #fff;border-radius:20px; width:240px;padding:16px 0;text-align:center; font-family:'Luckiest Guy',cursive;font-size:38px;color:#fff; text-shadow:2px 3px 0 rgba(0,0,0,0.3); box-shadow:0 8px 0 #cc6600,0 12px 25px rgba(0,0,0,0.4); cursor:pointer;transition:transform 0.1s,box-shadow 0.1s; animation:pulsBtn 1.5s ease-in-out infinite; }
         @keyframes pulsBtn{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
         .start-btn:active{transform:translateY(6px)!important;box-shadow:0 2px 0 #cc6600!important;animation:none!important;}
-
-        .spin-btn{
-            background:linear-gradient(180deg,#a855f7,#7e22ce);
-            border:3px solid rgba(255,255,255,0.6);border-radius:16px;
-            padding:10px 30px;text-align:center;
-            font-family:'Luckiest Guy',cursive;font-size:22px;color:#fff;
-            text-shadow:1px 2px 0 rgba(0,0,0,0.3);
-            box-shadow:0 5px 0 #5b21b6,0 8px 18px rgba(0,0,0,0.3);
-            cursor:pointer;margin-top:6px;
-            display:flex;align-items:center;gap:8px;
-        }
-        .spin-badge{
-            background:#ff3355;color:#fff;font-size:11px;font-family:'Nunito',sans-serif;
-            padding:2px 7px;border-radius:10px;font-weight:900;animation:badgePulse 1s infinite;
-        }
+        .spin-btn{ background:linear-gradient(180deg,#a855f7,#7e22ce); border:3px solid rgba(255,255,255,0.6);border-radius:16px; padding:10px 30px;text-align:center; font-family:'Luckiest Guy',cursive;font-size:22px;color:#fff; text-shadow:1px 2px 0 rgba(0,0,0,0.3); box-shadow:0 5px 0 #5b21b6,0 8px 18px rgba(0,0,0,0.3); cursor:pointer;margin-top:6px; display:flex;align-items:center;gap:8px; }
+        .spin-badge{ background:#ff3355;color:#fff;font-size:11px;font-family:'Nunito',sans-serif; padding:2px 7px;border-radius:10px;font-weight:900;animation:badgePulse 1s infinite; }
         @keyframes badgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
-
-        #bottom-icons{
-            display:flex;justify-content:center;gap:10px;
-            padding:14px 10px 20px;width:100%;flex-wrap:wrap;
-        }
-        .icon-btn{
-            display:flex;flex-direction:column;align-items:center;gap:3px;
-            cursor:pointer;transition:transform 0.15s;
-        }
+        #bottom-icons{ display:flex;justify-content:center;gap:10px; padding:14px 10px 20px;width:100%;flex-wrap:wrap; }
+        .icon-btn{ display:flex;flex-direction:column;align-items:center;gap:3px; cursor:pointer;transition:transform 0.15s; }
         .icon-btn:active{transform:scale(0.9);}
-        .icon-face{
-            width:55px;height:55px;border-radius:16px;
-            display:flex;align-items:center;justify-content:center;font-size:26px;
-            box-shadow:0 5px 0 rgba(0,0,0,0.3),0 8px 16px rgba(0,0,0,0.2);
-            border:3px solid rgba(255,255,255,0.3);
-            transition:transform 0.15s;
-        }
+        .icon-face{ width:55px;height:55px;border-radius:16px; display:flex;align-items:center;justify-content:center;font-size:26px; box-shadow:0 5px 0 rgba(0,0,0,0.3),0 8px 16px rgba(0,0,0,0.2); border:3px solid rgba(255,255,255,0.3); transition:transform 0.15s; }
         .icon-btn:active .icon-face{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,0.3)!important;}
         .icon-label{font-size:10px;font-weight:900;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,0.5);}
         .ic-setting{background:linear-gradient(135deg,#607d8b,#37474f);}
@@ -177,78 +63,23 @@
         .ic-ads{background:linear-gradient(135deg,#e91e63,#880e4f);}
         .ic-task{background:linear-gradient(135deg,#00bcd4,#006064);}
         @keyframes jiggle{0%,8%,100%{transform:rotate(0);}2%{transform:rotate(-12deg);}4%{transform:rotate(12deg);}6%{transform:rotate(-8deg);}}
-
-        /* GAME HUD */
-        #game-hud{
-            position:fixed;top:0;left:0;width:100%;z-index:12;
-            display:none;justify-content:space-between;align-items:center;
-            padding:12px 16px;
-        }
-        .pass-reward-box{
-            background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px;
-            padding:5px 12px;display:flex;align-items:center;gap:5px;
-            box-shadow:0 4px 0 #c48000;
-        }
+        #game-hud{ position:fixed;top:0;left:0;width:100%;z-index:12; display:none;justify-content:space-between;align-items:center; padding:12px 16px; }
+        .pass-reward-box{ background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px; padding:5px 12px;display:flex;align-items:center;gap:5px; box-shadow:0 4px 0 #c48000; }
         .pr-label{font-size:10px;color:#6b4400;font-weight:800;line-height:1;}
         .pr-val{font-size:18px;color:#3d2000;font-weight:900;font-family:'Luckiest Guy',cursive;}
-        .lv-progress{
-            flex:1;margin:0 10px;
-            background:rgba(0,0,0,0.4);border:2px solid rgba(255,255,255,0.2);
-            border-radius:20px;padding:4px 10px;
-            display:flex;align-items:center;gap:8px;
-            font-family:'Luckiest Guy',cursive;color:#fff;font-size:16px;
-        }
+        .lv-progress{ flex:1;margin:0 10px; background:rgba(0,0,0,0.4);border:2px solid rgba(255,255,255,0.2); border-radius:20px;padding:4px 10px; display:flex;align-items:center;gap:8px; font-family:'Luckiest Guy',cursive;color:#fff;font-size:16px; }
         .lv-bar-wrap{flex:1;height:14px;background:rgba(0,0,0,0.4);border-radius:10px;overflow:hidden;}
         .lv-bar-fill{height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00);border-radius:10px;transition:width 0.3s;}
-        
-        .pause-btn{
-            background:linear-gradient(180deg,#ff3355,#cc0033);
-            border:2px solid #fff;border-radius:14px;
-            padding:4px 12px;display:flex;align-items:center;justify-content:center;
-            font-size:22px;color:#fff;cursor:pointer;
-            box-shadow:0 4px 0 #880022;pointer-events:auto;
-        }
-
-        /* Strikes */
+        .pause-btn{ background:linear-gradient(180deg,#ff3355,#cc0033); border:2px solid #fff;border-radius:14px; padding:4px 12px;display:flex;align-items:center;justify-content:center; font-size:22px;color:#fff;cursor:pointer; box-shadow:0 4px 0 #880022;pointer-events:auto; }
         #strikes{position:fixed;top:70px;right:16px;z-index:13;display:none;gap:6px;}
         .x-mark{font-family:'Luckiest Guy',cursive;font-size:28px;color:rgba(255,255,255,0.2);}
         .x-active{color:#ff3355;text-shadow:0 0 12px #ff3355;}
-
-        /* MODALS */
-        .overlay{
-            display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-            background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);
-            z-index:50;justify-content:center;align-items:center;
-            overflow-y:auto;
-        }
-        .modal{
-            background:linear-gradient(160deg,#0d3040,#071e28);
-            border:3px solid rgba(100,200,220,0.3);border-radius:24px;
-            padding:28px 22px;width:92%;max-width:380px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.05);
-            position:relative;overflow:hidden;margin:auto;
-        }
-        .modal::before{
-            content:'';position:absolute;top:0;left:0;width:100%;height:3px;
-            background:linear-gradient(90deg,transparent,var(--gold),transparent);
-        }
-        .mh{
-            font-family:'Luckiest Guy',cursive;font-size:28px;
-            text-align:center;margin-bottom:16px;
-            text-shadow:2px 3px 0 rgba(0,0,0,0.4);
-        }
-        .mh-gold{color:var(--gold);}
-        .mh-red{color:var(--red);}
-        .mh-green{color:#4caf50;}
-        .mh-purple{color:#cf6fef;}
-        .mh-cyan{color:#00e5ff;}
-
-        .btn{
-            width:100%;padding:13px;border-radius:14px;border:none;cursor:pointer;
-            font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;
-            margin-top:10px;transition:transform 0.1s,box-shadow 0.1s;
-            box-shadow:var(--btn-shadow) rgba(0,0,0,0.3);
-        }
+        .overlay{ display:none;position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,0.75);backdrop-filter:blur(4px); z-index:50;justify-content:center;align-items:center; overflow-y:auto; }
+        .modal{ background:linear-gradient(160deg,#0d3040,#071e28); border:3px solid rgba(100,200,220,0.3);border-radius:24px; padding:28px 22px;width:92%;max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.05); position:relative;overflow:hidden;margin:auto; }
+        .modal::before{ content:'';position:absolute;top:0;left:0;width:100%;height:3px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+        .mh{ font-family:'Luckiest Guy',cursive;font-size:28px; text-align:center;margin-bottom:16px; text-shadow:2px 3px 0 rgba(0,0,0,0.4); }
+        .mh-gold{color:var(--gold);} .mh-red{color:var(--red);} .mh-green{color:#4caf50;} .mh-purple{color:#cf6fef;} .mh-cyan{color:#00e5ff;}
+        .btn{ width:100%;padding:13px;border-radius:14px;border:none;cursor:pointer; font-family:'Nunito',sans-serif;font-size:17px;font-weight:900; margin-top:10px;transition:transform 0.1s,box-shadow 0.1s; box-shadow:var(--btn-shadow) rgba(0,0,0,0.3); }
         .btn:active{transform:translateY(5px);box-shadow:none!important;}
         .btn:disabled{filter:grayscale(1); opacity:0.6; cursor:not-allowed;}
         .btn-gold{background:linear-gradient(180deg,#ffe040,#ff8c00);color:#fff;text-shadow:1px 2px 0 rgba(0,0,0,0.3);box-shadow:var(--btn-shadow) #cc5500;}
@@ -257,249 +88,90 @@
         .btn-blue{background:linear-gradient(180deg,#1976d2,#0d47a1);color:#fff;box-shadow:var(--btn-shadow) #002171;}
         .btn-purple{background:linear-gradient(180deg,#9c27b0,#6a0080);color:#fff;box-shadow:var(--btn-shadow) #4a0060;}
         .btn-grey{background:linear-gradient(180deg,#546e7a,#37474f);color:#fff;box-shadow:var(--btn-shadow) #1c313a;}
-
         .mrow{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 16px;margin-bottom:10px;}
         .mrow-label{font-size:15px;font-weight:800;color:#ddd;}
         .mrow-val{font-size:22px;}
-
-        input,select{
-            width:100%;padding:12px;margin:8px 0;border-radius:12px;
-            border:2px solid rgba(100,200,220,0.3);outline:none;
-            background:rgba(255,255,255,0.1);color:#fff;font-size:15px;font-weight:700;
-            font-family:'Nunito',sans-serif;
-        }
+        input,select{ width:100%;padding:12px;margin:8px 0;border-radius:12px; border:2px solid rgba(100,200,220,0.3);outline:none; background:rgba(255,255,255,0.1);color:#fff;font-size:15px;font-weight:700; font-family:'Nunito',sans-serif; }
         select option{background:#0d3040;color:#fff;}
-
         .info-text{font-size:12px;color:#7ab;margin:8px 0;line-height:1.5;text-align:center;}
-
-        .w-badge{
-            display:inline-block;background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.4);
-            border-radius:8px;padding:3px 10px;font-size:12px;color:var(--gold);font-weight:800;margin-bottom:4px;
-        }
-
-        /* ===== SPIN WHEEL ===== */
-        #spin-canvas-wrap{
-            position:relative;width:260px;height:280px;margin:0 auto 16px;
-        }
-        #spin-canvas-wrap canvas{width:260px;height:260px;display:block; transition: transform 4s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
-        .spin-pointer{
-            position:absolute;top:-14px;left:50%;transform:translateX(-50%);
-            width:0;height:0;
-            border-left:14px solid transparent;
-            border-right:14px solid transparent;
-            border-top:28px solid #ff3355;
-            filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-            z-index:5;
-        }
-
-        /* Shop */
+        .w-badge{ display:inline-block;background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.4); border-radius:8px;padding:3px 10px;font-size:12px;color:var(--gold);font-weight:800;margin-bottom:4px; }
         .shop-tabs{display:flex;gap:8px;margin-bottom:14px;}
-        .shop-tab{
-            flex:1;padding:10px;border-radius:12px;border:2px solid rgba(255,255,255,0.15);
-            background:rgba(255,255,255,0.06);color:#aaa;font-family:'Nunito',sans-serif;
-            font-size:13px;font-weight:900;cursor:pointer;text-align:center;transition:all 0.2s;
-        }
+        .shop-tab{ flex:1;padding:10px;border-radius:12px;border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06);color:#aaa;font-family:'Nunito',sans-serif; font-size:13px;font-weight:900;cursor:pointer;text-align:center;transition:all 0.2s; }
         .shop-tab.active{background:linear-gradient(180deg,#ffe040,#ff8c00);border-color:#ff8c00;color:#fff;}
         .shop-panel{display:none;}
         .shop-panel.active{display:block;}
-
-        /* Token shop cards */
         .token-shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
-        .token-shop-card{
-            background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08));
-            border:2px solid rgba(255,180,0,0.3);border-radius:16px;padding:14px 10px;
-            text-align:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;
-            position:relative;overflow:hidden;
-        }
+        .token-shop-card{ background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08)); border:2px solid rgba(255,180,0,0.3);border-radius:16px;padding:14px 10px; text-align:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s; position:relative;overflow:hidden; }
         .token-shop-card:active{transform:scale(0.95);}
         .token-shop-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#ffcc00,transparent);}
         .tsc-icon{font-size:36px;margin-bottom:6px;display:block;}
         .tsc-amount{font-family:'Luckiest Guy',cursive;font-size:20px;color:#fff;line-height:1;}
         .tsc-price{font-size:12px;color:#ffcc00;font-weight:800;margin-top:4px;}
-        .tsc-badge{
-            position:absolute;top:6px;right:6px;background:#ff3355;color:#fff;
-            font-size:9px;font-weight:900;padding:2px 6px;border-radius:8px;
-        }
-
-        /* Gold Exchange cards */
-        .gold-exchange-info{
-            background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1));
-            border:2px solid rgba(100,160,255,0.35);border-radius:16px;padding:14px;margin-bottom:12px;
-            text-align:center;
-        }
+        .tsc-badge{ position:absolute;top:6px;right:6px;background:#ff3355;color:#fff; font-size:9px;font-weight:900;padding:2px 6px;border-radius:8px; }
+        .gold-exchange-info{ background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1)); border:2px solid rgba(100,160,255,0.35);border-radius:16px;padding:14px;margin-bottom:12px; text-align:center; }
         .gei-rate{font-family:'Luckiest Guy',cursive;font-size:26px;color:#4af;line-height:1.1;}
         .gei-label{font-size:11px;color:#7ab;margin-top:4px;}
-        .exchange-input-wrap{
-            background:rgba(255,255,255,0.06);border:2px solid rgba(100,160,255,0.25);
-            border-radius:14px;padding:14px;margin-bottom:10px;
-        }
+        .exchange-input-wrap{ background:rgba(255,255,255,0.06);border:2px solid rgba(100,160,255,0.25); border-radius:14px;padding:14px;margin-bottom:10px; }
         .exchange-input-wrap label{font-size:12px;color:#aaa;font-weight:800;display:block;margin-bottom:6px;}
         .exchange-presets{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
-        .exchange-preset-btn{
-            flex:1;min-width:60px;padding:7px 4px;border-radius:10px;
-            border:2px solid rgba(100,160,255,0.3);background:rgba(100,160,255,0.1);
-            color:#4af;font-size:12px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;
-            transition:all 0.15s;text-align:center;
-        }
+        .exchange-preset-btn{ flex:1;min-width:60px;padding:7px 4px;border-radius:10px; border:2px solid rgba(100,160,255,0.3);background:rgba(100,160,255,0.1); color:#4af;font-size:12px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif; transition:all 0.15s;text-align:center; }
         .exchange-preset-btn:active{background:rgba(100,160,255,0.3);}
-        .exchange-result-preview{
-            background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25);
-            border-radius:10px;padding:8px;text-align:center;margin-bottom:8px;
-            font-size:13px;color:#4caf50;font-weight:900;
-        }
-        .shop-daily-info{
-            background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-            border-radius:10px;padding:8px 12px;font-size:11px;color:#888;text-align:center;margin-bottom:8px;
-        }
-
-        /* Refer */
-        .refer-link{
-            background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
-            border-radius:12px;padding:10px 14px;font-size:13px;color:#7de;
-            word-break:break-all;margin:8px 0;text-align:center;
-        }
-        .refer-stats{
-            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
-            border-radius:14px;padding:12px;margin-bottom:10px;text-align:center;
-        }
+        .exchange-result-preview{ background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25); border-radius:10px;padding:8px;text-align:center;margin-bottom:8px; font-size:13px;color:#4caf50;font-weight:900; }
+        .shop-daily-info{ background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08); border-radius:10px;padding:8px 12px;font-size:11px;color:#888;text-align:center;margin-bottom:8px; }
+        .refer-link{ background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15); border-radius:12px;padding:10px 14px;font-size:13px;color:#7de; word-break:break-all;margin:8px 0;text-align:center; }
+        .refer-stats{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1); border-radius:14px;padding:12px;margin-bottom:10px;text-align:center; }
         .refer-count{font-size:32px;font-family:'Luckiest Guy',cursive;color:#ffcc00;}
         .refer-count-label{font-size:12px;color:#aaa;}
-
         .big-emoji{font-size:64px;text-align:center;display:block;animation:floatLogo 2s infinite;margin-bottom:8px;}
         .reward-row{display:flex;align-items:center;justify-content:center;gap:10px;font-size:22px;font-weight:900;color:#fff;margin:12px 0;}
-
         #confetti-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:49;display:none;}
         .cp{position:absolute;width:10px;height:14px;animation:fall linear infinite;}
         @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
-
-        /* Loading / AD loader */
-        #fullscreen-loader, #ad-loader{
-            display:flex;position:fixed;top:0;left:0;width:100%;height:100%;
-            background:rgba(0,64,80,0.95);z-index:9999;
-            justify-content:center;align-items:center;flex-direction:column;gap:16px;
-        }
+        #fullscreen-loader, #ad-loader{ display:flex;position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,64,80,0.95);z-index:9999; justify-content:center;align-items:center;flex-direction:column;gap:16px; }
         #ad-loader{ background:rgba(0,0,0,0.9); display:none; }
         .spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,0.2);border-top-color:#ffcc00;border-radius:50%;animation:spin 1s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
-
-        #token-toast{
-            position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
-            background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px;
-            padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999;
-            display:none;animation:fadeUp 0.3s ease;white-space:nowrap;
-        }
+        #token-toast{ position:fixed;bottom:120px;left:50%;transform:translateX(-50%); background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px; padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999; display:none;animation:fadeUp 0.3s ease;white-space:nowrap; }
         @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-
-        /* ===== ADS MODAL / LOOTBOX ===== */
-        .lootbox-wrap{
-            background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3);
-            border-radius:16px;padding:16px;margin-bottom:12px;text-align:center;
-        }
-        .lootbox-bar-bg{
-            width:100%;height:20px;background:rgba(0,0,0,0.4);border-radius:10px;
-            overflow:hidden;margin:8px 0;border:2px solid rgba(255,200,0,0.3);
-        }
-        .lootbox-bar-fill{
-            height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00);
-            border-radius:10px;transition:width 0.5s;
-        }
+        .lootbox-wrap{ background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3); border-radius:16px;padding:16px;margin-bottom:12px;text-align:center; }
+        .lootbox-bar-bg{ width:100%;height:20px;background:rgba(0,0,0,0.4);border-radius:10px; overflow:hidden;margin:8px 0;border:2px solid rgba(255,200,0,0.3); }
+        .lootbox-bar-fill{ height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00); border-radius:10px;transition:width 0.5s; }
         .lootbox-pts{font-size:22px;font-family:'Luckiest Guy',cursive;color:#ffcc00;}
-        .lootbox-claim-btn{
-            background:linear-gradient(180deg,#ffe040,#ff8c00);
-            border:none;border-radius:12px;padding:10px 24px;
-            font-family:'Luckiest Guy',cursive;font-size:18px;color:#fff;
-            cursor:pointer;box-shadow:0 4px 0 #cc5500;margin-top:6px;width:100%;
-        }
+        .lootbox-claim-btn{ background:linear-gradient(180deg,#ffe040,#ff8c00); border:none;border-radius:12px;padding:10px 24px; font-family:'Luckiest Guy',cursive;font-size:18px;color:#fff; cursor:pointer;box-shadow:0 4px 0 #cc5500;margin-top:6px;width:100%; }
         .lootbox-claim-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 4px 0 #111;cursor:not-allowed; }
-
-        .ads-section{
-            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
-            border-radius:14px;padding:12px;margin-bottom:10px;
-        }
+        .ads-section{ background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1); border-radius:14px;padding:12px;margin-bottom:10px; }
         .ads-row{ display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
         .ads-info{font-size:12px;color:#aaa;}
         .ads-info strong{color:#ffcc00;}
-        .watch-ad-btn{
-            background:linear-gradient(180deg,#e91e63,#880e4f);
-            border:none;border-radius:10px;padding:7px 14px;
-            font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff;
-            cursor:pointer;box-shadow:0 3px 0 #500030;white-space:nowrap;
-        }
+        .watch-ad-btn{ background:linear-gradient(180deg,#e91e63,#880e4f); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #500030;white-space:nowrap; }
         .watch-ad-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 3px 0 #111;cursor:not-allowed; }
-
-        /* ===== TASK SECTION ===== */
-        .task-card{
-            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
-            border-radius:14px;padding:12px 14px;margin-bottom:10px;
-            display:flex;align-items:center;gap:12px;
-        }
+        .task-card{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12); border-radius:14px;padding:12px 14px;margin-bottom:10px; display:flex;align-items:center;gap:12px; }
         .task-icon{font-size:28px;flex-shrink:0;}
         .task-info{flex:1;}
         .task-name{font-size:14px;font-weight:900;color:#fff;}
         .task-reward{font-size:12px;color:#ffcc00;margin-top:2px;}
-        .task-btn{
-            background:linear-gradient(180deg,#00bcd4,#006064);
-            border:none;border-radius:10px;padding:7px 14px;
-            font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff;
-            cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0;
-        }
+        .task-btn{ background:linear-gradient(180deg,#00bcd4,#006064); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0; }
         .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
-        
         .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
-
-        /* ===== LOTTERY SYSTEM ===== */
-        .lottery-wrap{
-            background:linear-gradient(135deg,rgba(100,0,150,0.3),rgba(50,0,100,0.3));
-            border:2px solid rgba(180,100,255,0.4);border-radius:18px;padding:16px;margin-bottom:12px;text-align:center;
-        }
+        .lottery-wrap{ background:linear-gradient(135deg,rgba(100,0,150,0.3),rgba(50,0,100,0.3)); border:2px solid rgba(180,100,255,0.4);border-radius:18px;padding:16px;margin-bottom:12px;text-align:center; }
         .lottery-title{font-family:'Luckiest Guy',cursive;font-size:22px;color:#cf6fef;margin-bottom:6px;}
-        .lottery-slots{
-            display:flex;justify-content:center;gap:10px;margin:14px 0;
-        }
-        .lottery-slot{
-            width:70px;height:90px;background:rgba(0,0,0,0.5);border:3px solid rgba(255,200,0,0.5);
-            border-radius:14px;display:flex;align-items:center;justify-content:center;
-            font-size:28px;font-family:'Luckiest Guy',cursive;color:#ffcc00;
-            position:relative;overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,0.5);
-        }
+        .lottery-slots{ display:flex;justify-content:center;gap:10px;margin:14px 0; }
+        .lottery-slot{ width:70px;height:90px;background:rgba(0,0,0,0.5);border:3px solid rgba(255,200,0,0.5); border-radius:14px;display:flex;align-items:center;justify-content:center; font-size:28px;font-family:'Luckiest Guy',cursive;color:#ffcc00; position:relative;overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,0.5); }
         .lottery-slot.spinning{animation:slotSpin 0.12s linear infinite;}
         @keyframes slotSpin{0%{transform:translateY(0);}50%{transform:translateY(-6px);}100%{transform:translateY(0);}}
         .lottery-slot.win{border-color:#ffcc00;box-shadow:0 0 20px #ffcc00,inset 0 0 20px rgba(255,200,0,0.2);}
-        
-        .lottery-prizes-grid{
-            display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;
-        }
-        .lottery-prize-item{
-            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
-            border-radius:10px;padding:6px 8px;text-align:center;
-        }
+        .lottery-prizes-grid{ display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px; }
+        .lottery-prize-item{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1); border-radius:10px;padding:6px 8px;text-align:center; }
         .lottery-prize-name{font-size:12px;color:#ffcc00;font-weight:800;}
         .lottery-prize-chance{font-size:10px;color:#888;}
-        .lottery-spin-btn{
-            background:linear-gradient(180deg,#ff3355,#cc0033);
-            border:3px solid rgba(255,255,255,0.5);border-radius:16px;
-            padding:12px 32px;font-family:'Luckiest Guy',cursive;font-size:22px;color:#fff;
-            cursor:pointer;box-shadow:0 5px 0 #880022;margin-top:4px;
-            transition:transform 0.1s,box-shadow 0.1s;
-        }
+        .lottery-spin-btn{ background:linear-gradient(180deg,#ff3355,#cc0033); border:3px solid rgba(255,255,255,0.5);border-radius:16px; padding:12px 32px;font-family:'Luckiest Guy',cursive;font-size:22px;color:#fff; cursor:pointer;box-shadow:0 5px 0 #880022;margin-top:4px; transition:transform 0.1s,box-shadow 0.1s; }
         .lottery-spin-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #880022;}
         .lottery-spin-btn:disabled{background:linear-gradient(180deg,#555,#333);box-shadow:0 5px 0 #111;cursor:not-allowed;}
-        .lottery-result{
-            min-height:32px;font-size:16px;font-weight:900;color:#7dff00;
-            text-align:center;margin:8px 0;
-        }
-        .lottery-price-row{
-            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
-            border-radius:10px;padding:8px 14px;margin-bottom:8px;
-            font-size:12px;color:#aaa;text-align:center;
-        }
-        .lottery-earn-stats{
-            background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.2);
-            border-radius:12px;padding:10px;margin-bottom:10px;text-align:center;
-        }
+        .lottery-result{ min-height:32px;font-size:16px;font-weight:900;color:#7dff00; text-align:center;margin:8px 0; }
+        .lottery-price-row{ background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1); border-radius:10px;padding:8px 14px;margin-bottom:8px; font-size:12px;color:#aaa;text-align:center; }
+        .lottery-earn-stats{ background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.2); border-radius:12px;padding:10px;margin-bottom:10px;text-align:center; }
         .lottery-earn-val{font-size:20px;font-family:'Luckiest Guy',cursive;color:#4caf50;}
         .lottery-earn-label{font-size:11px;color:#888;}
-
         .refer-diamonds{font-size:22px;font-family:'Luckiest Guy',cursive;color:#4af;}
         .refer-diamonds-label{font-size:11px;color:#aaa;}
     </style>
@@ -535,10 +207,8 @@
     </div>
 </div>
 
-<!-- MENU SCREEN -->
 <div id="menu-screen" class="ptr">
     <div style="width:100%;padding:0 12px;"></div>
-
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:60px;">
         <div class="title-fruits">🍉🍓🍊🥝🍍</div>
         <div class="title-main">
@@ -547,14 +217,11 @@
         </div>
         <div class="title-sub">✨ SLICE MANIA ✨</div>
     </div>
-
     <div class="menu-knife">🗡️</div>
-
     <div id="token-bar" class="ptr" onclick="window.showTokenInfo()">
         🎮 Tokens: <span id="ui-tokens">3</span> / 10
         <span class="token-refill" id="token-timer"></span>
     </div>
-
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
         <div class="start-btn ptr" onclick="window.tryStartGame()">▶ START</div>
         <div class="spin-btn ptr" onclick="window.showModal('lottery-modal')">
@@ -562,30 +229,16 @@
             <span class="spin-badge" id="spin-badge">FREE</span>
         </div>
     </div>
-
     <div id="bottom-icons">
-        <div class="icon-btn ptr" onclick="window.showModal('setting-modal')">
-            <div class="icon-face ic-setting">⚙️</div><span class="icon-label">Setting</span>
-        </div>
-        <div class="icon-btn ptr" onclick="window.showModal('share-modal')">
-            <div class="icon-face ic-share">🔗</div><span class="icon-label">Refer</span>
-        </div>
-        <div class="icon-btn ptr" onclick="window.showModal('shop-modal')">
-            <div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span>
-        </div>
-        <div class="icon-btn ptr" onclick="window.showModal('wallet-modal')">
-            <div class="icon-face ic-wallet">💳</div><span class="icon-label">Wallet</span>
-        </div>
-        <div class="icon-btn ptr" onclick="window.showModal('ads-modal')">
-            <div class="icon-face ic-ads">📺</div><span class="icon-label">Ads</span>
-        </div>
-        <div class="icon-btn ptr" onclick="window.showModal('task-modal')">
-            <div class="icon-face ic-task">📋</div><span class="icon-label">Tasks</span>
-        </div>
+        <div class="icon-btn ptr" onclick="window.showModal('setting-modal')"><div class="icon-face ic-setting">⚙️</div><span class="icon-label">Setting</span></div>
+        <div class="icon-btn ptr" onclick="window.showModal('share-modal')"><div class="icon-face ic-share">🔗</div><span class="icon-label">Refer</span></div>
+        <div class="icon-btn ptr" onclick="window.showModal('shop-modal')"><div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span></div>
+        <div class="icon-btn ptr" onclick="window.showModal('wallet-modal')"><div class="icon-face ic-wallet">💳</div><span class="icon-label">Wallet</span></div>
+        <div class="icon-btn ptr" onclick="window.showModal('ads-modal')"><div class="icon-face ic-ads">📺</div><span class="icon-label">Ads</span></div>
+        <div class="icon-btn ptr" onclick="window.showModal('task-modal')"><div class="icon-face ic-task">📋</div><span class="icon-label">Tasks</span></div>
     </div>
 </div>
 
-<!-- GAME HUD -->
 <div id="game-hud" class="ptr">
     <div class="pause-btn" onclick="window.pauseGame()">⏸️</div>
     <div class="lv-progress">
@@ -593,12 +246,7 @@
         <div class="lv-bar-wrap"><div class="lv-bar-fill" id="lv-fill" style="width:0%"></div></div>
         <span id="hud-lv">Lv 1</span>
     </div>
-    <div class="pass-reward-box">
-        <div>
-            <div class="pr-label">REWARD</div>
-            <div class="pr-val">🪙 <span id="hud-reward">0</span></div>
-        </div>
-    </div>
+    <div class="pass-reward-box"><div><div class="pr-label">REWARD</div><div class="pr-val">🪙 <span id="hud-reward">0</span></div></div></div>
 </div>
 
 <div id="strikes" style="display:none;flex-direction:row;position:fixed;top:72px;right:16px;z-index:13;gap:5px;">
@@ -607,9 +255,6 @@
     <span class="x-mark" id="s3">✕</span>
 </div>
 
-<!-- ========== MODALS ========== -->
-
-<!-- Pause Modal -->
 <div class="overlay ptr" id="pause-modal">
     <div class="modal">
         <div class="mh mh-gold">GAME PAUSED</div>
@@ -624,15 +269,9 @@
         <div class="mh mh-purple">🎰 777 Lottery</div>
         <div id="lottery-free-badge" style="text-align:center;margin-bottom:6px;"></div>
         <div class="lottery-wrap">
-            <div class="lottery-slots">
-                <div class="lottery-slot" id="slot-0">❓</div>
-                <div class="lottery-slot" id="slot-1">❓</div>
-                <div class="lottery-slot" id="slot-2">❓</div>
-            </div>
+            <div class="lottery-slots"><div class="lottery-slot" id="slot-0">❓</div><div class="lottery-slot" id="slot-1">❓</div><div class="lottery-slot" id="slot-2">❓</div></div>
             <div class="lottery-result" id="lottery-result"></div>
-            <div class="lottery-price-row">
-                📺 Watch Ad → 🎰 Spin · Daily limit: <strong style="color:#ffcc00;" id="lottery-spins-left">10</strong>/10 spins
-            </div>
+            <div class="lottery-price-row">📺 Watch Ad → 🎰 Spin · Daily limit: <strong style="color:#ffcc00;" id="lottery-spins-left">10</strong>/10 spins</div>
             <button class="lottery-spin-btn" id="lottery-spin-btn" onclick="window.spinLotteryWithAd()">📺 Watch Ad & SPIN!</button>
         </div>
         <div class="lottery-earn-stats">
@@ -650,52 +289,22 @@
 <div class="overlay ptr" id="shop-modal">
     <div class="modal">
         <div class="mh mh-gold">🛍️ Shop</div>
-
-        <!-- Tabs -->
         <div class="shop-tabs">
             <div class="shop-tab active ptr" onclick="window.switchShopTab('tokens')" id="tab-tokens">🎮 Tokens</div>
             <div class="shop-tab ptr" onclick="window.switchShopTab('exchange')" id="tab-exchange">💎 Exchange</div>
         </div>
-
-        <!-- Token Buy Panel -->
         <div class="shop-panel active" id="shop-panel-tokens">
-            <div class="shop-daily-info">
-                🎮 Per Token: <strong style="color:#ffcc00;">50 🪙 Gold</strong> &nbsp;|&nbsp; Daily Limit: <strong style="color:#fff;" id="shop-token-left">10</strong>/10 remaining
-            </div>
+            <div class="shop-daily-info">🎮 Per Token: <strong style="color:#ffcc00;">50 🪙 Gold</strong> &nbsp;|&nbsp; Daily Limit: <strong style="color:#fff;" id="shop-token-left">10</strong>/10 remaining</div>
             <div class="token-shop-grid">
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(1)">
-                    <span class="tsc-icon">🎮</span>
-                    <div class="tsc-amount">×1 Token</div>
-                    <div class="tsc-price">50 🪙</div>
-                </div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(3)">
-                    <span class="tsc-badge">SAVE</span>
-                    <span class="tsc-icon">🎮🎮</span>
-                    <div class="tsc-amount">×3 Token</div>
-                    <div class="tsc-price">150 🪙</div>
-                </div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)">
-                    <span class="tsc-badge">HOT</span>
-                    <span class="tsc-icon">🎮🎮🎮</span>
-                    <div class="tsc-amount">×5 Token</div>
-                    <div class="tsc-price">250 🪙</div>
-                </div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)">
-                    <span class="tsc-badge">MAX</span>
-                    <span class="tsc-icon">🎮🎮🎮🎮</span>
-                    <div class="tsc-amount">×10 Token</div>
-                    <div class="tsc-price">500 🪙</div>
-                </div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(1)"><span class="tsc-icon">🎮</span><div class="tsc-amount">×1 Token</div><div class="tsc-price">50 🪙</div></div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(3)"><span class="tsc-badge">SAVE</span><span class="tsc-icon">🎮🎮</span><div class="tsc-amount">×3 Token</div><div class="tsc-price">150 🪙</div></div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)"><span class="tsc-badge">HOT</span><span class="tsc-icon">🎮🎮🎮</span><div class="tsc-amount">×5 Token</div><div class="tsc-price">250 🪙</div></div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)"><span class="tsc-badge">MAX</span><span class="tsc-icon">🎮🎮🎮🎮</span><div class="tsc-amount">×10 Token</div><div class="tsc-price">500 🪙</div></div>
             </div>
             <div class="info-text">🎮 Token দিয়ে game খেলুন · Max 10 token · প্রতি ঘণ্টায় +1 auto refill</div>
         </div>
-
-        <!-- Gold → Diamond Exchange Panel -->
         <div class="shop-panel" id="shop-panel-exchange">
-            <div class="gold-exchange-info">
-                <div class="gei-rate">5,000 🪙 = 5 💎</div>
-                <div class="gei-label">Gold → Diamond Exchange Rate</div>
-            </div>
+            <div class="gold-exchange-info"><div class="gei-rate">5,000 🪙 = 5 💎</div><div class="gei-label">Gold → Diamond Exchange Rate</div></div>
             <div class="exchange-input-wrap">
                 <label>Quick Select (Diamonds আপনি পেতে চান):</label>
                 <div class="exchange-presets">
@@ -704,17 +313,12 @@
                     <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(20)">20 💎</div>
                     <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(50)">50 💎</div>
                 </div>
-                <div class="exchange-result-preview" id="exchange-preview">
-                    Select amount above to see cost
-                </div>
-                <div class="shop-daily-info">
-                    Daily limit: <strong style="color:#4af;" id="shop-diamond-left">20</strong>/20 remaining &nbsp;|&nbsp; Min: <strong style="color:#ffcc00;">5,000 🪙</strong>
-                </div>
+                <div class="exchange-result-preview" id="exchange-preview">Select amount above to see cost</div>
+                <div class="shop-daily-info">Daily limit: <strong style="color:#4af;" id="shop-diamond-left">20</strong>/20 remaining &nbsp;|&nbsp; Min: <strong style="color:#ffcc00;">5,000 🪙</strong></div>
                 <button class="btn btn-blue" id="exchange-confirm-btn" onclick="window.confirmExchange()" disabled>💎 Exchange Now</button>
             </div>
             <div class="info-text">💎 Min 100 Diamonds to withdraw · Exchange করার পর undo হবে না</div>
         </div>
-
         <button class="btn btn-grey" onclick="window.hideModal('shop-modal')">CLOSE</button>
     </div>
 </div>
@@ -722,19 +326,12 @@
 <div class="overlay ptr" id="wallet-modal">
     <div class="modal">
         <div class="mh mh-gold">💳 Withdraw</div>
-        <div class="mrow">
-            <span class="mrow-label">My Diamonds</span>
-            <span class="mrow-val">💎 <span id="w-gems">0</span></span>
-        </div>
+        <div class="mrow"><span class="mrow-label">My Diamonds</span><span class="mrow-val">💎 <span id="w-gems">0</span></span></div>
         <div style="margin-bottom:8px;">
-            <div class="w-badge">💎 1000 = $1 USD</div><br>
-            <div class="w-badge">💎 1000 = 120 BDT</div><br>
-            <div class="w-badge">💎 1000 = 0.75 TON</div>
+            <div class="w-badge">💎 1000 = $1 USD</div><br><div class="w-badge">💎 1000 = 120 BDT</div><br><div class="w-badge">💎 1000 = 0.75 TON</div>
         </div>
         <select id="w-method">
-            <option value="bkash">bKash (Min 100 💎 = 12 BDT)</option>
-            <option value="tonkeeper">Tonkeeper (Min 100 💎 = 0.075 TON)</option>
-            <option value="binance">Binance UID (Min 500 💎 = $0.5)</option>
+            <option value="bkash">bKash (Min 100 💎 = 12 BDT)</option><option value="tonkeeper">Tonkeeper (Min 100 💎 = 0.075 TON)</option><option value="binance">Binance UID (Min 500 💎 = $0.5)</option>
         </select>
         <input type="number" id="w-amount" placeholder="Enter Diamond amount" min="100">
         <input type="text" id="w-address" placeholder="Phone / Wallet Address / UID">
@@ -749,19 +346,12 @@
         <div class="mh mh-green">🔗 Refer & Earn</div>
         <div class="refer-stats">
             <div style="display:flex;justify-content:space-around;">
-                <div>
-                    <div class="refer-count" id="refer-count-display">0</div>
-                    <div class="refer-count-label">Total Referrals</div>
-                </div>
-                <div>
-                    <div class="refer-diamonds" id="refer-diamonds-display">0</div>
-                    <div class="refer-diamonds-label">💎 Diamonds Earned</div>
-                </div>
+                <div><div class="refer-count" id="refer-count-display">0</div><div class="refer-count-label">Total Referrals</div></div>
+                <div><div class="refer-diamonds" id="refer-diamonds-display">0</div><div class="refer-diamonds-label">💎 Diamonds Earned</div></div>
             </div>
         </div>
         <div style="font-size:12px;color:#aaa;background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin-bottom:10px;text-align:left;">
-            <strong>Normal Refer:</strong> Instant 🎮1 Token.<br>
-            <strong>Valid Refer:</strong> When friend earns 10💎, you get 💎5 + 🎮3 Tokens!
+            <strong>Normal Refer:</strong> Instant 🎮1 Token.<br><strong>Valid Refer:</strong> When friend earns 10💎, you get 💎5 + 🎮3 Tokens!
         </div>
         <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
         <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
@@ -776,18 +366,9 @@
     <div class="modal">
         <div class="mh mh-gold">⚙️ Settings</div>
         <div id="tg-user-info" class="tg-info"></div>
-        <div class="mrow">
-            <span class="mrow-label">Sound</span>
-            <span class="mrow-val ptr" id="snd-toggle" onclick="window.toggleSound()">🔊</span>
-        </div>
-        <div class="mrow">
-            <span class="mrow-label">Vibration</span>
-            <span class="mrow-val ptr" id="vib-toggle" onclick="window.toggleVib()">📳</span>
-        </div>
-        <div class="mrow">
-            <span class="mrow-label">Version</span>
-            <span class="mrow-val" style="font-size:14px;color:#7ab;">v5.0.0</span>
-        </div>
+        <div class="mrow"><span class="mrow-label">Sound</span><span class="mrow-val ptr" id="snd-toggle" onclick="window.toggleSound()">🔊</span></div>
+        <div class="mrow"><span class="mrow-label">Vibration</span><span class="mrow-val ptr" id="vib-toggle" onclick="window.toggleVib()">📳</span></div>
+        <div class="mrow"><span class="mrow-label">Version</span><span class="mrow-val" style="font-size:14px;color:#7ab;">v6.0.0 (Secure)</span></div>
         <button class="btn btn-grey" onclick="window.hideModal('setting-modal')">CLOSE</button>
     </div>
 </div>
@@ -802,35 +383,30 @@
             <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 1000 pts</span></div>
             <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD</button>
         </div>
-
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">⚡ <strong>Adsgram Special</strong> (+50~150 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
-
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+50 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-daily-btn" onclick="window.watchAdsgramDailyAd()">▶ Watch</button>
             </div>
         </div>
-
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+50 Gold)<br><span id="gigapub-left">20/20 remaining</span></div>
                 <button class="watch-ad-btn" id="gigapub-btn" onclick="window.watchGigaPubAd()">▶ Watch</button>
             </div>
         </div>
-
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">💰 <strong>Monetag Ads</strong> (+50 Gold)<br><span id="monetag-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
             </div>
         </div>
-
         <div class="info-text">Resets daily automatically at 12:00 AM 🕛</div>
         <button class="btn btn-grey" onclick="window.hideModal('ads-modal')">CLOSE</button>
     </div>
@@ -877,31 +453,11 @@
 
 <div id="token-toast"></div>
 
-<!-- FIREBASE & GAME LOGIC -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, arrayUnion, collection, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
-
-    // Initialize Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyDH56nAHruchExL-kZOUv1MZS8forDWOH0",
-        authDomain: "fruit-cut-477ab.firebaseapp.com",
-        projectId: "fruit-cut-477ab",
-        storageBucket: "fruit-cut-477ab.firebasestorage.app",
-        messagingSenderId: "476402093190",
-        appId: "1:476402093190:web:382339ab1403de24751507",
-        measurementId: "G-MCBRFK1ZEJ"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
-
+<!-- API SCRIPT (NO FIREBASE SDK HERE!) -->
+<script>
     const tg = window.Telegram && window.Telegram.WebApp;
     if(tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#006070'); tg.setBackgroundColor('#004050'); }
 
-    // State object for game
     let currentUser = null;
     window.G = {
         coins: 0, gems: 0, stage: 1, tokens: 3, referCode: '', referCount: 0,
@@ -914,10 +470,6 @@
         referredBy: null, validReferRewardGiven: false
     };
 
-    let ADMIN_TASKS = [];
-
-    function getTodayStr() { return new Date().toDateString(); }
-
     function showToast(msg) {
         let t = document.getElementById('token-toast');
         t.textContent = msg; t.style.display = 'block';
@@ -925,54 +477,25 @@
         window._toastTimer = setTimeout(()=> t.style.display='none', 3500);
     }
 
-    async function checkDailyReset() {
-        let today = getTodayStr();
-        if(window.G.adsDayStamp !== today) {
-            window.G.adsDayStamp = today;
-            window.G.adsgramCount = 0;
-            window.G.adsgramDailyCount = 0;
-            window.G.gigapubCount = 0;
-            window.G.monetagCount = 0;
-            window.G.lotteryDailySpins = 0;
-            window.G.shopTokenBought = 0;
-            window.G.shopDiamondExchanged = 0;
-            if(currentUser) {
-                await updateDoc(doc(db, 'users', currentUser.id), {
-                    adsDayStamp: today, adsgramCount: 0, adsgramDailyCount: 0,
-                    gigapubCount: 0, monetagCount: 0,
-                    lotteryDailySpins: 0, shopTokenBought: 0, shopDiamondExchanged: 0
-                });
+    // --- CENTRAL API CALLER ---
+    async function apiCall(endpoint, data) {
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: currentUser?.id, ...data })
+            });
+            const result = await response.json();
+            if(result.success && result.user) {
+                Object.assign(window.G, result.user); // Update local state from server
+                window.updateUI();
             }
-            updateAdsUI(); updateShopUI();
+            return result;
+        } catch (err) {
+            console.error("API Call failed", err);
+            return { success: false, error: 'Network Error' };
         }
     }
-    // Background Tracker for Auto Reset at Midnight
-    setInterval(checkDailyReset, 60000); 
-
-    window.saveState = async function() {
-        if(!currentUser) return;
-        window.updateUI();
-        try {
-            await updateDoc(doc(db, 'users', currentUser.id), {
-                coins: window.G.coins, gems: window.G.gems, stage: window.G.stage,
-                tokens: window.G.tokens, lootboxPoints: window.G.lootboxPoints,
-                gamesPlayed: window.G.gamesPlayed, completedTasks: window.G.completedTasks,
-                tokenRefill: window.G.tokenRefill,
-                lotteryFreeUsed: window.G.lotteryFreeUsed,
-                lotteryTotalSpins: window.G.lotteryTotalSpins,
-                lotteryDailySpins: window.G.lotteryDailySpins,
-                lotteryDiamondsEarned: window.G.lotteryDiamondsEarned,
-                referDiamonds: window.G.referDiamonds,
-                gigapubCount: window.G.gigapubCount,
-                adsgramCount: window.G.adsgramCount,
-                adsgramDailyCount: window.G.adsgramDailyCount,
-                monetagCount: window.G.monetagCount,
-                shopTokenBought: window.G.shopTokenBought,
-                shopDiamondExchanged: window.G.shopDiamondExchanged,
-                validReferRewardGiven: window.G.validReferRewardGiven
-            });
-        } catch(e) { console.error("Save error", e); }
-    };
 
     window.updateUI = function() {
         document.getElementById('ui-coins').textContent = window.G.coins;
@@ -987,26 +510,6 @@
         if(rd) rd.textContent = window.G.referDiamonds || 0;
     };
 
-    // Helper for adding gems and checking Valid Referral Bonus
-    window.addGems = async function(amount) {
-        window.G.gems = parseFloat((window.G.gems + amount).toFixed(1));
-        document.getElementById('ui-gems').textContent = window.G.gems;
-        
-        if (!window.G.validReferRewardGiven && window.G.referredBy && window.G.gems >= 10) {
-            window.G.validReferRewardGiven = true;
-            try {
-                // Reward Referrer: 5 Diamonds + 3 Game Tokens
-                await updateDoc(doc(db, 'users', window.G.referredBy), { 
-                    gems: increment(5), 
-                    tokens: increment(3), 
-                    referDiamonds: increment(5) 
-                });
-                showToast('🎉 Your referrer got a bonus because you reached 10💎!');
-            } catch(e) { console.error("Valid refer error", e); }
-        }
-    };
-
-    // Firebase Auth & Init
     async function initApp() {
         let tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) {
@@ -1015,51 +518,24 @@
         }
 
         const userId = String(tgUser.id);
-        const userRef = doc(db, 'users', userId);
-        
-        try {
-            const snap = await getDoc(userRef);
-            if (!snap.exists()) {
-                // New User Registration
-                let startParam = tg.initDataUnsafe?.start_param;
-                let referredBy = null;
-                
-                if (startParam && startParam !== `FC${userId}`) {
-                    referredBy = startParam.replace('FC', '');
-                    try {
-                        // NORMAL REFER REWARD: +1 Token to Referrer instantly
-                        await updateDoc(doc(db, 'users', referredBy), { referCount: increment(1), tokens: increment(1) });
-                    } catch(e){}
-                }
+        currentUser = { id: userId }; // Temporarily set for API caller
+        let startParam = tg.initDataUnsafe?.start_param;
+        let referredBy = (startParam && startParam !== `FC${userId}`) ? startParam.replace('FC', '') : null;
 
-                const initialData = {
-                    telegramId: userId, username: tgUser.username || 'unknown',
-                    coins: 0, gems: 0, stage: 1, tokens: 3,
-                    referCode: `FC${userId}`, referCount: 0, referredBy: referredBy, validReferRewardGiven: false,
-                    tokenRefill: Date.now(), adsDayStamp: getTodayStr(),
-                    adsgramCount: 0, adsgramDailyCount: 0, monetagCount: 0,
-                    gigapubCount: 0, lootboxPoints: 0, completedTasks: [], gamesPlayed: 0,
-                    lotteryFreeUsed: false, lotteryTotalSpins: 0, lotteryDailySpins: 0,
-                    lotteryDiamondsEarned: 0, referDiamonds: 0,
-                    shopTokenBought: 0, shopDiamondExchanged: 0
-                };
-                await setDoc(userRef, initialData);
-                currentUser = { id: userId, ...initialData };
-            } else {
-                currentUser = { id: snap.id, ...snap.data() };
-            }
+        // API Call to Initialize
+        const res = await apiCall('/api/init', { 
+            telegramId: userId, 
+            username: tgUser.username, 
+            referredBy: referredBy 
+        });
 
-            Object.assign(window.G, currentUser);
-
+        if (res.success) {
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
-
-            await checkDailyReset();
+            
             window.updateUI();
-
             let uiTg = document.getElementById('tg-user-info');
             uiTg.textContent = `👤 ${tgUser.first_name||''} (@${tgUser.username||''})`;
-
             document.getElementById('refer-link').textContent = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
             
             document.getElementById('fullscreen-loader').style.display = 'none';
@@ -1067,26 +543,22 @@
             
             startTokenTimer();
             requestAnimationFrame(window.loop);
-
-            // Play Menu Music on Load
             setTimeout(() => { if(window.G.sound) playSound('menu'); }, 500);
-
-        } catch (error) {
-            document.getElementById('loader-text').textContent = 'Error connecting to database. Please reload.';
-            console.error(error);
+        } else {
+            document.getElementById('loader-text').textContent = 'Error connecting to server. Please reload.';
         }
     }
 
     function startTokenTimer(){
         setInterval(()=>{
             if(window.G.tokens < 10){
-                let elapsed = Date.now() - window.G.tokenRefill;
+                let elapsed = Date.now() - (window.G.tokenRefill || Date.now());
                 let left = 60*60*1000 - elapsed;
                 if(left <= 0){
                     window.G.tokens = Math.min(10, window.G.tokens+1);
                     window.G.tokenRefill = Date.now();
-                    window.saveState();
                     showToast(`🎮 Token refilled! (${window.G.tokens})`);
+                    window.updateUI();
                 } else {
                     let m = Math.floor(left/60000), sec = Math.floor((left%60000)/1000);
                     document.getElementById('token-timer').textContent = `(+1 in ${m}:${sec.toString().padStart(2,'0')})`;
@@ -1099,11 +571,11 @@
 
     window.showModal = function(id){
         document.getElementById(id).style.display='flex';
-        if(id==='ads-modal'){ checkDailyReset().then(()=>{ updateAdsUI(); }); stopSound('menu'); }
+        if(id==='ads-modal'){ updateAdsUI(); stopSound('menu'); }
         if(id==='lottery-modal'){ window.renderLotteryModal(); }
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
-        if(id==='shop-modal'){ checkDailyReset().then(()=>{ updateShopUI(); }); }
+        if(id==='shop-modal'){ updateShopUI(); }
         if(id==='over-modal'){ let el=document.getElementById('over-tokens'); if(el) el.textContent=window.G.tokens; }
     };
     
@@ -1114,68 +586,41 @@
 
     window.showTokenInfo = function(){ showToast('🎮 Tokens: 1 token = 1 game. Max 10. Refills +1 every 1 hour!'); };
 
-    window.buyTokenShop = function(qty){
-        let bought = window.G.shopTokenBought || 0;
-        let canBuy = Math.min(qty, 10 - bought);
-        if(canBuy <= 0){ showToast('✋ Daily token buy limit reached (10/day)!'); return; }
-        let cost = canBuy * 50;
-        if(window.G.coins < cost){ showToast(`❌ Need ${cost} 🪙!`); return; }
-        if(window.G.tokens >= 10){ showToast('🎮 Tokens already full!'); return; }
-        window.G.coins -= cost;
-        let actualAdd = Math.min(canBuy, 10 - window.G.tokens);
-        window.G.tokens = Math.min(10, window.G.tokens + actualAdd);
-        window.G.shopTokenBought = bought + canBuy;
-        window.saveState();
-        updateShopUI();
-        showToast(`🎮 +${actualAdd} Token(s) purchased!`);
+    window.buyTokenShop = async function(qty){
+        document.getElementById('ad-loader').style.display='flex';
+        const res = await apiCall('/api/shop', { type: 'token', qty });
+        document.getElementById('ad-loader').style.display='none';
+        if(res.success) { showToast(`🎮 Token(s) purchased!`); updateShopUI(); } 
+        else { showToast('❌ ' + (res.error || 'Failed')); }
     };
 
-    window.exchangeDiamond = async function(qty){
-        let exchanged = window.G.shopDiamondExchanged || 0;
-        let canExchange = Math.min(qty, 20 - exchanged);
-        if(canExchange <= 0){ showToast('✋ Daily diamond exchange limit reached (20/day)!'); return; }
-        let cost = canExchange * 1000;
-        if(window.G.coins < cost){ showToast(`❌ Need ${cost} 🪙!`); return; }
-        window.G.coins -= cost;
-        
-        await window.addGems(canExchange);
-        
-        window.G.shopDiamondExchanged = exchanged + canExchange;
-        window.saveState();
-        updateShopUI();
-        showToast(`💎 +${canExchange} Diamond(s) exchanged!`);
-    };
-
-    // New Gold Exchange System: 5000 gold = 5 diamonds (minimum 5000)
     let pendingExchangeQty = 0;
     window.setExchangeQty = function(diamonds){
         pendingExchangeQty = diamonds;
-        let goldCost = diamonds * 1000; // 5000 gold per 5 diamonds = 1000 per diamond
+        let goldCost = diamonds * 1000; 
         let preview = document.getElementById('exchange-preview');
         let btn = document.getElementById('exchange-confirm-btn');
         if(preview) preview.textContent = `${diamonds} 💎 Diamond = ${goldCost.toLocaleString()} 🪙 Gold`;
         if(btn) btn.disabled = false;
     };
+
     window.confirmExchange = async function(){
         if(!pendingExchangeQty) return;
-        let exchanged = window.G.shopDiamondExchanged || 0;
-        let canExchange = Math.min(pendingExchangeQty, 20 - exchanged);
-        if(canExchange <= 0){ showToast('✋ Daily exchange limit reached (20/day)!'); return; }
-        let cost = canExchange * 1000; // 1000 gold per 1 diamond (5000 for 5)
-        if(cost < 5000 && canExchange < 5){ showToast(`❌ Minimum 5,000 🪙 (5 diamonds) required!`); return; }
-        if(window.G.coins < cost){ showToast(`❌ Need ${cost.toLocaleString()} 🪙 Gold!`); return; }
-        window.G.coins -= cost;
-        await window.addGems(canExchange);
-        window.G.shopDiamondExchanged = exchanged + canExchange;
-        await window.saveState();
-        updateShopUI();
-        pendingExchangeQty = 0;
-        let preview = document.getElementById('exchange-preview');
-        let btn = document.getElementById('exchange-confirm-btn');
-        if(preview) preview.textContent = 'Select amount above to see cost';
-        if(btn) btn.disabled = true;
-        showToast(`💎 +${canExchange} Diamonds exchanged! (${cost.toLocaleString()} 🪙 used)`);
+        document.getElementById('ad-loader').style.display='flex';
+        const res = await apiCall('/api/shop', { type: 'diamond', qty: pendingExchangeQty });
+        document.getElementById('ad-loader').style.display='none';
+
+        if(res.success) {
+            showToast(`💎 Diamonds exchanged!`);
+            pendingExchangeQty = 0;
+            document.getElementById('exchange-preview').textContent = 'Select amount above to see cost';
+            document.getElementById('exchange-confirm-btn').disabled = true;
+            updateShopUI();
+        } else {
+            showToast('❌ ' + (res.error || 'Failed'));
+        }
     };
+
     window.switchShopTab = function(tab){
         document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.shop-panel').forEach(p => p.classList.remove('active'));
@@ -1198,12 +643,12 @@
     };
 
     /* -------------------------------------------------------------------------
-       Ads & Lootbox
+       Ads & Lootbox (API Powered)
     ------------------------------------------------------------------------- */
     function updateAdsUI(){
-        let agLeft = 5 - window.G.adsgramCount;
+        let agLeft = 5 - (window.G.adsgramCount||0);
         let agDailyLeft = 5 - (window.G.adsgramDailyCount||0);
-        let gpLeft = 20 - window.G.gigapubCount;
+        let gpLeft = 20 - (window.G.gigapubCount||0);
         let mtLeft = 10 - (window.G.monetagCount||0);
 
         document.getElementById('adsgram-left').textContent = `${Math.max(0,agLeft)}/5 remaining`;
@@ -1216,7 +661,7 @@
         document.getElementById('gigapub-btn').disabled = gpLeft <= 0;
         document.getElementById('monetag-btn').disabled = mtLeft <= 0;
 
-        let pts = window.G.lootboxPoints;
+        let pts = window.G.lootboxPoints || 0;
         let pct = Math.min(100, (pts/1000)*100);
         document.getElementById('lootbox-fill').style.width = pct + '%';
         document.getElementById('lootbox-pts').textContent = pts;
@@ -1229,205 +674,75 @@
     function updateShopUI(){
         let tokenLeft = 10 - (window.G.shopTokenBought||0);
         let diamondLeft = 20 - (window.G.shopDiamondExchanged||0);
-        let el1 = document.getElementById('shop-token-left');
-        let el2 = document.getElementById('shop-diamond-left');
-        if(el1) el1.textContent = Math.max(0, tokenLeft);
-        if(el2) el2.textContent = Math.max(0, diamondLeft);
+        document.getElementById('shop-token-left').textContent = Math.max(0, tokenLeft);
+        document.getElementById('shop-diamond-left').textContent = Math.max(0, diamondLeft);
     }
 
     window.claimLootbox = async function(){
         if(window.G.lootboxPoints < 300){ showToast('❌ Need at least 300 points to claim!'); return; }
-        let pts = window.G.lootboxPoints;
-        let diamondReward = Math.floor(pts / 20); 
+        let diamondReward = Math.floor(window.G.lootboxPoints / 20); 
         
         document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        
+        const res = await apiCall('/api/ads', { action: 'claim_lootbox', coinsToAdd: diamondReward });
         document.getElementById('ad-loader').style.display='none';
+
+        if(res.success){ updateAdsUI(); showToast(`🎁 Lootbox claimed! +${diamondReward} 💎 Diamonds!`); }
+    };
+
+    async function processAdReward(actionName, maxLimit, currentCount, getRewardAmount, successMsg) {
+        if(currentCount >= maxLimit){ showToast('✋ Daily limit reached!'); return; }
+        if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
         
-        window.G.lootboxPoints = 0; 
-        await window.addGems(diamondReward);
-        await window.saveState();
-        
-        updateAdsUI(); showToast(`🎁 Lootbox claimed! +${diamondReward} 💎 Diamonds!`);
-        if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-    };
-
-    function addLootboxPoints(pts){
-        if(window.G.lootboxPoints >= 1000){ showToast('⚠️ Lootbox full! Claim first before earning more.'); return false; }
-        window.G.lootboxPoints = Math.min(1000, window.G.lootboxPoints + pts);
-        return true;
-    }
-
-    window.watchAdsgramAd = async function(){
-        await checkDailyReset();
-        if(window.G.adsgramCount >= 5){ showToast('✋ Daily Adsgram limit reached!'); return; }
-        if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-            // Adsgram Special: random 50-150 gold reward
-            let reward = Math.floor(Math.random() * 101) + 50; // 50 to 150
-            window.G.adsgramCount++; window.G.coins += reward; addLootboxPoints(reward);
-            window.saveState(); updateAdsUI(); showToast(`✅ +${reward} Gold! (Adsgram Special)`);
-        } catch(e) { 
-            let reward = Math.floor(Math.random() * 101) + 50;
-            simAdGold(reward, 'adsgramCount'); 
-        }
-    };
-
-    window.watchGigaPubAd = async function(){
-        await checkDailyReset();
-        if(window.G.gigapubCount >= 20){ showToast('✋ Daily GigaPub limit reached!'); return; }
-        if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
-        try {
-            await window.showGiga();
-            window.G.gigapubCount++; window.G.coins += 50; addLootboxPoints(50);
-            window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
-        } catch(e) { simAdGold(50, 'gigapubCount'); }
-    };
-
-    window.watchAdsgramDailyAd = async function(){
-        await checkDailyReset();
-        if((window.G.adsgramDailyCount||0) >= 5){ showToast('✋ Daily limit reached!'); return; }
-        if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-            window.G.adsgramDailyCount++; window.G.coins += 50; addLootboxPoints(50);
-            window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
-        } catch(e) { simAdGold(50, 'adsgramDailyCount'); }
-    };
-
-    window.watchMonetagAd = async function(){
-        await checkDailyReset();
-        if((window.G.monetagCount||0) >= 10){ showToast('✋ Daily Monetag limit reached!'); return; }
-        if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
-        try {
-            await show_10893505();
-            window.G.monetagCount++; window.G.coins += 50; addLootboxPoints(50);
-            window.saveState(); updateAdsUI(); showToast('✅ +50 Gold!');
-        } catch(e) { simAdGold(50, 'monetagCount'); }
-    };
-
-    function simAdGold(pts, type){
         document.getElementById('ad-loader').style.display='flex';
-        setTimeout(async ()=>{
-            document.getElementById('ad-loader').style.display='none';
-            if(window.G.lootboxPoints < 600){
-                window.G[type] = (window.G[type]||0) + 1; window.G.coins += pts; addLootboxPoints(pts);
-                window.saveState(); updateAdsUI(); 
-                showToast(type === 'adsgramCount' ? `✅ +${pts} Gold! (Adsgram Special)` : `✅ +${pts} Gold!`);
-            } else { showToast('⚠️ Claim your Lootbox first!'); }
-        }, 2000);
+        try {
+            if(actionName.includes('adsgram')){ let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); }
+            else if(actionName === 'gigapub') { await window.showGiga(); }
+            else if(actionName === 'monetag') { await show_10893505(); }
+        } catch(e) { await new Promise(r=>setTimeout(r,1500)); }
+
+        let reward = getRewardAmount();
+        const res = await apiCall('/api/ads', { action: actionName, coinsToAdd: reward, lootboxPointsToAdd: reward });
+        document.getElementById('ad-loader').style.display='none';
+
+        if(res.success){ updateAdsUI(); showToast(successMsg.replace('{R}', reward)); }
     }
+
+    window.watchAdsgramAd = () => processAdReward('adsgram', 5, window.G.adsgramCount, () => Math.floor(Math.random()*101)+50, `✅ +{R} Gold! (Adsgram Special)`);
+    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5, window.G.adsgramDailyCount, () => 50, `✅ +{R} Gold!`);
+    window.watchGigaPubAd = () => processAdReward('gigapub', 20, window.G.gigapubCount, () => 50, `✅ +{R} Gold!`);
+    window.watchMonetagAd = () => processAdReward('monetag', 10, window.G.monetagCount, () => 50, `✅ +{R} Gold!`);
 
     /* -------------------------------------------------------------------------
-       Tasks System — GitHub/API based from admin panel
-       Admin panel: https://fruit-cut-eight.vercel.app
+       Tasks System 
     ------------------------------------------------------------------------- */
-    // Task cache
-    let taskCache = null;
-    let taskCacheTime = 0;
-    const TASK_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
-
     window.renderTasks = async function(){
         let c = document.getElementById('task-list');
         c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">⏳ Loading tasks...</div>';
-        
         try {
-            // Try fetching from admin panel API (vercel domain)
-            let tasks = await fetchTasksFromAPI();
+            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', { method: 'GET', signal: AbortSignal.timeout(5000) });
+            let tasks = await res.json();
+            if(!tasks || !tasks.length) throw new Error();
             
-            // Fallback to Firebase if API fails
-            if(!tasks || !tasks.length){
-                const { getDocs, collection: col, query, orderBy } = await import("https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js");
-                const qSnap = await getDocs(query(col(db, 'tasks'), orderBy('order','asc')));
-                ADMIN_TASKS = [];
-                qSnap.forEach(d => ADMIN_TASKS.push({ id: d.id, ...d.data() }));
-            } else {
-                ADMIN_TASKS = tasks;
-            }
-        } catch(e) { 
-            // Final fallback to Firebase only
-            try {
-                const { getDocs, collection: col, query, orderBy } = await import("https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js");
-                const qSnap = await getDocs(query(col(db, 'tasks'), orderBy('order','asc')));
-                ADMIN_TASKS = [];
-                qSnap.forEach(d => ADMIN_TASKS.push({ id: d.id, ...d.data() }));
-            } catch(e2) { console.warn('Tasks load error', e2); }
-        }
-
-        if(!ADMIN_TASKS.length){ 
-            c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">📋 No tasks available yet.<br>Check back soon!</div>'; 
-            return; 
-        }
-
-        c.innerHTML = '';
-        ADMIN_TASKS.forEach(t => {
-            let done = (window.G.completedTasks||[]).includes(t.id);
-            let rewardText = '';
-            if(t.coins) rewardText += `🪙 ${t.coins} `;
-            if(t.gems) rewardText += `💎 ${t.gems} `;
-            c.innerHTML += `
-                <div class="task-card">
-                    <div class="task-icon">${t.icon||'📋'}</div>
-                    <div class="task-info">
-                        <div class="task-name">${t.name||'Task'}</div>
-                        <div class="task-reward">${rewardText.trim()||'🎁 Reward'}</div>
-                    </div>
-                    <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}')" ${done?'disabled':''}>
-                        ${done ? '✅ Done' : '▶ Go'}
-                    </button>
-                </div>`;
-        });
+            c.innerHTML = '';
+            tasks.forEach(t => {
+                let done = (window.G.completedTasks||[]).includes(t.id);
+                let rText = (t.coins ? `🪙 ${t.coins} ` : '') + (t.gems ? `💎 ${t.gems}` : '');
+                c.innerHTML += `
+                    <div class="task-card">
+                        <div class="task-icon">${t.icon||'📋'}</div>
+                        <div class="task-info"><div class="task-name">${t.name}</div><div class="task-reward">${rText||'🎁 Reward'}</div></div>
+                        <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}','${t.link}')" ${done?'disabled':''}>${done ? '✅ Done' : '▶ Go'}</button>
+                    </div>`;
+            });
+        } catch(e) { c.innerHTML = '<div style="text-align:center;color:#aaa;">📋 No tasks available right now.</div>'; }
     };
 
-    // Fetch tasks from admin panel API (https://fruit-cut-eight.vercel.app)
-    async function fetchTasksFromAPI(){
-        let now = Date.now();
-        if(taskCache && (now - taskCacheTime) < TASK_CACHE_TTL){
-            return taskCache;
-        }
-        try {
-            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                signal: AbortSignal.timeout(5000)
-            });
-            if(!res.ok) return null;
-            let data = await res.json();
-            // Support both array format and { tasks: [] } format
-            let tasks = Array.isArray(data) ? data : (data.tasks || null);
-            if(tasks && tasks.length){
-                taskCache = tasks;
-                taskCacheTime = now;
-                return tasks;
-            }
-            return null;
-        } catch(e){
-            console.warn('API task fetch failed, using Firebase fallback');
-            return null;
-        }
-    }
-
-    window.doTask = async function(id){
-        let t = ADMIN_TASKS.find(x=>x.id===id);
-        if(!t || (window.G.completedTasks||[]).includes(id)) return;
-        if(t.link){ if(tg?.openLink) tg.openLink(t.link); else window.open(t.link, '_blank'); }
-
-        setTimeout(async ()=>{
-            if(!(window.G.completedTasks||[]).includes(id)){
-                window.G.completedTasks.push(id);
-                if(t.gems) await window.addGems(t.gems);
-                if(t.coins) window.G.coins += t.coins;
-                await window.saveState();
-                window.renderTasks();
-                showToast(`✅ Task done!`);
-            }
-        }, 2000);
+    window.doTask = function(id, link){
+        if(link) { if(tg?.openLink) tg.openLink(link); else window.open(link, '_blank'); }
+        // For security, ideally task verification should be on backend. 
+        // For now, since API is fully locked, we might need a simple endpoint to mark task complete if required later.
     };
 
     /* -------------------------------------------------------------------------
@@ -1445,22 +760,11 @@
         let btn = document.getElementById('btn-withdraw');
         btn.disabled = true; btn.textContent = "Processing...";
 
-        try {
-            await runTransaction(db, async (t) => {
-                const uRef = doc(db, 'users', currentUser.id);
-                const uDoc = await t.get(uRef);
-                if(uDoc.data().gems < amount) throw new Error("Insufficient");
-                
-                t.update(uRef, { gems: increment(-amount) });
-                t.set(doc(collection(db, 'withdrawals')), {
-                    userId: currentUser.id, username: currentUser.username,
-                    method, address: addr, amount, status: 'pending', createdAt: serverTimestamp()
-                });
-            });
-            window.G.gems -= amount; window.updateUI();
-            window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!');
-        } catch(e) { showToast('❌ Server error. Try again.'); } 
-        finally { btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW"; }
+        const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
+        
+        btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
+        if(res.success){ window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!'); }
+        else { showToast('❌ ' + (res.error || 'Server Error')); }
     };
 
     /* -------------------------------------------------------------------------
@@ -1510,7 +814,6 @@
 
     function splash(x,y,c){ for(let i=0;i<20;i++) particles.push(new Particle(x,y,c)); }
     function getPos(e){ let t=e.touches?e.touches[0]:e; return {x:t.clientX,y:t.clientY}; }
-    
     function onStart(e){ if(gameState!=='playing')return; isSlicing=true; sliceTrail=[]; let p=getPos(e); mouse.x=p.x; mouse.y=p.y; }
     function onMove(e){ if(!isSlicing||gameState!=='playing')return; let p=getPos(e); mouse.x=p.x; mouse.y=p.y; sliceTrail.push({x:p.x,y:p.y,time:Date.now()}); checkCuts(); }
     function onEnd(){ isSlicing=false; setTimeout(()=>sliceTrail=[],120); }
@@ -1525,8 +828,7 @@
                 o.cut=true; o.sliced=true; o.sliceAlpha=1; splash(o.x,o.y,o.color);
                 if(o.isBomb){ addMiss(); addMiss(); }
                 else{ 
-                    playSound('slice'); 
-                    currentCut++; 
+                    playSound('slice'); currentCut++; 
                     document.getElementById('hud-cut').textContent=currentCut;
                     document.getElementById('lv-fill').style.width = Math.min(100, (currentCut/cutTarget)*100) + '%';
                     if(currentCut>=cutTarget) {
@@ -1544,10 +846,7 @@
         if(gameState!=='playing') return;
         missCount++; let el = document.getElementById('s'+missCount); if(el) el.classList.add('x-active');
         if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-        if(missCount>=3){ 
-            gameState='gameover'; // Stops game updates
-            playSound('gameover'); window.showModal('over-modal'); 
-        }
+        if(missCount>=3){ gameState='gameover'; playSound('gameover'); window.showModal('over-modal'); }
     }
 
     function drawBlade(){
@@ -1563,96 +862,38 @@
 
     window.loop = function(){
         ctx.clearRect(0,0,W,H);
-        
         let isActive = (gameState==='playing' || gameState==='menu');
-        
-        if(isActive){
-            let rate = gameState==='menu' ? 55 : Math.max(28,65 - window.G.stage*2);
-            if(Math.random()<1/rate) objects.push(new FruitObj(gameState==='menu'));
-        }
-        
-        for(let i=objects.length-1;i>=0;i--){
-            let o=objects[i]; 
-            if(isActive) o.update(); 
-            o.draw();
-            if(o.y>H+o.r){ 
-                if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss(); 
-                objects.splice(i,1); 
-            }
-        }
-        for(let i=particles.length-1;i>=0;i--){ 
-            let p=particles[i]; 
-            if(isActive) p.update(); 
-            p.draw(); 
-            if(p.life<=0) particles.splice(i,1); 
-        }
+        if(isActive){ let rate = gameState==='menu' ? 55 : Math.max(28,65 - window.G.stage*2); if(Math.random()<1/rate) objects.push(new FruitObj(gameState==='menu')); }
+        for(let i=objects.length-1;i>=0;i--){ let o=objects[i]; if(isActive) o.update(); o.draw(); if(o.y>H+o.r){ if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss(); objects.splice(i,1); } }
+        for(let i=particles.length-1;i>=0;i--){ let p=particles[i]; if(isActive) p.update(); p.draw(); if(p.life<=0) particles.splice(i,1); }
         if(gameState==='playing') drawBlade();
         requestAnimationFrame(window.loop);
     };
 
     /* -------------------------------------------------------------------------
-       Sound System & Menu Music Logic
+       Sound System
     ------------------------------------------------------------------------- */
     const SOUNDS = {};
-    const SOUND_FILES = {
-        menu:     'assets/sounds/menu.mp3',
-        slice:    'assets/sounds/slice.mp3',
-        gameover: 'assets/sounds/gameover.mp3',
-        win:      'assets/sounds/win.mp3',
-        spin:     'assets/sounds/spin.mp3'
-    };
-
+    const SOUND_FILES = { menu:'assets/sounds/menu.mp3', slice:'assets/sounds/slice.mp3', gameover:'assets/sounds/gameover.mp3', win:'assets/sounds/win.mp3', spin:'assets/sounds/spin.mp3' };
     Object.entries(SOUND_FILES).forEach(([key, src]) => {
-        const audio = new Audio(src);
-        audio.preload = 'auto';
-        if(key === 'menu') { audio.loop = true; audio.volume = 0.4; }
-        else { audio.volume = 0.7; }
+        const audio = new Audio(src); audio.preload = 'auto';
+        if(key === 'menu') { audio.loop = true; audio.volume = 0.4; } else { audio.volume = 0.7; }
         SOUNDS[key] = audio;
     });
 
-    function playSound(name) {
-        if(!window.G.sound) return;
-        const snd = SOUNDS[name];
-        if(!snd) return;
-        if(name === 'menu') {
-            if(snd.paused) { snd.play().catch(()=>{}); }
-        } else {
-            const clone = snd.cloneNode();
-            clone.volume = snd.volume;
-            clone.play().catch(()=>{});
-        }
-    }
-
-    function stopSound(name) {
-        const snd = SOUNDS[name];
-        if(!snd) return;
-        snd.pause(); 
-    }
-
-    window.toggleSound = function(){
-        window.G.sound = !window.G.sound;
-        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
-        if(!window.G.sound) stopSound('menu');
-        else if(gameState === 'menu') playSound('menu');
-        window.updateUI();
-    };
-
-    window.toggleVib = function(){
-        window.G.vib=!window.G.vib;
-        localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib}));
-        window.updateUI();
-    };
+    function playSound(name) { if(!window.G.sound) return; const snd = SOUNDS[name]; if(!snd) return; if(name === 'menu') { if(snd.paused) snd.play().catch(()=>{}); } else { const clone = snd.cloneNode(); clone.volume = snd.volume; clone.play().catch(()=>{}); } }
+    function stopSound(name) { const snd = SOUNDS[name]; if(snd) snd.pause(); }
+    window.toggleSound = function(){ window.G.sound = !window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); if(!window.G.sound) stopSound('menu'); else if(gameState === 'menu') playSound('menu'); window.updateUI(); };
+    window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
     /* -------------------------------------------------------------------------
-       Game Controls (Start / Pause / Restart / Quit)
+       Game Controls & API Claims
     ------------------------------------------------------------------------- */
     window.tryStartGame = function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
-        if(!forceStart) window.G.tokens--; 
-        window.G.gamesPlayed++; window.saveState();
+        if(!forceStart) { window.G.tokens--; window.updateUI(); } 
         
-        stopSound('menu'); // Pause menu music
-        
+        stopSound('menu'); 
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
         document.getElementById('strikes').style.display='flex';
@@ -1669,110 +910,56 @@
         gameState='playing';
     };
 
-    window.pauseGame = function(){
-        if(gameState !== 'playing') return;
-        gameState = 'paused';
-        window.showModal('pause-modal');
-    };
-
-    window.resumeGame = function(){
-        window.hideModal('pause-modal');
-        gameState = 'playing';
-    };
-
-    window.restartGame = function(){
-        window.hideModal('pause-modal');
-        window.retryGame(); // Reuses retry logic
-    };
-
+    window.pauseGame = function(){ if(gameState !== 'playing') return; gameState = 'paused'; window.showModal('pause-modal'); };
+    window.resumeGame = function(){ window.hideModal('pause-modal'); gameState = 'playing'; };
+    window.restartGame = function(){ window.hideModal('pause-modal'); window.retryGame(); };
     window.quitGame = function(){
-        window.hideModal('pause-modal');
-        window.hideModal('over-modal');
-        window.hideModal('complete-modal');
-        document.getElementById('game-hud').style.display='none';
-        document.getElementById('strikes').style.display='none';
+        window.hideModal('pause-modal'); window.hideModal('over-modal'); window.hideModal('complete-modal');
+        document.getElementById('game-hud').style.display='none'; document.getElementById('strikes').style.display='none';
         document.getElementById('menu-screen').style.display='flex';
-        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        gameState='menu';
-        playSound('menu'); // Play menu music when returning
-        window.updateUI();
+        objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0; gameState='menu'; playSound('menu'); window.updateUI();
     };
 
     window.showNoTokenModal = function(){
         let existing = document.getElementById('no-token-modal');
         if(existing){ existing.style.display='flex'; return; }
-        let div = document.createElement('div');
-        div.className='overlay ptr'; div.id='no-token-modal'; div.style.display='flex';
-        div.innerHTML=`<div class="modal">
-            <span class="big-emoji">🎮</span>
-            <div class="mh mh-red">No Tokens!</div>
-            <div style="text-align:center;color:#aaa;margin-bottom:10px;">Tokens refill every 1 hour, or watch an ad to play now!</div>
-            <button class="btn btn-red" onclick="window.watchAdForGame()">📺 Watch Ad → Play Free</button>
-            <button class="btn btn-grey" onclick="window.hideModal('no-token-modal')">🏠 Back</button>
-        </div>`;
+        let div = document.createElement('div'); div.className='overlay ptr'; div.id='no-token-modal'; div.style.display='flex';
+        div.innerHTML=`<div class="modal"><span class="big-emoji">🎮</span><div class="mh mh-red">No Tokens!</div><div style="text-align:center;color:#aaa;margin-bottom:10px;">Tokens refill every 1 hour, or watch an ad to play now!</div><button class="btn btn-red" onclick="window.watchAdForGame()">📺 Watch Ad → Play Free</button><button class="btn btn-grey" onclick="window.hideModal('no-token-modal')">🏠 Back</button></div>`;
         document.body.appendChild(div);
     };
 
     window.watchAdForGame = async function(){
         document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
-        document.getElementById('ad-loader').style.display='none';
-        window.hideModal('no-token-modal');
-        window.tryStartGame(true); 
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        document.getElementById('ad-loader').style.display='none'; window.hideModal('no-token-modal'); window.tryStartGame(true); 
     };
 
     window.watchAdForGameRetry = async function(){
-        window.hideModal('over-modal');
-        document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
-        document.getElementById('ad-loader').style.display='none';
-        window.tryStartGame(true); 
+        window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        document.getElementById('ad-loader').style.display='none'; window.tryStartGame(true); 
     };
 
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
-        document.getElementById('menu-screen').style.display='none';
-        document.getElementById('game-hud').style.display='flex';
-        document.getElementById('strikes').style.display='flex';
+        document.getElementById('ad-loader').style.display='flex';
+        if(watchAd){ try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); } }
+        
+        // --- API CALL TO CLAIM COINS ---
+        const res = await apiCall('/api/game_claim', { reward: pendingReward, isAdWatched: watchAd });
+        document.getElementById('ad-loader').style.display='none';
 
-        if(watchAd){
-            document.getElementById('ad-loader').style.display='flex';
-            try {
-                let AdC = Adsgram.init({ blockId: "int-28067" });
-                await AdC.show();
-            } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
-            document.getElementById('ad-loader').style.display='none';
-            window.G.coins += pendingReward * 2;
-        } else {
-            window.G.coins += pendingReward;
-        }
-        window.G.stage++; await window.saveState();
-        window.tryStartGame(true); 
+        if(res.success) { window.tryStartGame(true); } else { showToast('❌ Error Saving Data!'); window.quitGame(); }
     };
 
-    window.retryGame = function(){
-        window.hideModal('over-modal');
-        if(window.G.tokens <= 0){ window.showNoTokenModal(); return; }
-        window.tryStartGame();
-    };
+    window.retryGame = function(){ window.hideModal('over-modal'); if(window.G.tokens <= 0){ window.showNoTokenModal(); return; } window.tryStartGame(); };
 
     window.skipStageWithAd = async function(){
-        window.hideModal('over-modal');
-        document.getElementById('ad-loader').style.display='flex';
-        try {
-            let AdC = Adsgram.init({ blockId: "int-28067" });
-            await AdC.show();
-        } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
+        window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
+        const res = await apiCall('/api/game_claim', { reward: 0, isAdWatched: false }); // Just to level up
         document.getElementById('ad-loader').style.display='none';
-        window.G.stage++; await window.saveState();
-        window.tryStartGame(true);
-        showToast('⏭️ Stage skipped!');
+        if(res.success) { window.tryStartGame(true); showToast('⏭️ Stage skipped!'); }
     };
 
     /* -------------------------------------------------------------------------
@@ -1798,7 +985,6 @@
         for(let p of LOTTERY_PRIZES){ acc+=p.weight; if(r<acc) return p; }
         return LOTTERY_PRIZES[LOTTERY_PRIZES.length-1];
     }
-
     function getSlotResult(prize){
         if(prize.type==='gem' && prize.val>=1) return ['💎','💎','💎'];
         if(prize.type==='gem' && prize.val===0.5) return ['💎','💎','🌟'];
@@ -1812,45 +998,17 @@
         return ['🍋','🍋','🎰'];
     }
 
-    async function playRandomLotteryAd(){
-        let providers = ['adsgram', 'monetag', 'gigapub'];
-        let pick = providers[Math.floor(Math.random() * providers.length)];
-        try {
-            if(pick === 'adsgram'){ let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } 
-            else if(pick === 'monetag'){ await show_10893505(); } 
-            else { await window.showGiga(); }
-        } catch(e){
-            document.getElementById('ad-loader').style.display='flex';
-            await new Promise(r=>setTimeout(r,2000));
-            document.getElementById('ad-loader').style.display='none';
-        }
-    }
-
     let lotterySpinning = false;
-
     window.renderLotteryModal = function(){
         let grid = document.getElementById('lottery-prizes-grid');
-        if(grid) grid.innerHTML = LOTTERY_PRIZES.map(p=>`
-            <div class="lottery-prize-item">
-                <div class="lottery-prize-name">${p.icon} ${p.label}</div>
-                <div class="lottery-prize-chance">${p.weight}% chance</div>
-            </div>`).join('');
-
-        let earned = document.getElementById('lottery-total-earned');
-        let spins = document.getElementById('lottery-total-spins');
-        if(earned) earned.textContent = window.G.lotteryDiamondsEarned||0;
-        if(spins) spins.textContent = window.G.lotteryTotalSpins||0;
-
+        if(grid) grid.innerHTML = LOTTERY_PRIZES.map(p=>`<div class="lottery-prize-item"><div class="lottery-prize-name">${p.icon} ${p.label}</div><div class="lottery-prize-chance">${p.weight}% chance</div></div>`).join('');
+        document.getElementById('lottery-total-earned').textContent = window.G.lotteryDiamondsEarned||0;
+        document.getElementById('lottery-total-spins').textContent = window.G.lotteryTotalSpins||0;
         let dailyLeft = 10 - (window.G.lotteryDailySpins||0);
-        let badge = document.getElementById('lottery-free-badge');
-        if(badge) badge.innerHTML = `<span style="font-size:12px;color:#ffcc00;">📺 Watch Ad to Spin · <strong style="color:#fff;">${Math.max(0,dailyLeft)}/10</strong> spins left today</span>`;
-        
-        let spinsLeftEl = document.getElementById('lottery-spins-left');
-        if(spinsLeftEl) spinsLeftEl.textContent = Math.max(0, dailyLeft);
-
+        document.getElementById('lottery-free-badge').innerHTML = `<span style="font-size:12px;color:#ffcc00;">📺 Watch Ad to Spin · <strong style="color:#fff;">${Math.max(0,dailyLeft)}/10</strong> spins left today</span>`;
+        document.getElementById('lottery-spins-left').textContent = Math.max(0, dailyLeft);
         ['slot-0','slot-1','slot-2'].forEach(id=>{ let el = document.getElementById(id); if(el){ el.textContent='❓'; el.classList.remove('spinning','win'); } });
-        let res = document.getElementById('lottery-result'); if(res) res.textContent='';
-
+        document.getElementById('lottery-result').textContent='';
         let btn = document.getElementById('lottery-spin-btn');
         if(btn){ btn.disabled = dailyLeft <= 0; btn.textContent = dailyLeft <= 0 ? '🚫 Daily Limit Reached' : '📺 Watch Ad & SPIN!'; }
     };
@@ -1858,64 +1016,44 @@
     window.spinLotteryWithAd = async function(){
         if(lotterySpinning) return;
         let dailyLeft = 10 - (window.G.lotteryDailySpins||0);
-        if(dailyLeft <= 0){ showToast('✋ Daily lottery limit reached! (10/day)'); return; }
+        if(dailyLeft <= 0){ showToast('✋ Daily lottery limit reached!'); return; }
 
         lotterySpinning = true;
-        let btn = document.getElementById('lottery-spin-btn');
-        if(btn){ btn.disabled = true; btn.textContent = '⏳ Loading Ad...'; }
+        document.getElementById('lottery-spin-btn').disabled = true;
+        document.getElementById('lottery-spin-btn').textContent = '⏳ Loading Ad...';
+        stopSound('menu');
 
-        stopSound('menu'); // Pause sound for ad viewing
-        await playRandomLotteryAd();
-
-        // Play spin sound after ad
+        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        
         playSound('spin');
-
         let slots = ['slot-0','slot-1','slot-2'];
-        slots.forEach(id=>{ let el=document.getElementById(id); if(el){ el.classList.add('spinning'); el.textContent='🎰'; } });
-        let result = document.getElementById('lottery-result'); if(result) result.textContent='🎰 Spinning...';
+        slots.forEach(id=>{ document.getElementById(id).classList.add('spinning'); document.getElementById(id).textContent='🎰'; });
+        document.getElementById('lottery-result').textContent='🎰 Spinning...';
 
-        let symbolInterval = setInterval(()=>{
-            slots.forEach(id=>{ let el=document.getElementById(id); if(el) el.textContent = SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)]; });
-        }, 100);
+        let symbolInterval = setInterval(()=>{ slots.forEach(id=>{ document.getElementById(id).textContent = SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)]; }); }, 100);
 
         let prize = weightedRandom(); let finalSymbols = getSlotResult(prize);
 
-        setTimeout(()=>{ clearInterval(symbolInterval); let el0=document.getElementById('slot-0'); if(el0){ el0.classList.remove('spinning'); el0.textContent=finalSymbols[0]; } }, 1200);
-        setTimeout(()=>{ let el1=document.getElementById('slot-1'); if(el1){ el1.classList.remove('spinning'); el1.textContent=finalSymbols[1]; } }, 1800);
+        setTimeout(()=>{ clearInterval(symbolInterval); document.getElementById('slot-0').classList.remove('spinning'); document.getElementById('slot-0').textContent=finalSymbols[0]; }, 1200);
+        setTimeout(()=>{ document.getElementById('slot-1').classList.remove('spinning'); document.getElementById('slot-1').textContent=finalSymbols[1]; }, 1800);
         setTimeout(async ()=>{
-            let el2=document.getElementById('slot-2'); if(el2){ el2.classList.remove('spinning'); el2.textContent=finalSymbols[2]; }
+            document.getElementById('slot-2').classList.remove('spinning'); document.getElementById('slot-2').textContent=finalSymbols[2];
+            if(finalSymbols[0]===finalSymbols[1] && finalSymbols[1]===finalSymbols[2]){ slots.forEach(id=>{ document.getElementById(id).classList.add('win'); }); }
 
-            if(finalSymbols[0]===finalSymbols[1] && finalSymbols[1]===finalSymbols[2]){ slots.forEach(id=>{ let el=document.getElementById(id); if(el) el.classList.add('win'); }); }
+            // API Call for Lottery Prize
+            const res = await apiCall('/api/lottery', { prizeType: prize.type, prizeVal: prize.val });
 
-            let rewardMsg = '';
-            if(prize.type==='gem'){
-                await window.addGems(prize.val);
-                window.G.lotteryDiamondsEarned = parseFloat(((window.G.lotteryDiamondsEarned||0)+prize.val).toFixed(1));
-                rewardMsg = `🎉 You won: ${prize.label}`;
-            } else if(prize.type==='token'){
-                window.G.tokens = Math.min(10, window.G.tokens + prize.val); rewardMsg = `🎉 You won: ${prize.label}`;
-            } else if(prize.type==='coin'){
-                window.G.coins += prize.val; rewardMsg = `🎉 You won: ${prize.label}`;
+            if(res.success){
+                let rewardMsg = `🎉 You won: ${prize.label}`;
+                document.getElementById('lottery-result').textContent = rewardMsg; showToast(rewardMsg);
+                if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                document.getElementById('lottery-result').textContent = "Server Error";
             }
-
-            window.G.lotteryFreeUsed = true; window.G.lotteryTotalSpins = (window.G.lotteryTotalSpins||0) + 1; window.G.lotteryDailySpins = (window.G.lotteryDailySpins||0) + 1;
-
-            let earned = document.getElementById('lottery-total-earned'); let spins = document.getElementById('lottery-total-spins');
-            if(earned) earned.textContent = window.G.lotteryDiamondsEarned||0; if(spins) spins.textContent = window.G.lotteryTotalSpins;
-
-            let newLeft = 10 - window.G.lotteryDailySpins;
-            let spinsLeftEl = document.getElementById('lottery-spins-left'); if(spinsLeftEl) spinsLeftEl.textContent = Math.max(0, newLeft);
-            let badge = document.getElementById('lottery-free-badge'); if(badge) badge.innerHTML = `<span style="font-size:12px;color:#ffcc00;">📺 Watch Ad to Spin · <strong style="color:#fff;">${Math.max(0,newLeft)}/10</strong> spins left today</span>`;
-
-            if(result) result.textContent = rewardMsg; showToast(rewardMsg);
-
-            await window.saveState(); window.updateUI();
-            lotterySpinning = false;
-            if(btn){ btn.disabled = newLeft <= 0; btn.textContent = newLeft <= 0 ? '🚫 Daily Limit Reached' : '📺 Watch Ad & SPIN!'; }
-
-            if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             
-            playSound('menu'); // Resume sound if sound is on
+            window.renderLotteryModal();
+            lotterySpinning = false;
+            playSound('menu');
         }, 2600);
     };
 
@@ -1929,7 +1067,6 @@
     })();
 
     window.onload = initApp;
-
 </script>
 </body>
 </html>
