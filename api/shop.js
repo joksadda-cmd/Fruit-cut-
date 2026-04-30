@@ -2,7 +2,7 @@ const { db, admin } = require('./utils/firebase');
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    const { telegramId, type, qty } = req.body; // type: 'token' or 'diamond'
+    const { telegramId, type, qty, goldAmount } = req.body; 
 
     const userRef = db.collection('users').doc(String(telegramId));
     
@@ -13,20 +13,22 @@ export default async function handler(req, res) {
 
             if (type === 'token') {
                 let cost = qty * 50;
-                if (user.coins < cost) throw new Error("Not enough coins");
+                if (user.coins < cost) throw new Error("Not enough Gold");
                 t.update(userRef, {
                     coins: admin.firestore.FieldValue.increment(-cost),
                     tokens: admin.firestore.FieldValue.increment(qty),
                     shopTokenBought: admin.firestore.FieldValue.increment(qty)
                 });
             } 
-            else if (type === 'diamond') {
-                let cost = qty * 1000;
-                if (user.coins < cost) throw new Error("Not enough coins");
+            else if (type === 'gold_to_diamond') {
+                if (goldAmount < 1000 || goldAmount > 100000) throw new Error("Invalid amount");
+                if (user.coins < goldAmount) throw new Error("Not enough Gold");
+                
+                let diamonds = Math.floor(goldAmount / 1000);
                 t.update(userRef, {
-                    coins: admin.firestore.FieldValue.increment(-cost),
-                    gems: admin.firestore.FieldValue.increment(qty),
-                    shopDiamondExchanged: admin.firestore.FieldValue.increment(qty)
+                    coins: admin.firestore.FieldValue.increment(-goldAmount),
+                    gems: admin.firestore.FieldValue.increment(diamonds),
+                    shopDiamondExchanged: admin.firestore.FieldValue.increment(diamonds)
                 });
             }
         });
