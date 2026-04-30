@@ -26,43 +26,64 @@
         #ui{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none;}
         .ptr{pointer-events:auto;}
         #top-bar{ display:flex;justify-content:space-between;align-items:center; padding:12px 16px;gap:8px; }
+        /* Gold currency box */
         .coin-box{ background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #c48000,0 6px 12px rgba(0,0,0,0.3); }
         .coin-label{font-size:11px;color:#6b4400;font-weight:800;line-height:1;}
         .coin-value{font-size:20px;color:#3d2000;font-weight:900;font-family:'Luckiest Guy',cursive;}
         .lv-box{ background:linear-gradient(180deg,#ffee00,#ffaa00); border:3px solid #ff8800;border-radius:10px;padding:5px 18px; font-family:'Luckiest Guy',cursive;font-size:18px;color:#333; box-shadow:0 4px 0 #cc6600,0 6px 12px rgba(0,0,0,0.3);min-width:80px;text-align:center; }
         .diamond-box{ background:rgba(180,220,255,0.95);border:3px solid #4af;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #0077bb,0 6px 12px rgba(0,0,0,0.3); }
         .diamond-value{font-size:20px;color:#003366;font-weight:900;font-family:'Luckiest Guy',cursive;}
-        #menu-screen{ position:fixed;top:0;left:0;width:100%;height:100%;z-index:12; display:none;flex-direction:column;align-items:center;justify-content:space-between; padding:10px 10px 0 10px; }
-        .game-title{ display:flex;flex-direction:column;align-items:center; margin-top:80px;animation:floatLogo 3s ease-in-out infinite; }
+
+        /* ---- MENU SCREEN ---- */
+        #menu-screen{ position:fixed;top:0;left:0;width:100%;height:100%;z-index:12; display:none;flex-direction:column;align-items:center;justify-content:flex-start; padding:10px 10px 0 10px;overflow:hidden; }
+        .game-title{ display:flex;flex-direction:column;align-items:center; margin-top:70px;animation:floatLogo 3s ease-in-out infinite; }
         @keyframes floatLogo{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
-        .title-fruits{font-size:50px;letter-spacing:-4px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));}
-        .title-main{ font-family:'Luckiest Guy',cursive;font-size:62px;line-height:0.9; text-align:center;letter-spacing:2px; }
+        .title-fruits{font-size:48px;letter-spacing:-4px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));}
+        .title-main{ font-family:'Luckiest Guy',cursive;font-size:58px;line-height:0.9; text-align:center;letter-spacing:2px; }
         .title-fruit{color:#7dff00;-webkit-text-stroke:3px #2a7000;text-shadow:0 6px 0 #2a7000,0 10px 20px rgba(0,0,0,0.5);}
         .title-cut{color:#ffcc00;-webkit-text-stroke:3px #996600;text-shadow:0 6px 0 #996600,0 10px 20px rgba(0,0,0,0.5);}
         .title-sub{font-size:13px;color:rgba(255,255,255,0.8);font-weight:800;letter-spacing:3px;margin-top:4px;}
-        .menu-knife{font-size:70px;margin:10px 0;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));animation:knifeFloat 2s ease-in-out infinite;}
+        .menu-knife{font-size:60px;margin:4px 0;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));animation:knifeFloat 2s ease-in-out infinite;}
         @keyframes knifeFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-8px) rotate(5deg);}}
         #token-bar{ background:rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2); border-radius:20px;padding:6px 16px;display:flex;align-items:center;gap:8px; font-size:14px;color:#fff;font-weight:800;margin-bottom:6px; }
         .token-refill{font-size:11px;color:#ffcc00;}
-        .start-btn{ background:linear-gradient(180deg,#ffe040,#ff8c00); border:4px solid #fff;border-radius:20px; width:240px;padding:16px 0;text-align:center; font-family:'Luckiest Guy',cursive;font-size:38px;color:#fff; text-shadow:2px 3px 0 rgba(0,0,0,0.3); box-shadow:0 8px 0 #cc6600,0 12px 25px rgba(0,0,0,0.4); cursor:pointer;transition:transform 0.1s,box-shadow 0.1s; animation:pulsBtn 1.5s ease-in-out infinite; }
+        .start-btn{ background:linear-gradient(180deg,#ffe040,#ff8c00); border:4px solid #fff;border-radius:20px; width:220px;padding:14px 0;text-align:center; font-family:'Luckiest Guy',cursive;font-size:34px;color:#fff; text-shadow:2px 3px 0 rgba(0,0,0,0.3); box-shadow:0 8px 0 #cc6600,0 12px 25px rgba(0,0,0,0.4); cursor:pointer;transition:transform 0.1s,box-shadow 0.1s; animation:pulsBtn 1.5s ease-in-out infinite; }
         @keyframes pulsBtn{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
         .start-btn:active{transform:translateY(6px)!important;box-shadow:0 2px 0 #cc6600!important;animation:none!important;}
-        .spin-btn{ background:linear-gradient(180deg,#a855f7,#7e22ce); border:3px solid rgba(255,255,255,0.6);border-radius:16px; padding:10px 30px;text-align:center; font-family:'Luckiest Guy',cursive;font-size:22px;color:#fff; text-shadow:1px 2px 0 rgba(0,0,0,0.3); box-shadow:0 5px 0 #5b21b6,0 8px 18px rgba(0,0,0,0.3); cursor:pointer;margin-top:6px; display:flex;align-items:center;gap:8px; }
+        .spin-btn{ background:linear-gradient(180deg,#a855f7,#7e22ce); border:3px solid rgba(255,255,255,0.6);border-radius:16px; padding:9px 26px;text-align:center; font-family:'Luckiest Guy',cursive;font-size:20px;color:#fff; text-shadow:1px 2px 0 rgba(0,0,0,0.3); box-shadow:0 5px 0 #5b21b6,0 8px 18px rgba(0,0,0,0.3); cursor:pointer;margin-top:5px; display:flex;align-items:center;gap:8px; }
         .spin-badge{ background:#ff3355;color:#fff;font-size:11px;font-family:'Nunito',sans-serif; padding:2px 7px;border-radius:10px;font-weight:900;animation:badgePulse 1s infinite; }
         @keyframes badgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
-        #bottom-icons{ display:flex;justify-content:center;gap:10px; padding:14px 10px 20px;width:100%;flex-wrap:wrap; }
+
+        /* ---- PLAY AREA LAYOUT: Task Left | PLAY | Refer Right ---- */
+        .play-center-row {
+            display:flex; align-items:center; justify-content:center;
+            gap:10px; width:100%; margin-top:6px;
+        }
+        .side-panel-btn {
+            display:flex; flex-direction:column; align-items:center; gap:4px;
+            background:rgba(0,0,0,0.4); border:2px solid rgba(255,255,255,0.15);
+            border-radius:16px; padding:10px 10px; cursor:pointer;
+            transition:transform 0.15s; min-width:58px; text-align:center;
+        }
+        .side-panel-btn:active{transform:scale(0.92);}
+        .side-icon{font-size:28px;}
+        .side-label{font-size:10px;font-weight:900;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,0.5);}
+        .side-panel-btn.task-side { background:linear-gradient(180deg,rgba(0,188,212,0.3),rgba(0,96,100,0.3)); border-color:rgba(0,188,212,0.4); }
+        .side-panel-btn.refer-side { background:linear-gradient(180deg,rgba(67,160,71,0.3),rgba(27,94,32,0.3)); border-color:rgba(67,160,71,0.4); }
+
+        /* ---- BOTTOM ICONS: 4 icons row ---- */
+        #bottom-icons{ display:flex;justify-content:center;gap:10px; padding:10px 10px 16px;width:100%;flex-wrap:wrap; }
         .icon-btn{ display:flex;flex-direction:column;align-items:center;gap:3px; cursor:pointer;transition:transform 0.15s; }
         .icon-btn:active{transform:scale(0.9);}
-        .icon-face{ width:55px;height:55px;border-radius:16px; display:flex;align-items:center;justify-content:center;font-size:26px; box-shadow:0 5px 0 rgba(0,0,0,0.3),0 8px 16px rgba(0,0,0,0.2); border:3px solid rgba(255,255,255,0.3); transition:transform 0.15s; }
+        .icon-face{ width:58px;height:58px;border-radius:16px; display:flex;align-items:center;justify-content:center;font-size:28px; box-shadow:0 5px 0 rgba(0,0,0,0.3),0 8px 16px rgba(0,0,0,0.2); border:3px solid rgba(255,255,255,0.3); transition:transform 0.15s; }
         .icon-btn:active .icon-face{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,0.3)!important;}
         .icon-label{font-size:10px;font-weight:900;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,0.5);}
         .ic-setting{background:linear-gradient(135deg,#607d8b,#37474f);}
-        .ic-share{background:linear-gradient(135deg,#43a047,#1b5e20);}
         .ic-shop{background:linear-gradient(135deg,#ff9800,#e65100);}
         .ic-wallet{background:linear-gradient(135deg,#1976d2,#0d47a1);animation:jiggle 4s infinite;}
         .ic-ads{background:linear-gradient(135deg,#e91e63,#880e4f);}
-        .ic-task{background:linear-gradient(135deg,#00bcd4,#006064);}
         @keyframes jiggle{0%,8%,100%{transform:rotate(0);}2%{transform:rotate(-12deg);}4%{transform:rotate(12deg);}6%{transform:rotate(-8deg);}}
+
         #game-hud{ position:fixed;top:0;left:0;width:100%;z-index:12; display:none;justify-content:space-between;align-items:center; padding:12px 16px; }
         .pass-reward-box{ background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px; padding:5px 12px;display:flex;align-items:center;gap:5px; box-shadow:0 4px 0 #c48000; }
         .pr-label{font-size:10px;color:#6b4400;font-weight:800;line-height:1;}
@@ -108,13 +129,14 @@
         .tsc-amount{font-family:'Luckiest Guy',cursive;font-size:20px;color:#fff;line-height:1;}
         .tsc-price{font-size:12px;color:#ffcc00;font-weight:800;margin-top:4px;}
         .tsc-badge{ position:absolute;top:6px;right:6px;background:#ff3355;color:#fff; font-size:9px;font-weight:900;padding:2px 6px;border-radius:8px; }
+        /* Gold→Diamond exchange section */
         .gold-exchange-info{ background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1)); border:2px solid rgba(100,160,255,0.35);border-radius:16px;padding:14px;margin-bottom:12px; text-align:center; }
-        .gei-rate{font-family:'Luckiest Guy',cursive;font-size:26px;color:#4af;line-height:1.1;}
+        .gei-rate{font-family:'Luckiest Guy',cursive;font-size:22px;color:#4af;line-height:1.1;}
         .gei-label{font-size:11px;color:#7ab;margin-top:4px;}
         .exchange-input-wrap{ background:rgba(255,255,255,0.06);border:2px solid rgba(100,160,255,0.25); border-radius:14px;padding:14px;margin-bottom:10px; }
         .exchange-input-wrap label{font-size:12px;color:#aaa;font-weight:800;display:block;margin-bottom:6px;}
         .exchange-presets{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
-        .exchange-preset-btn{ flex:1;min-width:60px;padding:7px 4px;border-radius:10px; border:2px solid rgba(100,160,255,0.3);background:rgba(100,160,255,0.1); color:#4af;font-size:12px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif; transition:all 0.15s;text-align:center; }
+        .exchange-preset-btn{ flex:1;min-width:65px;padding:7px 4px;border-radius:10px; border:2px solid rgba(100,160,255,0.3);background:rgba(100,160,255,0.1); color:#4af;font-size:11px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif; transition:all 0.15s;text-align:center; }
         .exchange-preset-btn:active{background:rgba(100,160,255,0.3);}
         .exchange-result-preview{ background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25); border-radius:10px;padding:8px;text-align:center;margin-bottom:8px; font-size:13px;color:#4caf50;font-weight:900; }
         .shop-daily-info{ background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08); border-radius:10px;padding:8px 12px;font-size:11px;color:#888;text-align:center;margin-bottom:8px; }
@@ -133,6 +155,7 @@
         @keyframes spin{to{transform:rotate(360deg);}}
         #token-toast{ position:fixed;bottom:120px;left:50%;transform:translateX(-50%); background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px; padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999; display:none;animation:fadeUp 0.3s ease;white-space:nowrap; }
         @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+        /* Lootbox - GOLD ONLY (no diamond) */
         .lootbox-wrap{ background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3); border-radius:16px;padding:16px;margin-bottom:12px;text-align:center; }
         .lootbox-bar-bg{ width:100%;height:20px;background:rgba(0,0,0,0.4);border-radius:10px; overflow:hidden;margin:8px 0;border:2px solid rgba(255,200,0,0.3); }
         .lootbox-bar-fill{ height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00); border-radius:10px;transition:width 0.5s; }
@@ -145,6 +168,8 @@
         .ads-info strong{color:#ffcc00;}
         .watch-ad-btn{ background:linear-gradient(180deg,#e91e63,#880e4f); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #500030;white-space:nowrap; }
         .watch-ad-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 3px 0 #111;cursor:not-allowed; }
+        /* Adsgram Special button - highlighted */
+        .watch-ad-btn.special{ background:linear-gradient(180deg,#ff8c00,#e65100);box-shadow:0 3px 0 #8b3000; }
         .task-card{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12); border-radius:14px;padding:12px 14px;margin-bottom:10px; display:flex;align-items:center;gap:12px; }
         .task-icon{font-size:28px;flex-shrink:0;}
         .task-info{flex:1;}
@@ -153,6 +178,11 @@
         .task-btn{ background:linear-gradient(180deg,#00bcd4,#006064); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0; }
         .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
         .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
+        /* Setting - unique code box */
+        .unique-code-box{background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;text-align:center;}
+        .unique-code-label{font-size:11px;color:#aaa;font-weight:800;margin-bottom:4px;}
+        .unique-code-val{font-size:15px;color:#ffcc00;font-weight:900;word-break:break-all;letter-spacing:1px;}
+        /* Lottery */
         .lottery-wrap{ background:linear-gradient(135deg,rgba(100,0,150,0.3),rgba(50,0,100,0.3)); border:2px solid rgba(180,100,255,0.4);border-radius:18px;padding:16px;margin-bottom:12px;text-align:center; }
         .lottery-title{font-family:'Luckiest Guy',cursive;font-size:22px;color:#cf6fef;margin-bottom:6px;}
         .lottery-slots{ display:flex;justify-content:center;gap:10px;margin:14px 0; }
@@ -174,6 +204,9 @@
         .lottery-earn-label{font-size:11px;color:#888;}
         .refer-diamonds{font-size:22px;font-family:'Luckiest Guy',cursive;color:#4af;}
         .refer-diamonds-label{font-size:11px;color:#aaa;}
+        /* Withdraw requirement badge */
+        .withdraw-req{ background:rgba(255,50,50,0.1);border:1px solid rgba(255,50,50,0.3);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#ff7788;text-align:center;font-weight:800; }
+        .withdraw-req.met{ background:rgba(0,200,100,0.1);border-color:rgba(0,200,100,0.3);color:#4caf50; }
     </style>
 </head>
 <body>
@@ -197,7 +230,7 @@
     <div id="top-bar" class="ptr">
         <div class="coin-box">
             <span style="font-size:18px">🪙</span>
-            <div><div class="coin-label">COINS</div><div class="coin-value" id="ui-coins">0</div></div>
+            <div><div class="coin-label">GOLD</div><div class="coin-value" id="ui-coins">0</div></div>
         </div>
         <div class="lv-box">Lv <span id="ui-lv">1</span></div>
         <div class="diamond-box">
@@ -207,8 +240,10 @@
     </div>
 </div>
 
+<!-- MENU SCREEN -->
 <div id="menu-screen" class="ptr">
     <div style="width:100%;padding:0 12px;"></div>
+    <!-- Title -->
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:60px;">
         <div class="title-fruits">🍉🍓🍊🥝🍍</div>
         <div class="title-main">
@@ -222,20 +257,37 @@
         🎮 Tokens: <span id="ui-tokens">3</span> / 10
         <span class="token-refill" id="token-timer"></span>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-        <div class="start-btn ptr" onclick="window.tryStartGame()">▶ START</div>
-        <div class="spin-btn ptr" onclick="window.showModal('lottery-modal')">
-            🎰 777 LOTTERY
-            <span class="spin-badge" id="spin-badge">FREE</span>
+
+    <!-- UPDATE 1: Task LEFT | PLAY CENTER | Refer RIGHT -->
+    <div class="play-center-row">
+        <!-- Task - Left of play button -->
+        <div class="side-panel-btn task-side ptr" onclick="window.showModal('task-modal')">
+            <div class="side-icon">📋</div>
+            <div class="side-label">Tasks</div>
+        </div>
+
+        <!-- Play buttons center -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div class="start-btn ptr" onclick="window.tryStartGame()">▶ START</div>
+            <div class="spin-btn ptr" onclick="window.showModal('lottery-modal')">
+                🎰 777 LOTTERY
+                <span class="spin-badge" id="spin-badge">FREE</span>
+            </div>
+        </div>
+
+        <!-- Refer - Right of play button -->
+        <div class="side-panel-btn refer-side ptr" onclick="window.showModal('share-modal')">
+            <div class="side-icon">🔗</div>
+            <div class="side-label">Refer</div>
         </div>
     </div>
+
+    <!-- UPDATE 1: Bottom 4 icons: Setting, Shop, Wallet, Ads -->
     <div id="bottom-icons">
         <div class="icon-btn ptr" onclick="window.showModal('setting-modal')"><div class="icon-face ic-setting">⚙️</div><span class="icon-label">Setting</span></div>
-        <div class="icon-btn ptr" onclick="window.showModal('share-modal')"><div class="icon-face ic-share">🔗</div><span class="icon-label">Refer</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('shop-modal')"><div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('wallet-modal')"><div class="icon-face ic-wallet">💳</div><span class="icon-label">Wallet</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('ads-modal')"><div class="icon-face ic-ads">📺</div><span class="icon-label">Ads</span></div>
-        <div class="icon-btn ptr" onclick="window.showModal('task-modal')"><div class="icon-face ic-task">📋</div><span class="icon-label">Tasks</span></div>
     </div>
 </div>
 
@@ -276,7 +328,7 @@
         </div>
         <div class="lottery-earn-stats">
             <div style="display:flex;justify-content:space-around;">
-                <div><div class="lottery-earn-val" id="lottery-total-earned">0</div><div class="lottery-earn-label">💎 Diamonds Earned</div></div>
+                <div><div class="lottery-earn-val" id="lottery-total-earned">0</div><div class="lottery-earn-label">🪙 Gold Earned</div></div>
                 <div><div class="lottery-earn-val" id="lottery-total-spins">0</div><div class="lottery-earn-label">Total Spins</div></div>
             </div>
         </div>
@@ -286,6 +338,7 @@
     </div>
 </div>
 
+<!-- UPDATE 5: Shop - Gold→Diamond exchange with min 1K max 100K gold + Token buy -->
 <div class="overlay ptr" id="shop-modal">
     <div class="modal">
         <div class="mh mh-gold">🛍️ Shop</div>
@@ -296,25 +349,31 @@
         <div class="shop-panel active" id="shop-panel-tokens">
             <div class="shop-daily-info">🎮 Per Token: <strong style="color:#ffcc00;">50 🪙 Gold</strong> &nbsp;|&nbsp; Daily Limit: <strong style="color:#fff;" id="shop-token-left">10</strong>/10 remaining</div>
             <div class="token-shop-grid">
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(1)"><span class="tsc-icon">🎮</span><div class="tsc-amount">×1 Token</div><div class="tsc-price">50 🪙</div></div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(3)"><span class="tsc-badge">SAVE</span><span class="tsc-icon">🎮🎮</span><div class="tsc-amount">×3 Token</div><div class="tsc-price">150 🪙</div></div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)"><span class="tsc-badge">HOT</span><span class="tsc-icon">🎮🎮🎮</span><div class="tsc-amount">×5 Token</div><div class="tsc-price">250 🪙</div></div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)"><span class="tsc-badge">MAX</span><span class="tsc-icon">🎮🎮🎮🎮</span><div class="tsc-amount">×10 Token</div><div class="tsc-price">500 🪙</div></div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(1)"><span class="tsc-icon">🎮</span><div class="tsc-amount">×1 Token</div><div class="tsc-price">50 🪙 Gold</div></div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(3)"><span class="tsc-badge">SAVE</span><span class="tsc-icon">🎮🎮</span><div class="tsc-amount">×3 Token</div><div class="tsc-price">150 🪙 Gold</div></div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)"><span class="tsc-badge">HOT</span><span class="tsc-icon">🎮🎮🎮</span><div class="tsc-amount">×5 Token</div><div class="tsc-price">250 🪙 Gold</div></div>
+                <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)"><span class="tsc-badge">MAX</span><span class="tsc-icon">🎮🎮🎮🎮</span><div class="tsc-amount">×10 Token</div><div class="tsc-price">500 🪙 Gold</div></div>
             </div>
             <div class="info-text">🎮 Token দিয়ে game খেলুন · Max 10 token · প্রতি ঘণ্টায় +1 auto refill</div>
         </div>
         <div class="shop-panel" id="shop-panel-exchange">
-            <div class="gold-exchange-info"><div class="gei-rate">5,000 🪙 = 5 💎</div><div class="gei-label">Gold → Diamond Exchange Rate</div></div>
+            <!-- Gold to Diamond exchange: min 1K, max 100K gold -->
+            <div class="gold-exchange-info">
+                <div class="gei-rate">1,000 🪙 Gold = 1 💎</div>
+                <div class="gei-label">Gold → Diamond Exchange Rate</div>
+                <div style="font-size:11px;color:#f90;margin-top:4px;">Min: 1,000 Gold · Max: 100,000 Gold per exchange</div>
+            </div>
             <div class="exchange-input-wrap">
-                <label>Quick Select (Diamonds আপনি পেতে চান):</label>
+                <label>Quick Select (Gold amount to exchange):</label>
                 <div class="exchange-presets">
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(5)">5 💎</div>
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(10)">10 💎</div>
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(20)">20 💎</div>
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeQty(50)">50 💎</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(1000)">1K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(5000)">5K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(10000)">10K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(50000)">50K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(100000)">100K 🪙</div>
                 </div>
-                <div class="exchange-result-preview" id="exchange-preview">Select amount above to see cost</div>
-                <div class="shop-daily-info">Daily limit: <strong style="color:#4af;" id="shop-diamond-left">20</strong>/20 remaining &nbsp;|&nbsp; Min: <strong style="color:#ffcc00;">5,000 🪙</strong></div>
+                <div class="exchange-result-preview" id="exchange-preview">Select Gold amount to see Diamond reward</div>
+                <div class="shop-daily-info">My Gold: <strong style="color:#ffcc00;" id="shop-my-gold">0</strong> 🪙 &nbsp;|&nbsp; My Diamonds: <strong style="color:#4af;" id="shop-my-diamond">0</strong> 💎</div>
                 <button class="btn btn-blue" id="exchange-confirm-btn" onclick="window.confirmExchange()" disabled>💎 Exchange Now</button>
             </div>
             <div class="info-text">💎 Min 100 Diamonds to withdraw · Exchange করার পর undo হবে না</div>
@@ -323,10 +382,15 @@
     </div>
 </div>
 
+<!-- UPDATE 6: Wallet - withdraw requires 5 tasks + 2 refers -->
 <div class="overlay ptr" id="wallet-modal">
     <div class="modal">
         <div class="mh mh-gold">💳 Withdraw</div>
         <div class="mrow"><span class="mrow-label">My Diamonds</span><span class="mrow-val">💎 <span id="w-gems">0</span></span></div>
+        <div id="withdraw-req-box" class="withdraw-req">
+            ⚠️ Withdraw unlock করতে: <strong>5 Task</strong> সম্পন্ন করুন এবং <strong>2 Refer</strong> দিন<br>
+            <span id="withdraw-req-status">Tasks: 0/5 · Refers: 0/2</span>
+        </div>
         <div style="margin-bottom:8px;">
             <div class="w-badge">💎 1000 = $1 USD</div><br><div class="w-badge">💎 1000 = 120 BDT</div><br><div class="w-badge">💎 1000 = 0.75 TON</div>
         </div>
@@ -341,6 +405,7 @@
     </div>
 </div>
 
+<!-- Refer modal -->
 <div class="overlay ptr" id="share-modal">
     <div class="modal">
         <div class="mh mh-green">🔗 Refer & Earn</div>
@@ -362,48 +427,62 @@
     </div>
 </div>
 
+<!-- UPDATE 3: Settings with unique code + telegram username -->
 <div class="overlay ptr" id="setting-modal">
     <div class="modal">
         <div class="mh mh-gold">⚙️ Settings</div>
         <div id="tg-user-info" class="tg-info"></div>
+        <!-- Unique code display -->
+        <div class="unique-code-box">
+            <div class="unique-code-label">🔑 Your Unique Code</div>
+            <div class="unique-code-val" id="setting-unique-code">Loading...</div>
+            <div style="font-size:11px;color:#888;margin-top:4px;">Tap to copy</div>
+        </div>
+        <div class="mrow"><span class="mrow-label">Telegram Username</span><span class="mrow-val" style="font-size:15px;color:#7de;" id="setting-tg-username">@unknown</span></div>
         <div class="mrow"><span class="mrow-label">Sound</span><span class="mrow-val ptr" id="snd-toggle" onclick="window.toggleSound()">🔊</span></div>
         <div class="mrow"><span class="mrow-label">Vibration</span><span class="mrow-val ptr" id="vib-toggle" onclick="window.toggleVib()">📳</span></div>
-        <div class="mrow"><span class="mrow-label">Version</span><span class="mrow-val" style="font-size:14px;color:#7ab;">v6.0.0 (Secure)</span></div>
+        <div class="mrow"><span class="mrow-label">Version</span><span class="mrow-val" style="font-size:14px;color:#7ab;">v7.0.0 (Secure)</span></div>
         <button class="btn btn-grey" onclick="window.hideModal('setting-modal')">CLOSE</button>
     </div>
 </div>
 
+<!-- UPDATE 7: Ads - Adsgram Special (100 gold, block 28066) + others 50 gold; lootbox = gold only -->
 <div class="overlay ptr" id="ads-modal">
     <div class="modal">
         <div class="mh mh-red">📺 Earn with Ads</div>
+        <!-- Lootbox: min 300, max 1000 gold - NO DIAMOND -->
         <div class="lootbox-wrap">
             <div style="font-size:16px;font-weight:900;color:#ffcc00;margin-bottom:4px;">🎁 Lootbox</div>
-            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Min 300 pts to claim! Max 1000 pts per cycle</div>
+            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Min 300 pts to claim! Max 1000 pts per cycle · Reward: 🪙 Gold only</div>
             <div class="lootbox-bar-bg"><div class="lootbox-bar-fill" id="lootbox-fill" style="width:0%"></div></div>
             <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 1000 pts</span></div>
             <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD</button>
         </div>
-        <div class="ads-section">
+        <!-- Adsgram Special (blockId 28066) = 100 gold -->
+        <div class="ads-section" style="border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.06);">
             <div class="ads-row">
-                <div class="ads-info">⚡ <strong>Adsgram Special</strong> (+50~150 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
-                <button class="watch-ad-btn" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
+                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+100 🪙 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
+                <button class="watch-ad-btn special" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
+        <!-- Adsgram Daily = 50 gold -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+50 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
+                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+50 🪙 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-daily-btn" onclick="window.watchAdsgramDailyAd()">▶ Watch</button>
             </div>
         </div>
+        <!-- GigaPub = 50 gold -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+50 Gold)<br><span id="gigapub-left">20/20 remaining</span></div>
+                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+50 🪙 Gold)<br><span id="gigapub-left">20/20 remaining</span></div>
                 <button class="watch-ad-btn" id="gigapub-btn" onclick="window.watchGigaPubAd()">▶ Watch</button>
             </div>
         </div>
+        <!-- Monetag = 50 gold -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+50 Gold)<br><span id="monetag-left">10/10 remaining</span></div>
+                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+50 🪙 Gold)<br><span id="monetag-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
             </div>
         </div>
@@ -412,11 +491,12 @@
     </div>
 </div>
 
+<!-- UPDATE 8: Tasks loaded from Vercel API -->
 <div class="overlay ptr" id="task-modal">
     <div class="modal">
         <div class="mh mh-cyan">📋 Tasks</div>
         <div id="task-list"><div style="text-align:center;color:#aaa;padding:20px;">Loading tasks...</div></div>
-        <div class="info-text">Complete tasks to earn rewards!</div>
+        <div class="info-text">Complete tasks to earn Gold & Diamonds!</div>
         <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
     </div>
 </div>
@@ -426,7 +506,7 @@
     <div class="modal">
         <span class="big-emoji">🎉</span>
         <div class="mh mh-gold">LEVEL COMPLETE!</div>
-        <div class="reward-row">Reward: 🪙 <span id="comp-reward" style="color:#ffcc00;">0</span></div>
+        <div class="reward-row">Reward: 🪙 <span id="comp-reward" style="color:#ffcc00;">0</span> Gold</div>
         <button class="btn btn-gold" onclick="window.claimReward(false)">▶ NEXT LEVEL</button>
         <button class="btn btn-red" onclick="window.claimReward(true)">📺 2× REWARD (Watch Ad)</button>
     </div>
@@ -453,7 +533,7 @@
 
 <div id="token-toast"></div>
 
-<!-- API SCRIPT (NO FIREBASE SDK HERE!) -->
+<!-- MAIN SCRIPT -->
 <script>
     const tg = window.Telegram && window.Telegram.WebApp;
     if(tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#006070'); tg.setBackgroundColor('#004050'); }
@@ -467,7 +547,8 @@
         lotteryFreeUsed: false, lotteryTotalSpins: 0, lotteryDailySpins: 0,
         lotteryDiamondsEarned: 0, referDiamonds: 0,
         shopTokenBought: 0, shopDiamondExchanged: 0,
-        referredBy: null, validReferRewardGiven: false
+        referredBy: null, validReferRewardGiven: false,
+        username: ''
     };
 
     function showToast(msg) {
@@ -487,7 +568,7 @@
             });
             const result = await response.json();
             if(result.success && result.user) {
-                Object.assign(window.G, result.user); // Update local state from server
+                Object.assign(window.G, result.user);
                 window.updateUI();
             }
             return result;
@@ -508,7 +589,32 @@
         document.getElementById('refer-count-display').textContent = window.G.referCount || 0;
         let rd = document.getElementById('refer-diamonds-display');
         if(rd) rd.textContent = window.G.referDiamonds || 0;
+        // Shop gold/diamond display
+        let sg = document.getElementById('shop-my-gold');
+        let sd = document.getElementById('shop-my-diamond');
+        if(sg) sg.textContent = window.G.coins;
+        if(sd) sd.textContent = window.G.gems;
+        // Withdraw requirement status
+        updateWithdrawReqUI();
     };
+
+    function updateWithdrawReqUI(){
+        let tasks = (window.G.completedTasks||[]).length;
+        let refers = window.G.referCount || 0;
+        let taskOk = tasks >= 5;
+        let referOk = refers >= 2;
+        let allMet = taskOk && referOk;
+        let box = document.getElementById('withdraw-req-box');
+        let status = document.getElementById('withdraw-req-status');
+        let btn = document.getElementById('btn-withdraw');
+        if(box){
+            box.className = 'withdraw-req' + (allMet ? ' met' : '');
+            box.innerHTML = allMet
+                ? '✅ Withdraw unlock হয়েছে!'
+                : `⚠️ Withdraw unlock করতে: <strong>5 Task</strong> সম্পন্ন করুন এবং <strong>2 Refer</strong> দিন<br><span id="withdraw-req-status">Tasks: ${tasks}/5 · Refers: ${refers}/2</span>`;
+        }
+        if(btn) btn.disabled = !allMet;
+    }
 
     async function initApp() {
         let tgUser = tg?.initDataUnsafe?.user;
@@ -518,29 +624,43 @@
         }
 
         const userId = String(tgUser.id);
-        currentUser = { id: userId }; // Temporarily set for API caller
+        currentUser = { id: userId };
         let startParam = tg.initDataUnsafe?.start_param;
         let referredBy = (startParam && startParam !== `FC${userId}`) ? startParam.replace('FC', '') : null;
 
-        // API Call to Initialize
-        const res = await apiCall('/api/init', { 
-            telegramId: userId, 
-            username: tgUser.username, 
-            referredBy: referredBy 
+        const res = await apiCall('/api/init', {
+            telegramId: userId,
+            username: tgUser.username,
+            referredBy: referredBy
         });
 
         if (res.success) {
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
-            
+
+            window.G.username = tgUser.username || '';
             window.updateUI();
+
+            // UPDATE 3: Show unique code + telegram username in settings
             let uiTg = document.getElementById('tg-user-info');
-            uiTg.textContent = `👤 ${tgUser.first_name||''} (@${tgUser.username||''})`;
+            uiTg.textContent = `👤 ${tgUser.first_name||''} (@${tgUser.username||'unknown'})`;
+
+            let settingCode = document.getElementById('setting-unique-code');
+            if(settingCode){
+                settingCode.textContent = window.G.referCode || `FC${userId}`;
+                settingCode.style.cursor = 'pointer';
+                settingCode.onclick = function(){
+                    navigator.clipboard?.writeText(settingCode.textContent).then(()=>showToast('✅ Code copied!'));
+                };
+            }
+            let settingUname = document.getElementById('setting-tg-username');
+            if(settingUname) settingUname.textContent = `@${tgUser.username||'unknown'}`;
+
             document.getElementById('refer-link').textContent = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
-            
+
             document.getElementById('fullscreen-loader').style.display = 'none';
             document.getElementById('menu-screen').style.display = 'flex';
-            
+
             startTokenTimer();
             requestAnimationFrame(window.loop);
             setTimeout(() => { if(window.G.sound) playSound('menu'); }, 500);
@@ -576,50 +696,64 @@
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
         if(id==='shop-modal'){ updateShopUI(); }
+        if(id==='wallet-modal'){ updateWithdrawReqUI(); }
         if(id==='over-modal'){ let el=document.getElementById('over-tokens'); if(el) el.textContent=window.G.tokens; }
     };
-    
-    window.hideModal = function(id){ 
-        document.getElementById(id).style.display='none'; 
-        if(id==='ads-modal' && gameState === 'menu'){ playSound('menu'); } 
+
+    window.hideModal = function(id){
+        document.getElementById(id).style.display='none';
+        if(id==='ads-modal' && gameState === 'menu'){ playSound('menu'); }
     };
 
     window.showTokenInfo = function(){ showToast('🎮 Tokens: 1 token = 1 game. Max 10. Refills +1 every 1 hour!'); };
 
     window.buyTokenShop = async function(qty){
+        let cost = qty * 50;
+        if(window.G.coins < cost){ showToast(`❌ Not enough Gold! Need ${cost} 🪙`); return; }
         document.getElementById('ad-loader').style.display='flex';
         const res = await apiCall('/api/shop', { type: 'token', qty });
         document.getElementById('ad-loader').style.display='none';
-        if(res.success) { showToast(`🎮 Token(s) purchased!`); updateShopUI(); } 
+        if(res.success) { showToast(`🎮 ${qty} Token(s) purchased!`); updateShopUI(); }
         else { showToast('❌ ' + (res.error || 'Failed')); }
     };
 
-    let pendingExchangeQty = 0;
-    window.setExchangeQty = function(diamonds){
-        pendingExchangeQty = diamonds;
-        let goldCost = diamonds * 1000; 
+    // UPDATE 5: Gold → Diamond exchange (min 1K gold, max 100K gold; rate: 1000 gold = 1 diamond)
+    let pendingExchangeGold = 0;
+    window.setExchangeGold = function(gold){
+        if(gold < 1000){ showToast('❌ Minimum 1,000 Gold!'); return; }
+        if(gold > 100000){ showToast('❌ Maximum 100,000 Gold per exchange!'); return; }
+        pendingExchangeGold = gold;
+        let diamonds = Math.floor(gold / 1000);
         let preview = document.getElementById('exchange-preview');
         let btn = document.getElementById('exchange-confirm-btn');
-        if(preview) preview.textContent = `${diamonds} 💎 Diamond = ${goldCost.toLocaleString()} 🪙 Gold`;
+        if(preview) preview.textContent = `${gold.toLocaleString()} 🪙 Gold → ${diamonds} 💎 Diamond`;
         if(btn) btn.disabled = false;
     };
 
     window.confirmExchange = async function(){
-        if(!pendingExchangeQty) return;
+        if(!pendingExchangeGold) return;
+        if(pendingExchangeGold < 1000){ showToast('❌ Minimum 1,000 Gold!'); return; }
+        if(pendingExchangeGold > 100000){ showToast('❌ Maximum 100,000 Gold!'); return; }
+        if(window.G.coins < pendingExchangeGold){ showToast('❌ Not enough Gold!'); return; }
+        
         document.getElementById('ad-loader').style.display='flex';
-        const res = await apiCall('/api/shop', { type: 'diamond', qty: pendingExchangeQty });
+        const res = await apiCall('/api/shop', { type: 'gold_to_diamond', goldAmount: pendingExchangeGold });
         document.getElementById('ad-loader').style.display='none';
 
         if(res.success) {
-            showToast(`💎 Diamonds exchanged!`);
-            pendingExchangeQty = 0;
-            document.getElementById('exchange-preview').textContent = 'Select amount above to see cost';
+            let diamonds = Math.floor(pendingExchangeGold / 1000);
+            showToast(`💎 +${diamonds} Diamonds received!`);
+            pendingExchangeGold = 0;
+            document.getElementById('exchange-preview').textContent = 'Select Gold amount to see Diamond reward';
             document.getElementById('exchange-confirm-btn').disabled = true;
             updateShopUI();
         } else {
             showToast('❌ ' + (res.error || 'Failed'));
         }
     };
+
+    // Backward compat alias
+    window.setExchangeQty = window.setExchangeGold;
 
     window.switchShopTab = function(tab){
         document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
@@ -643,7 +777,9 @@
     };
 
     /* -------------------------------------------------------------------------
-       Ads & Lootbox (API Powered)
+       Ads & Lootbox
+       UPDATE 7: Adsgram Special uses blockId 28066 = 100 gold
+                 Lootbox = gold ONLY (no diamond)
     ------------------------------------------------------------------------- */
     function updateAdsUI(){
         let agLeft = 5 - (window.G.adsgramCount||0);
@@ -667,38 +803,45 @@
         document.getElementById('lootbox-pts').textContent = pts;
         let claimBtn = document.getElementById('lootbox-claim-btn');
         claimBtn.disabled = pts < 300;
-        let diamondPreview = Math.floor(pts / 20);
-        claimBtn.textContent = pts >= 300 ? `🎁 CLAIM REWARD (+${diamondPreview}💎)` : `🎁 CLAIM REWARD (Need 300 pts)`;
+        let goldPreview = Math.floor(pts / 2); // Lootbox = gold reward only
+        claimBtn.textContent = pts >= 300 ? `🎁 CLAIM REWARD (+${goldPreview}🪙 Gold)` : `🎁 CLAIM REWARD (Need 300 pts)`;
     }
 
     function updateShopUI(){
         let tokenLeft = 10 - (window.G.shopTokenBought||0);
-        let diamondLeft = 20 - (window.G.shopDiamondExchanged||0);
         document.getElementById('shop-token-left').textContent = Math.max(0, tokenLeft);
-        document.getElementById('shop-diamond-left').textContent = Math.max(0, diamondLeft);
+        let sg = document.getElementById('shop-my-gold');
+        let sd = document.getElementById('shop-my-diamond');
+        if(sg) sg.textContent = window.G.coins;
+        if(sd) sd.textContent = window.G.gems;
     }
 
+    // Lootbox claims GOLD only, not diamond
     window.claimLootbox = async function(){
         if(window.G.lootboxPoints < 300){ showToast('❌ Need at least 300 points to claim!'); return; }
-        let diamondReward = Math.floor(window.G.lootboxPoints / 20); 
+        let goldReward = Math.floor(window.G.lootboxPoints / 2); // Gold reward only
         
         document.getElementById('ad-loader').style.display='flex';
-        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        try { let AdC = Adsgram.init({ blockId: "28066" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
         
-        const res = await apiCall('/api/ads', { action: 'claim_lootbox', coinsToAdd: diamondReward });
+        const res = await apiCall('/api/ads', { action: 'claim_lootbox', coinsToAdd: goldReward });
         document.getElementById('ad-loader').style.display='none';
 
-        if(res.success){ updateAdsUI(); showToast(`🎁 Lootbox claimed! +${diamondReward} 💎 Diamonds!`); }
+        if(res.success){ updateAdsUI(); showToast(`🎁 Lootbox claimed! +${goldReward} 🪙 Gold!`); }
     };
 
     async function processAdReward(actionName, maxLimit, currentCount, getRewardAmount, successMsg) {
         if(currentCount >= maxLimit){ showToast('✋ Daily limit reached!'); return; }
         if(window.G.lootboxPoints >= 600){ showToast('⚠️ Claim your Lootbox first!'); return; }
-        
+
         document.getElementById('ad-loader').style.display='flex';
         try {
-            if(actionName.includes('adsgram')){ let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); }
-            else if(actionName === 'gigapub') { await window.showGiga(); }
+            if(actionName === 'adsgram'){
+                // UPDATE 7: Adsgram Special uses blockId 28066
+                let AdC = Adsgram.init({ blockId: "28066" }); await AdC.show();
+            } else if(actionName === 'adsgramDaily'){
+                let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
+            } else if(actionName === 'gigapub') { await window.showGiga(); }
             else if(actionName === 'monetag') { await show_10893505(); }
         } catch(e) { await new Promise(r=>setTimeout(r,1500)); }
 
@@ -709,69 +852,102 @@
         if(res.success){ updateAdsUI(); showToast(successMsg.replace('{R}', reward)); }
     }
 
-    window.watchAdsgramAd = () => processAdReward('adsgram', 5, window.G.adsgramCount, () => Math.floor(Math.random()*101)+50, `✅ +{R} Gold! (Adsgram Special)`);
-    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5, window.G.adsgramDailyCount, () => 50, `✅ +{R} Gold!`);
-    window.watchGigaPubAd = () => processAdReward('gigapub', 20, window.G.gigapubCount, () => 50, `✅ +{R} Gold!`);
-    window.watchMonetagAd = () => processAdReward('monetag', 10, window.G.monetagCount, () => 50, `✅ +{R} Gold!`);
+    // UPDATE 7: Adsgram Special = 100 gold, others = 50 gold
+    // GigaPub ad helper
+    window.showGiga = function(){
+        return new Promise((resolve)=>{
+            try{
+                if(typeof show_6350 === 'function') show_6350();
+            } catch(e){}
+            setTimeout(resolve, 2000);
+        });
+    };
+
+    window.watchAdsgramAd = () => processAdReward('adsgram', 5, window.G.adsgramCount, () => 100, `✅ +{R} 🪙 Gold! (Adsgram Special)`);
+    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5, window.G.adsgramDailyCount, () => 50, `✅ +{R} 🪙 Gold!`);
+    window.watchGigaPubAd = () => processAdReward('gigapub', 20, window.G.gigapubCount, () => 50, `✅ +{R} 🪙 Gold!`);
+    window.watchMonetagAd = () => processAdReward('monetag', 10, window.G.monetagCount, () => 50, `✅ +{R} 🪙 Gold!`);
 
     /* -------------------------------------------------------------------------
-       Tasks System 
+       UPDATE 8: Tasks loaded from Vercel API - shows tasks from admin panel
     ------------------------------------------------------------------------- */
     window.renderTasks = async function(){
         let c = document.getElementById('task-list');
         c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">⏳ Loading tasks...</div>';
         try {
-            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', { method: 'GET', signal: AbortSignal.timeout(5000) });
+            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', { method: 'GET', signal: AbortSignal.timeout(8000) });
             let tasks = await res.json();
-            if(!tasks || !tasks.length) throw new Error();
-            
+            if(!tasks || !tasks.length) throw new Error('No tasks');
+
             c.innerHTML = '';
             tasks.forEach(t => {
-                let done = (window.G.completedTasks||[]).includes(t.id);
-                let rText = (t.coins ? `🪙 ${t.coins} ` : '') + (t.gems ? `💎 ${t.gems}` : '');
+                let done = (window.G.completedTasks||[]).includes(String(t.id));
+                // UPDATE 4: reward shown as gold (coins) only - no points label
+                let rText = (t.coins ? `🪙 ${t.coins} Gold` : '') + (t.gems ? ` 💎 ${t.gems}` : '');
                 c.innerHTML += `
                     <div class="task-card">
                         <div class="task-icon">${t.icon||'📋'}</div>
-                        <div class="task-info"><div class="task-name">${t.name}</div><div class="task-reward">${rText||'🎁 Reward'}</div></div>
-                        <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}','${t.link}')" ${done?'disabled':''}>${done ? '✅ Done' : '▶ Go'}</button>
+                        <div class="task-info">
+                            <div class="task-name">${t.name}</div>
+                            <div class="task-reward">${rText||'🎁 Reward'}</div>
+                        </div>
+                        <button class="task-btn ${done?'done':''}" onclick="window.doTask('${t.id}','${t.link||''}')" ${done?'disabled':''}>${done ? '✅ Done' : '▶ Go'}</button>
                     </div>`;
             });
-        } catch(e) { c.innerHTML = '<div style="text-align:center;color:#aaa;">📋 No tasks available right now.</div>'; }
+        } catch(e) {
+            c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">📋 No tasks available right now.<br><small>Check back later!</small></div>';
+        }
     };
 
     window.doTask = function(id, link){
-        if(link) { if(tg?.openLink) tg.openLink(link); else window.open(link, '_blank'); }
-        // For security, ideally task verification should be on backend. 
-        // For now, since API is fully locked, we might need a simple endpoint to mark task complete if required later.
+        if(link && link !== 'undefined') {
+            if(tg?.openLink) tg.openLink(link);
+            else window.open(link, '_blank');
+        }
+        // Mark task as started (server should verify completion)
+        setTimeout(() => {
+            apiCall('/api/task_claim', { taskId: id }).then(res => {
+                if(res.success) { showToast('✅ Task completed! Reward received.'); window.renderTasks(); }
+            });
+        }, 3000);
     };
 
     /* -------------------------------------------------------------------------
-       Withdrawal System
+       UPDATE 6: Withdrawal requires 5 tasks + 2 refers
     ------------------------------------------------------------------------- */
     window.doWithdraw = async function(){
+        // Check requirements
+        let tasks = (window.G.completedTasks||[]).length;
+        let refers = window.G.referCount || 0;
+        if(tasks < 5 || refers < 2){
+            showToast(`❌ Complete 5 tasks & 2 refers first! (${tasks}/5 tasks, ${refers}/2 refers)`);
+            return;
+        }
+
         let method = document.getElementById('w-method').value;
         let addr = document.getElementById('w-address').value.trim();
         let amount = parseInt(document.getElementById('w-amount').value)||0;
-        
+
         if(!addr) return showToast('❌ Enter address!');
         if(amount < 100) return showToast(`❌ Min 100 💎!`);
         if(window.G.gems < amount) return showToast('❌ Not enough Diamonds!');
-        
+
         let btn = document.getElementById('btn-withdraw');
         btn.disabled = true; btn.textContent = "Processing...";
 
         const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
-        
+
         btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
         if(res.success){ window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!'); }
         else { showToast('❌ ' + (res.error || 'Server Error')); }
     };
 
     /* -------------------------------------------------------------------------
-       Game Logic & Canvas
+       Game Logic & Canvas - UPDATE 2: Fruit boundary fix
     ------------------------------------------------------------------------- */
     const canvas = document.getElementById('gc'); const ctx = canvas.getContext('2d');
-    let W, H; function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+    let W, H;
+    function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
     window.addEventListener('resize', resize); resize();
 
     let gameState='menu', objects=[], particles=[], sliceTrail=[], isSlicing=false, mouse={x:0,y:0};
@@ -783,13 +959,29 @@
             let emojis = ['🍉','🍓','🥝','🍊','🍋','🍑','🍍'];
             let colors = ['#ff4444','#ff2244','#66bb00','#ff9900','#ffee00','#ff8866','#ffcc00'];
             let rIdx = Math.floor(Math.random()*emojis.length);
-            this.emoji = this.isBomb ? '💣' : emojis[rIdx]; this.color = this.isBomb ? '#ff0000' : colors[rIdx];
-            this.r = 40 + Math.random()*18; this.x = 80 + Math.random()*(W-160); this.y = H + this.r;
-            this.vx = (Math.random()-0.5)*(isMenu?2:3); this.vy = -(isMenu?(9+Math.random()*4):(11+Math.random()*3+Math.min(window.G.stage*0.08,2)));
-            this.grav = isMenu ? 0.05 : 0.10; this.rot = 0; this.rotSpd = (Math.random()-0.5)*0.10;
+            this.emoji = this.isBomb ? '💣' : emojis[rIdx];
+            this.color = this.isBomb ? '#ff0000' : colors[rIdx];
+            this.r = 36 + Math.random()*16;
+            // UPDATE 2: Spawn within safe bounds so fruit stays inside screen
+            let margin = this.r + 10;
+            this.x = margin + Math.random()*(W - margin*2);
+            this.y = H + this.r;
+            // UPDATE 2: Constrain horizontal velocity so fruit doesn't fly offscreen
+            let maxVx = Math.min(2.5, (W/2 - margin) / 80);
+            this.vx = (Math.random()-0.5) * (isMenu ? maxVx*1.2 : maxVx*2);
+            this.vy = -(isMenu?(9+Math.random()*4):(11+Math.random()*3+Math.min(window.G.stage*0.08,2)));
+            this.grav = isMenu ? 0.05 : 0.10;
+            this.rot = 0; this.rotSpd = (Math.random()-0.5)*0.10;
             this.cut=false; this.sliced=false; this.sliceAlpha=0;
         }
-        update(){ this.x+=this.vx; this.y+=this.vy; this.vy+=this.grav; this.rot+=this.rotSpd; if(this.sliced) this.sliceAlpha=Math.max(0,this.sliceAlpha-0.05); }
+        update(){
+            this.x+=this.vx; this.y+=this.vy; this.vy+=this.grav; this.rot+=this.rotSpd;
+            // UPDATE 2: Bounce off side walls to keep fruit inside barrier
+            let margin = this.r;
+            if(this.x < margin){ this.x = margin; this.vx = Math.abs(this.vx); }
+            if(this.x > W - margin){ this.x = W - margin; this.vx = -Math.abs(this.vx); }
+            if(this.sliced) this.sliceAlpha=Math.max(0,this.sliceAlpha-0.05);
+        }
         draw(){
             ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rot);
             ctx.shadowColor=this.isBomb?'#ff0000':'rgba(0,0,0,0.3)'; ctx.shadowBlur=this.isBomb?20:8; ctx.shadowOffsetY=4;
@@ -802,7 +994,7 @@
             }
         }
     }
-    
+
     class Particle {
         constructor(x,y,color){
             this.x=x; this.y=y; this.vx=(Math.random()-0.5)*16; this.vy=(Math.random()-0.5)*16;
@@ -815,9 +1007,14 @@
     function splash(x,y,c){ for(let i=0;i<20;i++) particles.push(new Particle(x,y,c)); }
     function getPos(e){ let t=e.touches?e.touches[0]:e; return {x:t.clientX,y:t.clientY}; }
     function onStart(e){ if(gameState!=='playing')return; isSlicing=true; sliceTrail=[]; let p=getPos(e); mouse.x=p.x; mouse.y=p.y; }
-    function onMove(e){ if(!isSlicing||gameState!=='playing')return; let p=getPos(e); mouse.x=p.x; mouse.y=p.y; sliceTrail.push({x:p.x,y:p.y,time:Date.now()}); checkCuts(); }
+    function onMove(e){
+        if(!isSlicing||gameState!=='playing')return;
+        let p=getPos(e); mouse.x=p.x; mouse.y=p.y;
+        sliceTrail.push({x:p.x,y:p.y,time:Date.now()});
+        checkCuts();
+    }
     function onEnd(){ isSlicing=false; setTimeout(()=>sliceTrail=[],120); }
-    
+
     canvas.addEventListener('mousedown',onStart); canvas.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onEnd);
     canvas.addEventListener('touchstart',onStart,{passive:false}); canvas.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',onEnd);
 
@@ -827,12 +1024,12 @@
             if(!o.cut && Math.hypot(o.x-mouse.x, o.y-mouse.y)<o.r){
                 o.cut=true; o.sliced=true; o.sliceAlpha=1; splash(o.x,o.y,o.color);
                 if(o.isBomb){ addMiss(); addMiss(); }
-                else{ 
-                    playSound('slice'); currentCut++; 
+                else{
+                    playSound('slice'); currentCut++;
                     document.getElementById('hud-cut').textContent=currentCut;
                     document.getElementById('lv-fill').style.width = Math.min(100, (currentCut/cutTarget)*100) + '%';
                     if(currentCut>=cutTarget) {
-                        gameState='paused'; 
+                        gameState='paused';
                         setTimeout(()=>{ playSound('win'); window.showModal('complete-modal'); }, 250);
                     }
                 }
@@ -863,8 +1060,17 @@
     window.loop = function(){
         ctx.clearRect(0,0,W,H);
         let isActive = (gameState==='playing' || gameState==='menu');
-        if(isActive){ let rate = gameState==='menu' ? 55 : Math.max(28,65 - window.G.stage*2); if(Math.random()<1/rate) objects.push(new FruitObj(gameState==='menu')); }
-        for(let i=objects.length-1;i>=0;i--){ let o=objects[i]; if(isActive) o.update(); o.draw(); if(o.y>H+o.r){ if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss(); objects.splice(i,1); } }
+        if(isActive){
+            let rate = gameState==='menu' ? 55 : Math.max(28,65 - window.G.stage*2);
+            if(Math.random()<1/rate) objects.push(new FruitObj(gameState==='menu'));
+        }
+        for(let i=objects.length-1;i>=0;i--){
+            let o=objects[i]; if(isActive) o.update(); o.draw();
+            if(o.y>H+o.r+20){
+                if(gameState==='playing'&&!o.isBomb&&!o.cut) addMiss();
+                objects.splice(i,1);
+            }
+        }
         for(let i=particles.length-1;i>=0;i--){ let p=particles[i]; if(isActive) p.update(); p.draw(); if(p.life<=0) particles.splice(i,1); }
         if(gameState==='playing') drawBlade();
         requestAnimationFrame(window.loop);
@@ -887,19 +1093,19 @@
     window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
     /* -------------------------------------------------------------------------
-       Game Controls & API Claims
+       Game Controls
     ------------------------------------------------------------------------- */
     window.tryStartGame = function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
-        if(!forceStart) { window.G.tokens--; window.updateUI(); } 
-        
-        stopSound('menu'); 
+        if(!forceStart) { window.G.tokens--; window.updateUI(); }
+
+        stopSound('menu');
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
         document.getElementById('strikes').style.display='flex';
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
         cutTarget = 15 + window.G.stage*3;
-        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage; 
+        pendingReward = 8 + Math.floor(Math.random()*8) + window.G.stage;
         document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
         document.getElementById('comp-reward').textContent=pendingReward;
         document.getElementById('hud-target').textContent=cutTarget;
@@ -931,21 +1137,20 @@
     window.watchAdForGame = async function(){
         document.getElementById('ad-loader').style.display='flex';
         try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
-        document.getElementById('ad-loader').style.display='none'; window.hideModal('no-token-modal'); window.tryStartGame(true); 
+        document.getElementById('ad-loader').style.display='none'; window.hideModal('no-token-modal'); window.tryStartGame(true);
     };
 
     window.watchAdForGameRetry = async function(){
         window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
         try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
-        document.getElementById('ad-loader').style.display='none'; window.tryStartGame(true); 
+        document.getElementById('ad-loader').style.display='none'; window.tryStartGame(true);
     };
 
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
         document.getElementById('ad-loader').style.display='flex';
         if(watchAd){ try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); } }
-        
-        // --- API CALL TO CLAIM COINS ---
+
         const res = await apiCall('/api/game_claim', { reward: pendingReward, isAdWatched: watchAd });
         document.getElementById('ad-loader').style.display='none';
 
@@ -957,27 +1162,28 @@
     window.skipStageWithAd = async function(){
         window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
         try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
-        const res = await apiCall('/api/game_claim', { reward: 0, isAdWatched: false }); // Just to level up
+        const res = await apiCall('/api/game_claim', { reward: 0, isAdWatched: false });
         document.getElementById('ad-loader').style.display='none';
         if(res.success) { window.tryStartGame(true); showToast('⏭️ Stage skipped!'); }
     };
 
     /* -------------------------------------------------------------------------
-       777 Lottery System
+       UPDATE 4: Lottery - coin prizes only (no gem prizes) = gold only
+       Diamond earning kept very limited/hard
     ------------------------------------------------------------------------- */
     const LOTTERY_PRIZES = [
-        { id:1,  label:'1 💎',      icon:'💎',  type:'gem',   val:1,    weight:3  },
-        { id:2,  label:'10 🪙',     icon:'🪙',  type:'coin',  val:10,   weight:10 },
-        { id:3,  label:'20 🪙',     icon:'🪙',  type:'coin',  val:20,   weight:10 },
-        { id:4,  label:'50 🪙',     icon:'🪙',  type:'coin',  val:50,   weight:10 },
-        { id:5,  label:'1 🎮',      icon:'🎮',  type:'token', val:1,    weight:10 },
-        { id:6,  label:'0.1 💎',    icon:'💠',  type:'gem',   val:0.1,  weight:10 },
-        { id:7,  label:'0.5 💎',    icon:'💎',  type:'gem',   val:0.5,  weight:4  },
-        { id:8,  label:'0.8 💎',    icon:'💎',  type:'gem',   val:0.8,  weight:3  },
-        { id:9,  label:'100 🪙',    icon:'🪙',  type:'coin',  val:100,  weight:10 },
-        { id:10, label:'200 🪙',    icon:'🪙',  type:'coin',  val:200,  weight:10 },
+        { id:1,  label:'50 🪙 Gold',   icon:'🪙',  type:'coin', val:50,  weight:15 },
+        { id:2,  label:'100 🪙 Gold',  icon:'🪙',  type:'coin', val:100, weight:15 },
+        { id:3,  label:'200 🪙 Gold',  icon:'🪙',  type:'coin', val:200, weight:12 },
+        { id:4,  label:'500 🪙 Gold',  icon:'🪙',  type:'coin', val:500, weight:10 },
+        { id:5,  label:'1 🎮 Token',   icon:'🎮',  type:'token',val:1,   weight:12 },
+        { id:6,  label:'20 🪙 Gold',   icon:'🪙',  type:'coin', val:20,  weight:15 },
+        { id:7,  label:'30 🪙 Gold',   icon:'🪙',  type:'coin', val:30,  weight:12 },
+        { id:8,  label:'80 🪙 Gold',   icon:'🪙',  type:'coin', val:80,  weight:8  },
+        { id:9,  label:'1000 🪙 Gold', icon:'🪙',  type:'coin', val:1000,weight:1  },
+        { id:10, label:'10 🪙 Gold',   icon:'🪙',  type:'coin', val:10,  weight:10 },
     ];
-    const SLOT_SYMBOLS = ['💎','🍋','🎰','7️⃣','⭐','🎮','💠','🪙','🔔','🍒'];
+    const SLOT_SYMBOLS = ['🪙','🍋','🎰','7️⃣','⭐','🎮','🍊','🪙','🔔','🍒'];
 
     function weightedRandom(){
         let total = LOTTERY_PRIZES.reduce((a,p)=>a+p.weight,0);
@@ -986,16 +1192,13 @@
         return LOTTERY_PRIZES[LOTTERY_PRIZES.length-1];
     }
     function getSlotResult(prize){
-        if(prize.type==='gem' && prize.val>=1) return ['💎','💎','💎'];
-        if(prize.type==='gem' && prize.val===0.5) return ['💎','💎','🌟'];
-        if(prize.type==='gem' && prize.val===0.8) return ['💎','💎','⭐'];
-        if(prize.type==='gem' && prize.val===0.1) return ['💠','💠','💠'];
         if(prize.type==='token') return ['🎮','🎮','🎮'];
-        if(prize.val>=200) return ['🪙','🪙','🪙'];
-        if(prize.val>=100) return ['🔔','🔔','🔔'];
-        if(prize.val>=50)  return ['⭐','⭐','⭐'];
-        if(prize.val>=20)  return ['🍒','🍒','7️⃣'];
-        return ['🍋','🍋','🎰'];
+        if(prize.val>=1000) return ['🪙','🪙','🪙'];
+        if(prize.val>=500) return ['⭐','⭐','⭐'];
+        if(prize.val>=200) return ['🔔','🔔','🔔'];
+        if(prize.val>=100) return ['🍒','🍒','🍒'];
+        if(prize.val>=50)  return ['🍋','🍋','🍋'];
+        return ['🎰','🍊','7️⃣'];
     }
 
     let lotterySpinning = false;
@@ -1023,8 +1226,8 @@
         document.getElementById('lottery-spin-btn').textContent = '⏳ Loading Ad...';
         stopSound('menu');
 
-        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
-        
+        try { let AdC = Adsgram.init({ blockId: "28066" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+
         playSound('spin');
         let slots = ['slot-0','slot-1','slot-2'];
         slots.forEach(id=>{ document.getElementById(id).classList.add('spinning'); document.getElementById(id).textContent='🎰'; });
@@ -1040,7 +1243,6 @@
             document.getElementById('slot-2').classList.remove('spinning'); document.getElementById('slot-2').textContent=finalSymbols[2];
             if(finalSymbols[0]===finalSymbols[1] && finalSymbols[1]===finalSymbols[2]){ slots.forEach(id=>{ document.getElementById(id).classList.add('win'); }); }
 
-            // API Call for Lottery Prize
             const res = await apiCall('/api/lottery', { prizeType: prize.type, prizeVal: prize.val });
 
             if(res.success){
@@ -1050,7 +1252,7 @@
             } else {
                 document.getElementById('lottery-result').textContent = "Server Error";
             }
-            
+
             window.renderLotteryModal();
             lotterySpinning = false;
             playSound('menu');
