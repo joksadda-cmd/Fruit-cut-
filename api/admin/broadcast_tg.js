@@ -9,9 +9,8 @@ module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
-    // -------------------
 
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+    if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method Not Allowed' });
     
     const { secret, message, btnText, btnUrl } = req.body;
 
@@ -27,13 +26,18 @@ module.exports = async function handler(req, res) {
     if (!botToken) return res.status(500).json({ success: false, error: 'BOT_TOKEN is missing in Vercel settings' });
 
     try {
-        const usersSnap = await db.collection('users').get();
-        let userIds = [];
+        // ৩. মাত্র ১টি Read খরচ করে সবার আইডি নিয়ে আসা!
+        const broadcastDoc = await db.collection('system').doc('broadcast_list').get();
         
-        // আমি ধরে নিচ্ছি আপনার ডাটাবেসে doc.id টাই হলো ইউজারের টেলিগ্রাম আইডি
-        usersSnap.forEach(doc => { userIds.push(doc.id); });
+        if (!broadcastDoc.exists) {
+            return res.status(400).json({ success: false, error: 'No users found in broadcast list' });
+        }
 
-        if (userIds.length === 0) return res.status(400).json({ success: false, error: 'No users found in database' });
+        const userIds = broadcastDoc.data().ids || [];
+
+        if (userIds.length === 0) {
+            return res.status(400).json({ success: false, error: 'User list is empty' });
+        }
 
         let replyMarkup = {};
         if (btnText && btnUrl) {
@@ -44,7 +48,7 @@ module.exports = async function handler(req, res) {
 
         let sentCount = 0;
 
-        // ৩. Promise.all এর বদলে For Loop ব্যবহার (যাতে Rate Limit ক্রস না করে)
+        // ৪. লুপ করে মেসেজ পাঠানো (Rate Limit Protection সহ)
         for (const userId of userIds) {
             try {
                 const tgUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -64,7 +68,7 @@ module.exports = async function handler(req, res) {
                     sentCount++;
                 }
 
-                // টেলিগ্রামের লিমিটেশন এড়াতে প্রতি মেসেজের পর 40 মিলি-সেকেন্ড অপেক্ষা করবে
+                // টেলিগ্রামের লিমিটেশন এড়াতে প্রতি মেসেজের পর 40 মিলি-সেকেন্ড অপেক্ষা করবে (১ সেকেন্ডে সর্বোচ্চ ২৫ মেসেজ যাবে)
                 await new Promise(resolve => setTimeout(resolve, 40));
 
             } catch (err) {
@@ -72,9 +76,9 @@ module.exports = async function handler(req, res) {
             }
         }
 
+        // ৫. সফলভাবে পাঠানো মেসেজের সংখ্যা রিটার্ন করা
         return res.status(200).json({ success: true, sentCount });
     } catch (error) {
         return res.status(500).json({ success: false, error: error.message });
     }
-}
 }
