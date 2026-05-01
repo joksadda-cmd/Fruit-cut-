@@ -1,6 +1,15 @@
 const { db, admin } = require('./utils/firebase');
 
 export default async function handler(req, res) {
+    // --- CORS Headers (প্রয়োজন হলে) ---
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
     
     const { telegramId, username, referredBy } = req.body;
@@ -13,7 +22,7 @@ export default async function handler(req, res) {
     const today = new Date().toDateString();
 
     if (!doc.exists) {
-        // নতুন একাউন্ট
+        // --- নতুন একাউন্ট ---
         if (referredBy) {
             // যে রেফার করেছে তাকে ১ টোকেন দেওয়া
             const refUser = db.collection('users').doc(String(referredBy));
@@ -30,8 +39,18 @@ export default async function handler(req, res) {
             shopTokenBought: 0, shopDiamondExchanged: 0
         };
         await userRef.set(userData);
+
+        // 🔥 Array Tricks: নতুন ইউজারের আইডি ব্রডকাস্ট লিস্টে সেভ করা হচ্ছে
+        try {
+            await db.collection('system').doc('broadcast_list').set({
+                ids: admin.firestore.FieldValue.arrayUnion(String(telegramId))
+            }, { merge: true });
+        } catch (error) {
+            console.error("Broadcast array update error:", error);
+        }
+
     } else {
-        // পুরানো একাউন্ট (Daily Reset চেক)
+        // --- পুরানো একাউন্ট (Daily Reset চেক) ---
         userData = doc.data();
         if (userData.adsDayStamp !== today) {
             await userRef.update({
