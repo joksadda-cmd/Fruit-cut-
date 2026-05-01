@@ -1,6 +1,7 @@
 const { db } = require('../utils/firebase');
+const fetch = require('node-fetch'); // আপনার আগের কোডে এটা ছিল, তাই রাখলাম
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     // --- CORS Headers ---
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -23,10 +24,10 @@ module.exports = async function handler(req, res) {
 
     // ২. Bot Token চেক
     const botToken = process.env.BOT_TOKEN;
-    if (!botToken) return res.status(500).json({ success: false, error: 'BOT_TOKEN is missing in Vercel settings' });
+    if (!botToken) return res.status(500).json({ success: false, error: 'BOT_TOKEN is missing in Vercel' });
 
     try {
-        // ৩. মাত্র ১টি Read খরচ করে সবার আইডি নিয়ে আসা!
+        // ৩. মাত্র ১টি Read খরচ করে সবার আইডি Array থেকে নিয়ে আসা!
         const broadcastDoc = await db.collection('system').doc('broadcast_list').get();
         
         if (!broadcastDoc.exists) {
@@ -68,11 +69,11 @@ module.exports = async function handler(req, res) {
                     sentCount++;
                 }
 
-                // টেলিগ্রামের লিমিটেশন এড়াতে প্রতি মেসেজের পর 40 মিলি-সেকেন্ড অপেক্ষা করবে (১ সেকেন্ডে সর্বোচ্চ ২৫ মেসেজ যাবে)
+                // টেলিগ্রামের লিমিটেশন এড়াতে প্রতি মেসেজের পর 40 মিলি-সেকেন্ড অপেক্ষা করবে
                 await new Promise(resolve => setTimeout(resolve, 40));
 
             } catch (err) {
-                console.error(`Failed to send message to ${userId}:`, err);
+                console.error(`Failed to send to ${userId}`);
             }
         }
 
@@ -81,4 +82,4 @@ module.exports = async function handler(req, res) {
     } catch (error) {
         return res.status(500).json({ success: false, error: error.message });
     }
-}
+                            }
