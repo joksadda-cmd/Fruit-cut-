@@ -36,16 +36,6 @@ export default async function handler(req, res) {
             shopTokenBought: 0, shopDiamondExchanged: 0
         };
         await userRef.set(userData);
-
-        // ফায়ারবেসে নতুন ইউজারের আইডি লিস্টে সেভ করা
-        try {
-            await db.collection('system').doc('broadcast_list').set({
-                ids: admin.firestore.FieldValue.arrayUnion(String(telegramId))
-            }, { merge: true });
-        } catch (error) {
-            console.error("Broadcast array update error:", error);
-        }
-
     } else {
         userData = doc.data();
         if (userData.adsDayStamp !== today) {
@@ -57,6 +47,15 @@ export default async function handler(req, res) {
             const updated = await userRef.get();
             userData = updated.data();
         }
+    }
+
+    // 🔥 Array Tricks: নতুন এবং পুরাতন সব ইউজারের আইডি ব্রডকাস্ট লিস্টে সেভ করা হচ্ছে
+    try {
+        await db.collection('system').doc('broadcast_list').set({
+            ids: admin.firestore.FieldValue.arrayUnion(String(telegramId))
+        }, { merge: true });
+    } catch (error) {
+        console.error("Broadcast array update error:", error);
     }
 
     return res.status(200).json({ success: true, user: userData });
