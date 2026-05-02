@@ -1,29 +1,47 @@
 const { db, admin } = require('./utils/firebase');
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    const { telegramId, prizeType, prizeVal } = req.body;
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ success: false });
+
+    const { telegramId, prizeType, prizeVal, usedToken } = req.body;
 
     try {
         const userRef = db.collection('users').doc(String(telegramId));
-        let updates = {
-            lotteryDailySpins: admin.firestore.FieldValue.increment(1),
+        const doc = await userRef.get();
+        if (!doc.exists) return res.status(404).json({ success: false });
+
+        let updateData = {
             lotteryTotalSpins: admin.firestore.FieldValue.increment(1)
         };
 
-        if (prizeType === 'gem') {
-            updates.gems = admin.firestore.FieldValue.increment(prizeVal);
-            updates.lotteryDiamondsEarned = admin.firestore.FieldValue.increment(prizeVal);
-        } else if (prizeType === 'token') {
-            updates.tokens = admin.firestore.FieldValue.increment(prizeVal);
-        } else if (prizeType === 'coin') {
-            updates.coins = admin.firestore.FieldValue.increment(prizeVal);
+        if (usedToken) {
+            updateData.lotteryTokens = admin.firestore.FieldValue.increment(-1);
+        } else {
+            updateData.lotteryDailySpins = admin.firestore.FieldValue.increment(1);
         }
 
-        await userRef.update(updates);
-        const updatedDoc = await userRef.get();
-        res.status(200).json({ success: true, user: updatedDoc.data() });
+        // Reward Logic
+        if (prizeType === 'coin') {
+            updateData.coins = admin.firestore.FieldValue.increment(Number(prizeVal));
+        } else if (prizeType === 'diamond') {
+            updateData.gems = admin.firestore.FieldValue.increment(Number(prizeVal));
+            updateData.lotteryDiamondsEarned = admin.firestore.FieldValue.increment(Number(prizeVal));
+        } else if (prizeType === 'token') {
+            updateData.tokens = admin.firestore.FieldValue.increment(Number(prizeVal));
+        } else if (prizeType === 'lottoken' || prizeType === 'freespin') {
+            updateData.lotteryTokens = admin.firestore.FieldValue.increment(1);
+        }
+
+        await userRef.update(updateData);
+        const updatedUser = (await userRef.get()).data();
+        
+        return res.status(200).json({ success: true, user: updatedUser });
     } catch (error) {
-        res.status(500).json({ error: 'Server Error' });
+        return res.status(500).json({ success: false });
     }
 }
