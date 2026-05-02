@@ -753,6 +753,27 @@
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
 
+            // TOKEN BUG FIX: Check if local cache has lower token count than server
+            // This prevents reload from restoring tokens that were already spent
+            try {
+                let tokenCache = localStorage.getItem('fc_token_cache');
+                if(tokenCache){
+                    let tc = JSON.parse(tokenCache);
+                    let cacheAge = Date.now() - (tc.ts || 0);
+                    let hoursPassed = cacheAge / (1000 * 60 * 60);
+                    // Calculate how many tokens should have refilled since cache
+                    let refilledTokens = Math.floor(hoursPassed); // +1 per hour
+                    let expectedTokens = Math.min(10, (tc.tokens || 0) + refilledTokens);
+                    // If server gave MORE tokens than expected (bug), use our calculated value
+                    if(tc.id === currentUser?.id && window.G.tokens > expectedTokens){
+                        console.log(`[TOKEN FIX] Server: ${window.G.tokens}, Expected: ${expectedTokens}. Using expected.`);
+                        window.G.tokens = expectedTokens;
+                    }
+                    // Update cache with current corrected value
+                    localStorage.setItem('fc_token_cache', JSON.stringify({ id: currentUser?.id, tokens: window.G.tokens, ts: tc.ts }));
+                }
+            } catch(e){}
+
             window.G.username = tgUser.username || '';
             window.updateUI();
 
@@ -787,6 +808,16 @@
         }
     }
 
+    function saveTokenCache(){
+        try{
+            localStorage.setItem('fc_token_cache', JSON.stringify({
+                id: currentUser?.id,
+                tokens: window.G.tokens,
+                ts: Date.now()
+            }));
+        }catch(e){}
+    }
+
     function startTokenTimer(){
         setInterval(()=>{
             if(window.G.tokens < 10){
@@ -796,6 +827,7 @@
                     window.G.tokens = Math.min(10, window.G.tokens+1);
                     window.G.tokenRefill = Date.now();
                     showToast(`Token refilled! (${window.G.tokens})`);
+                    saveTokenCache();
                     window.updateUI();
                 } else {
                     let m = Math.floor(left/60000), sec = Math.floor((left%60000)/1000);
@@ -1290,9 +1322,30 @@
     window.toggleSound = function(){ window.G.sound = !window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); if(!window.G.sound) stopSound('menu'); else if(gameState === 'menu') playSound('menu'); window.updateUI(); };
     window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
-    window.tryStartGame = function(forceStart=false){
+    window.tryStartGame = async function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
-        if(!forceStart) { window.G.tokens--; window.updateUI(); }
+        
+        if(!forceStart) {
+            // Deduct token on SERVER first (fixes reload bug)
+            let btn = document.querySelector('.start-btn');
+            if(btn){ btn.style.opacity='0.6'; btn.style.pointerEvents='none'; }
+            const res = await apiCall('/api/use_token', { telegramId: currentUser?.id });
+            if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
+            
+            if(!res.success){
+                // Fallback: deduct locally if API endpoint not yet created
+                if(window.G.tokens > 0){
+                    window.G.tokens--;
+                    // Save token locally as backup
+                    try{ localStorage.setItem('fc_token_cache', JSON.stringify({ id: currentUser?.id, tokens: window.G.tokens, ts: Date.now() })); }catch(e){}
+                    window.updateUI();
+                } else {
+                    showToast('No tokens!');
+                    return;
+                }
+            }
+        }
+        
         stopSound('menu');
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
@@ -1300,7 +1353,6 @@
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
         
         cutTarget = 10 + window.G.stage * 2;
-        // 🎮 GAME REWARD UPDATED: Randomly 40 to 120 Gold
         pendingReward = 40 + Math.floor(Math.random() * 81); 
 
         document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
@@ -1370,7 +1422,7 @@
         }
     };
 
-    window.retryGame = function(){ window.hideModal('over-modal'); if(window.G.tokens <= 0){ window.showNoTokenModal(); return; } window.tryStartGame(); };
+    window.retryGame = async function(){ window.hideModal('over-modal'); if(window.G.tokens <= 0){ window.showNoTokenModal(); return; } await window.tryStartGame(); };
 
     window.skipStageWithAd = async function(){
         window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
