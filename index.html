@@ -26,6 +26,7 @@
         #ui{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none;}
         .ptr{pointer-events:auto;}
         #top-bar{ display:flex;justify-content:space-between;align-items:center; padding:12px 16px;gap:8px; }
+        
         /* Gold currency box */
         .coin-box{ background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #c48000,0 6px 12px rgba(0,0,0,0.3); }
         .coin-label{font-size:11px;color:#6b4400;font-weight:800;line-height:1;}
@@ -45,33 +46,28 @@
         .title-sub{font-size:13px;color:rgba(255,255,255,0.8);font-weight:800;letter-spacing:3px;margin-top:4px;}
         .menu-knife{font-size:60px;margin:4px 0;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));animation:knifeFloat 2s ease-in-out infinite;}
         @keyframes knifeFloat{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-8px) rotate(5deg);}}
+        
         #token-bar{ background:rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.2); border-radius:20px;padding:6px 16px;display:flex;align-items:center;gap:8px; font-size:14px;color:#fff;font-weight:800;margin-bottom:6px; }
         .token-refill{font-size:11px;color:#ffcc00;}
+        
         .start-btn{ background:linear-gradient(180deg,#ffe040,#ff8c00); border:4px solid #fff;border-radius:20px; width:220px;padding:14px 0;text-align:center; font-family:'Luckiest Guy',cursive;font-size:34px;color:#fff; text-shadow:2px 3px 0 rgba(0,0,0,0.3); box-shadow:0 8px 0 #cc6600,0 12px 25px rgba(0,0,0,0.4); cursor:pointer;transition:transform 0.1s,box-shadow 0.1s; animation:pulsBtn 1.5s ease-in-out infinite; }
         @keyframes pulsBtn{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
         .start-btn:active{transform:translateY(6px)!important;box-shadow:0 2px 0 #cc6600!important;animation:none!important;}
+        
         .spin-btn{ background:linear-gradient(180deg,#a855f7,#7e22ce); border:3px solid rgba(255,255,255,0.6);border-radius:16px; padding:9px 26px;text-align:center; font-family:'Luckiest Guy',cursive;font-size:20px;color:#fff; text-shadow:1px 2px 0 rgba(0,0,0,0.3); box-shadow:0 5px 0 #5b21b6,0 8px 18px rgba(0,0,0,0.3); cursor:pointer;margin-top:5px; display:flex;align-items:center;gap:8px; }
         .spin-badge{ background:#ff3355;color:#fff;font-size:11px;font-family:'Nunito',sans-serif; padding:2px 7px;border-radius:10px;font-weight:900;animation:badgePulse 1s infinite; }
         @keyframes badgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
 
-        /* ---- PLAY AREA LAYOUT: Task Left | PLAY | Refer Right ---- */
-        .play-center-row {
-            display:flex; align-items:center; justify-content:center;
-            gap:10px; width:100%; margin-top:6px;
-        }
-        .side-panel-btn {
-            display:flex; flex-direction:column; align-items:center; gap:4px;
-            background:rgba(0,0,0,0.4); border:2px solid rgba(255,255,255,0.15);
-            border-radius:16px; padding:10px 10px; cursor:pointer;
-            transition:transform 0.15s; min-width:58px; text-align:center;
-        }
+        /* ---- PLAY AREA LAYOUT ---- */
+        .play-center-row { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:6px; }
+        .side-panel-btn { display:flex; flex-direction:column; align-items:center; gap:4px; background:rgba(0,0,0,0.4); border:2px solid rgba(255,255,255,0.15); border-radius:16px; padding:10px 10px; cursor:pointer; transition:transform 0.15s; min-width:58px; text-align:center; }
         .side-panel-btn:active{transform:scale(0.92);}
         .side-icon{font-size:28px;}
         .side-label{font-size:10px;font-weight:900;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,0.5);}
         .side-panel-btn.task-side { background:linear-gradient(180deg,rgba(0,188,212,0.3),rgba(0,96,100,0.3)); border-color:rgba(0,188,212,0.4); }
         .side-panel-btn.refer-side { background:linear-gradient(180deg,rgba(67,160,71,0.3),rgba(27,94,32,0.3)); border-color:rgba(67,160,71,0.4); }
 
-        /* ---- BOTTOM ICONS: 4 icons row ---- */
+        /* ---- BOTTOM ICONS ---- */
         #bottom-icons{ display:flex;justify-content:center;gap:10px; padding:10px 10px 16px;width:100%;flex-wrap:wrap; }
         .icon-btn{ display:flex;flex-direction:column;align-items:center;gap:3px; cursor:pointer;transition:transform 0.15s; }
         .icon-btn:active{transform:scale(0.9);}
@@ -92,14 +88,17 @@
         .lv-bar-wrap{flex:1;height:14px;background:rgba(0,0,0,0.4);border-radius:10px;overflow:hidden;}
         .lv-bar-fill{height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00);border-radius:10px;transition:width 0.3s;}
         .pause-btn{ background:linear-gradient(180deg,#ff3355,#cc0033); border:2px solid #fff;border-radius:14px; padding:4px 12px;display:flex;align-items:center;justify-content:center; font-size:22px;color:#fff;cursor:pointer; box-shadow:0 4px 0 #880022;pointer-events:auto; }
+        
         #strikes{position:fixed;top:70px;right:16px;z-index:13;display:none;gap:6px;}
         .x-mark{font-family:'Luckiest Guy',cursive;font-size:28px;color:rgba(255,255,255,0.2);}
         .x-active{color:#ff3355;text-shadow:0 0 12px #ff3355;}
+        
         .overlay{ display:none;position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,0.75);backdrop-filter:blur(4px); z-index:50;justify-content:center;align-items:center; overflow-y:auto; }
         .modal{ background:linear-gradient(160deg,#0d3040,#071e28); border:3px solid rgba(100,200,220,0.3);border-radius:24px; padding:28px 22px;width:92%;max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.05); position:relative;overflow:hidden;margin:auto; }
         .modal::before{ content:'';position:absolute;top:0;left:0;width:100%;height:3px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
         .mh{ font-family:'Luckiest Guy',cursive;font-size:28px; text-align:center;margin-bottom:16px; text-shadow:2px 3px 0 rgba(0,0,0,0.4); }
         .mh-gold{color:var(--gold);} .mh-red{color:var(--red);} .mh-green{color:#4caf50;} .mh-purple{color:#cf6fef;} .mh-cyan{color:#00e5ff;}
+        
         .btn{ width:100%;padding:13px;border-radius:14px;border:none;cursor:pointer; font-family:'Nunito',sans-serif;font-size:17px;font-weight:900; margin-top:10px;transition:transform 0.1s,box-shadow 0.1s; box-shadow:var(--btn-shadow) rgba(0,0,0,0.3); }
         .btn:active{transform:translateY(5px);box-shadow:none!important;}
         .btn:disabled{filter:grayscale(1); opacity:0.6; cursor:not-allowed;}
@@ -109,6 +108,7 @@
         .btn-blue{background:linear-gradient(180deg,#1976d2,#0d47a1);color:#fff;box-shadow:var(--btn-shadow) #002171;}
         .btn-purple{background:linear-gradient(180deg,#9c27b0,#6a0080);color:#fff;box-shadow:var(--btn-shadow) #4a0060;}
         .btn-grey{background:linear-gradient(180deg,#546e7a,#37474f);color:#fff;box-shadow:var(--btn-shadow) #1c313a;}
+        
         .mrow{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 16px;margin-bottom:10px;}
         .mrow-label{font-size:15px;font-weight:800;color:#ddd;}
         .mrow-val{font-size:22px;}
@@ -116,6 +116,7 @@
         select option{background:#0d3040;color:#fff;}
         .info-text{font-size:12px;color:#7ab;margin:8px 0;line-height:1.5;text-align:center;}
         .w-badge{ display:inline-block;background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.4); border-radius:8px;padding:3px 10px;font-size:12px;color:var(--gold);font-weight:800;margin-bottom:4px; }
+        
         .shop-tabs{display:flex;gap:8px;margin-bottom:14px;}
         .shop-tab{ flex:1;padding:10px;border-radius:12px;border:2px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06);color:#aaa;font-family:'Nunito',sans-serif; font-size:13px;font-weight:900;cursor:pointer;text-align:center;transition:all 0.2s; }
         .shop-tab.active{background:linear-gradient(180deg,#ffe040,#ff8c00);border-color:#ff8c00;color:#fff;}
@@ -129,7 +130,7 @@
         .tsc-amount{font-family:'Luckiest Guy',cursive;font-size:20px;color:#fff;line-height:1;}
         .tsc-price{font-size:12px;color:#ffcc00;font-weight:800;margin-top:4px;}
         .tsc-badge{ position:absolute;top:6px;right:6px;background:#ff3355;color:#fff; font-size:9px;font-weight:900;padding:2px 6px;border-radius:8px; }
-        /* Gold→Diamond exchange section */
+        
         .gold-exchange-info{ background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1)); border:2px solid rgba(100,160,255,0.35);border-radius:16px;padding:14px;margin-bottom:12px; text-align:center; }
         .gei-rate{font-family:'Luckiest Guy',cursive;font-size:22px;color:#4af;line-height:1.1;}
         .gei-label{font-size:11px;color:#7ab;margin-top:4px;}
@@ -140,36 +141,42 @@
         .exchange-preset-btn:active{background:rgba(100,160,255,0.3);}
         .exchange-result-preview{ background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25); border-radius:10px;padding:8px;text-align:center;margin-bottom:8px; font-size:13px;color:#4caf50;font-weight:900; }
         .shop-daily-info{ background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08); border-radius:10px;padding:8px 12px;font-size:11px;color:#888;text-align:center;margin-bottom:8px; }
+        
         .refer-link{ background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15); border-radius:12px;padding:10px 14px;font-size:13px;color:#7de; word-break:break-all;margin:8px 0;text-align:center; }
         .refer-stats{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1); border-radius:14px;padding:12px;margin-bottom:10px;text-align:center; }
         .refer-count{font-size:32px;font-family:'Luckiest Guy',cursive;color:#ffcc00;}
         .refer-count-label{font-size:12px;color:#aaa;}
+        
         .big-emoji{font-size:64px;text-align:center;display:block;animation:floatLogo 2s infinite;margin-bottom:8px;}
         .reward-row{display:flex;align-items:center;justify-content:center;gap:10px;font-size:22px;font-weight:900;color:#fff;margin:12px 0;}
+        
         #confetti-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:49;display:none;}
         .cp{position:absolute;width:10px;height:14px;animation:fall linear infinite;}
         @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+        
         #fullscreen-loader, #ad-loader{ display:flex;position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,64,80,0.95);z-index:9999; justify-content:center;align-items:center;flex-direction:column;gap:16px; }
         #ad-loader{ background:rgba(0,0,0,0.9); display:none; }
         .spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,0.2);border-top-color:#ffcc00;border-radius:50%;animation:spin 1s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
         #token-toast{ position:fixed;bottom:120px;left:50%;transform:translateX(-50%); background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px; padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999; display:none;animation:fadeUp 0.3s ease;white-space:nowrap; }
         @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-        /* Lootbox - GOLD ONLY (no diamond) */
+        
+        /* Lootbox */
         .lootbox-wrap{ background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3); border-radius:16px;padding:16px;margin-bottom:12px;text-align:center; }
         .lootbox-bar-bg{ width:100%;height:20px;background:rgba(0,0,0,0.4);border-radius:10px; overflow:hidden;margin:8px 0;border:2px solid rgba(255,200,0,0.3); }
         .lootbox-bar-fill{ height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00); border-radius:10px;transition:width 0.5s; }
         .lootbox-pts{font-size:22px;font-family:'Luckiest Guy',cursive;color:#ffcc00;}
         .lootbox-claim-btn{ background:linear-gradient(180deg,#ffe040,#ff8c00); border:none;border-radius:12px;padding:10px 24px; font-family:'Luckiest Guy',cursive;font-size:18px;color:#fff; cursor:pointer;box-shadow:0 4px 0 #cc5500;margin-top:6px;width:100%; }
         .lootbox-claim-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 4px 0 #111;cursor:not-allowed; }
+        
         .ads-section{ background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1); border-radius:14px;padding:12px;margin-bottom:10px; }
         .ads-row{ display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
         .ads-info{font-size:12px;color:#aaa;}
         .ads-info strong{color:#ffcc00;}
         .watch-ad-btn{ background:linear-gradient(180deg,#e91e63,#880e4f); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #500030;white-space:nowrap; }
         .watch-ad-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 3px 0 #111;cursor:not-allowed; }
-        /* Adsgram Special button - highlighted */
         .watch-ad-btn.special{ background:linear-gradient(180deg,#ff8c00,#e65100);box-shadow:0 3px 0 #8b3000; }
+        
         .task-card{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12); border-radius:14px;padding:12px 14px;margin-bottom:10px; display:flex;align-items:center;gap:12px; }
         .task-icon{font-size:28px;flex-shrink:0;}
         .task-info{flex:1;}
@@ -178,10 +185,11 @@
         .task-btn{ background:linear-gradient(180deg,#00bcd4,#006064); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0; }
         .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
         .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
-        /* Setting - unique code box */
+        
         .unique-code-box{background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;text-align:center;}
         .unique-code-label{font-size:11px;color:#aaa;font-weight:800;margin-bottom:4px;}
         .unique-code-val{font-size:15px;color:#ffcc00;font-weight:900;word-break:break-all;letter-spacing:1px;}
+        
         /* Lottery */
         .lottery-wrap{ background:linear-gradient(135deg,rgba(100,0,150,0.3),rgba(50,0,100,0.3)); border:2px solid rgba(180,100,255,0.4);border-radius:18px;padding:16px;margin-bottom:12px;text-align:center; }
         .lottery-title{font-family:'Luckiest Guy',cursive;font-size:22px;color:#cf6fef;margin-bottom:6px;}
@@ -204,7 +212,7 @@
         .lottery-earn-label{font-size:11px;color:#888;}
         .refer-diamonds{font-size:22px;font-family:'Luckiest Guy',cursive;color:#4af;}
         .refer-diamonds-label{font-size:11px;color:#aaa;}
-        /* Withdraw requirement badge */
+        
         .withdraw-req{ background:rgba(255,50,50,0.1);border:1px solid rgba(255,50,50,0.3);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#ff7788;text-align:center;font-weight:800; }
         .withdraw-req.met{ background:rgba(0,200,100,0.1);border-color:rgba(0,200,100,0.3);color:#4caf50; }
     </style>
@@ -258,15 +266,14 @@
         <span class="token-refill" id="token-timer"></span>
     </div>
 
-    <!-- UPDATE 1: Task LEFT | PLAY CENTER | Refer RIGHT -->
     <div class="play-center-row">
-        <!-- Task - Left of play button -->
+        <!-- Task -->
         <div class="side-panel-btn task-side ptr" onclick="window.showModal('task-modal')">
             <div class="side-icon">📋</div>
             <div class="side-label">Tasks</div>
         </div>
 
-        <!-- Play buttons center -->
+        <!-- Play center -->
         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
             <div class="start-btn ptr" onclick="window.tryStartGame()">▶ START</div>
             <div class="spin-btn ptr" onclick="window.showModal('lottery-modal')">
@@ -275,14 +282,14 @@
             </div>
         </div>
 
-        <!-- Refer - Right of play button -->
+        <!-- Refer -->
         <div class="side-panel-btn refer-side ptr" onclick="window.showModal('share-modal')">
             <div class="side-icon">🔗</div>
             <div class="side-label">Refer</div>
         </div>
     </div>
 
-    <!-- UPDATE 1: Bottom 4 icons: Setting, Shop, Wallet, Ads -->
+    <!-- BOTTOM ICONS -->
     <div id="bottom-icons">
         <div class="icon-btn ptr" onclick="window.showModal('setting-modal')"><div class="icon-face ic-setting">⚙️</div><span class="icon-label">Setting</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('shop-modal')"><div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span></div>
@@ -345,7 +352,7 @@
     </div>
 </div>
 
-<!-- UPDATE 5: Shop - Gold→Diamond exchange with min 1K max 100K gold + Token buy -->
+<!-- Shop - Gold→Diamond exchange -->
 <div class="overlay ptr" id="shop-modal">
     <div class="modal">
         <div class="mh mh-gold">🛍️ Shop</div>
@@ -364,7 +371,6 @@
             <div class="info-text">Use Tokens to play games · Max 10 tokens · Auto +1 refill every hour</div>
         </div>
         <div class="shop-panel" id="shop-panel-exchange">
-            <!-- Gold to Diamond exchange: min 1K, max 100K gold -->
             <div class="gold-exchange-info">
                 <div class="gei-rate">1,000 🪙 Gold = 1 💎</div>
                 <div class="gei-label">Gold → Diamond Exchange Rate</div>
@@ -389,7 +395,7 @@
     </div>
 </div>
 
-<!-- UPDATE 6: Wallet - withdraw requires 5 tasks + 2 refers -->
+<!-- Wallet -->
 <div class="overlay ptr" id="wallet-modal">
     <div class="modal">
         <div class="mh mh-gold">💳 Withdraw</div>
@@ -436,12 +442,11 @@
     </div>
 </div>
 
-<!-- UPDATE 3: Settings with unique code + telegram username -->
+<!-- Settings -->
 <div class="overlay ptr" id="setting-modal">
     <div class="modal">
         <div class="mh mh-gold">⚙️ Settings</div>
         <div id="tg-user-info" class="tg-info"></div>
-        <!-- Unique code display -->
         <div class="unique-code-box">
             <div class="unique-code-label">🔑 Your Unique Code</div>
             <div class="unique-code-val" id="setting-unique-code">Loading...</div>
@@ -455,52 +460,58 @@
     </div>
 </div>
 
-<!-- UPDATE 7: Ads - Adsgram Special (100 gold, block 28066) + others 50 gold; lootbox = gold only -->
+<!-- Ads & Lootbox (UPDATED) -->
 <div class="overlay ptr" id="ads-modal">
     <div class="modal">
         <div class="mh mh-red">📺 Earn with Ads</div>
-        <!-- Lootbox: min 300, max 1000 gold - NO DIAMOND -->
+        
+        <!-- Lootbox: Claim Gold Directly Without Ads -->
         <div class="lootbox-wrap">
             <div style="font-size:16px;font-weight:900;color:#ffcc00;margin-bottom:4px;">🎁 Lootbox</div>
-            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Min 300 pts to claim! Max 1000 pts per cycle · Reward: 🪙 Gold only</div>
+            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Min 500 pts to claim! Max 3000 pts per cycle · Reward: 🪙 Gold only</div>
             <div class="lootbox-bar-bg"><div class="lootbox-bar-fill" id="lootbox-fill" style="width:0%"></div></div>
-            <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 1000 pts</span></div>
+            <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 3000 pts</span></div>
             <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD</button>
         </div>
-        <!-- Adsgram Special (blockId 28066) = 150-250 gold random, 5 daily -->
+
+        <!-- Adsgram Special (Fixed 250 Gold) -->
         <div class="ads-section" style="border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.06);">
             <div class="ads-row">
-                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+150~250 🪙 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
+                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+250 🪙 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn special" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
-        <!-- Adsgram Daily = 120 gold, 5 daily -->
+        
+        <!-- Adsgram Daily -->
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+120 🪙 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-daily-btn" onclick="window.watchAdsgramDailyAd()">▶ Watch</button>
             </div>
         </div>
-        <!-- GigaPub = 120 gold, 20 daily -->
+        
+        <!-- GigaPub -->
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+120 🪙 Gold)<br><span id="gigapub-left">20/20 remaining</span></div>
                 <button class="watch-ad-btn" id="gigapub-btn" onclick="window.watchGigaPubAd()">▶ Watch</button>
             </div>
         </div>
-        <!-- Monetag = 120 gold, 20 daily -->
+        
+        <!-- Monetag -->
         <div class="ads-section">
             <div class="ads-row">
                 <div class="ads-info">💰 <strong>Monetag Ads</strong> (+120 🪙 Gold)<br><span id="monetag-left">20/20 remaining</span></div>
                 <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
             </div>
         </div>
+        
         <div class="info-text">Resets daily automatically at 12:00 AM 🕛</div>
         <button class="btn btn-grey" onclick="window.hideModal('ads-modal')">CLOSE</button>
     </div>
 </div>
 
-<!-- UPDATE 8: Tasks loaded from Vercel API -->
+<!-- Tasks -->
 <div class="overlay ptr" id="task-modal">
     <div class="modal">
         <div class="mh mh-cyan">📋 Tasks</div>
@@ -543,7 +554,6 @@
 <div id="token-toast"></div>
 
 <!-- MAIN SCRIPT -->
-<!-- MAIN SCRIPT -->
 <script>
     const tg = window.Telegram && window.Telegram.WebApp;
     if(tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#006070'); tg.setBackgroundColor('#004050'); }
@@ -568,7 +578,6 @@
         window._toastTimer = setTimeout(()=> t.style.display='none', 3500);
     }
 
-    // --- CENTRAL API CALLER ---
     async function apiCall(endpoint, data) {
         try {
             const response = await fetch(endpoint, {
@@ -779,11 +788,7 @@
     };
 
     /* =========================================================
-       UPDATE 4: ADS - Increased rewards, increased daily limits
-       Adsgram Special: 150-250 gold, 5 daily
-       Adsgram Daily: 120 gold, 5 daily
-       GigaPub: 120 gold, 20 daily
-       Monetag: 120 gold, 20 daily
+       UPDATED ADS & LOOTBOX SYSTEM
     ========================================================= */
     function updateAdsUI(){
         let agLeft  = 5  - (window.G.adsgramCount||0);
@@ -802,38 +807,31 @@
         document.getElementById('monetag-btn').disabled       = mtLeft  <= 0;
 
         let pts = window.G.lootboxPoints || 0;
-        let pct = Math.min(100, (pts/1000)*100);
+        let pct = Math.min(100, (pts/3000)*100);
         document.getElementById('lootbox-fill').style.width = pct + '%';
         document.getElementById('lootbox-pts').textContent = pts;
         let claimBtn = document.getElementById('lootbox-claim-btn');
-        claimBtn.disabled = pts < 300;
-        let goldPreview = Math.floor(pts / 2);
-        claimBtn.textContent = pts >= 300 ? `Claim Reward (+${goldPreview} Gold)` : `Claim Reward (Need 300 pts)`;
+        claimBtn.disabled = pts < 500;
+        let goldPreview = Math.floor(pts / 2); // Gold Reward
+        claimBtn.textContent = pts >= 500 ? `Claim Reward (+${goldPreview} Gold)` : `Claim Reward (Need 500 pts)`;
     }
 
-    function updateShopUI(){
-        let tokenLeft = 10 - (window.G.shopTokenBought||0);
-        document.getElementById('shop-token-left').textContent = Math.max(0, tokenLeft);
-        let sg = document.getElementById('shop-my-gold');
-        let sd = document.getElementById('shop-my-diamond');
-        if(sg) sg.textContent = window.G.coins;
-        if(sd) sd.textContent = window.G.gems;
-    }
-
+    // Lootbox Claim - NO ADS SHOWN HERE!
     window.claimLootbox = async function(){
-        if(window.G.lootboxPoints < 300){ showToast('Need at least 300 points to claim!'); return; }
+        if(window.G.lootboxPoints < 500){ showToast('Need at least 500 points to claim!'); return; }
         let goldReward = Math.floor(window.G.lootboxPoints / 2);
+        
         document.getElementById('ad-loader').style.display='flex';
-        try { let AdC = Adsgram.init({ blockId: "28066" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        // HTML এর মাধ্যমে গোল্ড পাঠানো হচ্ছে, API তে ডায়মন্ডের কোড থাকলে গোল্ড সেভ হবে।
         const res = await apiCall('/api/ads', { action: 'claim_lootbox', coinsToAdd: goldReward });
         document.getElementById('ad-loader').style.display='none';
+        
         if(res.success){ updateAdsUI(); showToast(`Lootbox claimed! +${goldReward} Gold!`); }
     };
 
     async function processAdReward(actionName, maxLimit, currentCount, getRewardAmount, successMsg) {
         if(currentCount >= maxLimit){ showToast('Daily limit reached!'); return; }
-        if(window.G.lootboxPoints >= 600){ showToast('Claim your Lootbox first!'); return; }
-
+        
         document.getElementById('ad-loader').style.display='flex';
         try {
             if(actionName === 'adsgram'){
@@ -857,15 +855,12 @@
         });
     };
 
-    // UPDATE 4: Adsgram Special = 150-250 gold (random), Daily = 120, GigaPub = 120, Monetag = 120
-    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      () => 150 + Math.floor(Math.random()*101), `+{R} Gold! (Adsgram Special)`);
+    // Fixed Adsgram Special Reward to 250
+    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      () => 250, `+{R} Gold! (Adsgram Special)`);
     window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, () => 120, `+{R} Gold! (Adsgram Daily)`);
     window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      () => 120, `+{R} Gold! (GigaPub)`);
     window.watchMonetagAd      = () => processAdReward('monetag',      20, window.G.monetagCount,      () => 120, `+{R} Gold! (Monetag)`);
 
-    /* =========================================================
-       UPDATE 2: Tasks with claim button + 5s timer + 200 gold
-    ========================================================= */
     window.renderTasks = async function(){
         let c = document.getElementById('task-list');
         c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
@@ -934,12 +929,6 @@
         }
     };
 
-    /* =========================================================
-       UPDATE 5: Withdraw / Refer system
-       Normal refer: 1 game token + 1 lottery spin token
-       Valid refer (friend earns 2000 gold from ads): +5 diamond + 2 game tokens
-       Total per complete refer: 3 game tokens + 1 lottery token + 5 diamonds
-    ========================================================= */
     window.doWithdraw = async function(){
         let tasks = (window.G.completedTasks||[]).length;
         let refers = window.G.referCount || 0;
@@ -971,13 +960,11 @@
 
     let gameState='menu', objects=[], particles=[], sliceTrail=[], isSlicing=false, mouse={x:0,y:0};
     let cutTarget=0, currentCut=0, missCount=0, pendingReward=0;
-    // UPDATE 3: Track stages played for inter-stage ads (every 2-3 stages)
     let stagesCompletedSinceAd = 0;
-    let adTriggerThreshold = 2 + Math.floor(Math.random()*2); // 2 or 3
+    let adTriggerThreshold = 2 + Math.floor(Math.random()*2); 
 
     class FruitObj {
         constructor(isMenu=false){
-            // UPDATE 3: Lower bomb rate for easier gameplay
             this.isBomb = !isMenu && Math.random() < Math.min(0.03+window.G.stage*0.005, 0.08);
             let emojis = ['🍉','🍓','🥝','🍊','🍋','🍑','🍍'];
             let colors = ['#ff4444','#ff2244','#66bb00','#ff9900','#ffee00','#ff8866','#ffcc00'];
@@ -989,9 +976,7 @@
             this.x = margin + Math.random()*(W - margin*2);
             this.y = H + this.r;
             let maxVx = Math.min(2.0, (W/2 - margin) / 90);
-            // UPDATE 3: Slower horizontal speed (easier)
             this.vx = (Math.random()-0.5) * (isMenu ? maxVx*1.2 : maxVx*1.5);
-            // UPDATE 3: Slower vertical speed (easier)
             this.vy = -(isMenu?(8+Math.random()*3):(9+Math.random()*2+Math.min(window.G.stage*0.05,1.5)));
             this.grav = isMenu ? 0.05 : 0.08;
             this.rot = 0; this.rotSpd = (Math.random()-0.5)*0.10;
@@ -1062,7 +1047,6 @@
     }
 
     function addMiss(){
-        // WARNING: addMiss must NEVER trigger ads - only game over logic
         if(gameState!=='playing') return;
         missCount++; let el = document.getElementById('s'+missCount); if(el) el.classList.add('x-active');
         if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
@@ -1099,9 +1083,6 @@
         requestAnimationFrame(window.loop);
     };
 
-    /* =========================================================
-       SOUND SYSTEM
-    ========================================================= */
     const SOUNDS = {};
     const SOUND_FILES = { menu:'assets/sounds/menu.mp3', slice:'assets/sounds/slice.mp3', gameover:'assets/sounds/gameover.mp3', win:'assets/sounds/win.mp3', spin:'assets/sounds/spin.mp3' };
     Object.entries(SOUND_FILES).forEach(([key, src]) => {
@@ -1114,11 +1095,6 @@
     window.toggleSound = function(){ window.G.sound = !window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); if(!window.G.sound) stopSound('menu'); else if(gameState === 'menu') playSound('menu'); window.updateUI(); };
     window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
-    /* =========================================================
-       GAME CONTROLS
-       UPDATE 3: Reward 40-100 gold random per stage, lower difficulty
-       Inter-stage ads every 2-3 completed stages (NOT on miss/fail)
-    ========================================================= */
     window.tryStartGame = function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
         if(!forceStart) { window.G.tokens--; window.updateUI(); }
@@ -1127,9 +1103,11 @@
         document.getElementById('game-hud').style.display='flex';
         document.getElementById('strikes').style.display='flex';
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
-        // UPDATE 3: Easier cut target, random reward 40-100
+        
         cutTarget = 10 + window.G.stage * 2;
-        pendingReward = 40 + Math.floor(Math.random() * 61);
+        // Game Reward Updated: 100 - 150 Gold + Bonus based on stage
+        pendingReward = 100 + Math.floor(Math.random() * 50) + (window.G.stage * 5);
+
         document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
         document.getElementById('comp-reward').textContent = pendingReward;
         document.getElementById('hud-target').textContent = cutTarget;
@@ -1170,12 +1148,11 @@
         document.getElementById('ad-loader').style.display='none'; window.tryStartGame(true);
     };
 
-    // UPDATE 3: Inter-stage ad shown every 2-3 completed stages (only on successful stage clear)
+    // Fix Game Reward Bug
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
         document.getElementById('ad-loader').style.display='flex';
 
-        // Double reward ad
         if(watchAd){
             try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
         }
@@ -1185,10 +1162,9 @@
 
         if(res.success){
             stagesCompletedSinceAd++;
-            // Show inter-stage ad every 2-3 stages (only after successful stage clear, never on fail)
             if(stagesCompletedSinceAd >= adTriggerThreshold){
                 stagesCompletedSinceAd = 0;
-                adTriggerThreshold = 2 + Math.floor(Math.random()*2); // reset to 2 or 3
+                adTriggerThreshold = 2 + Math.floor(Math.random()*2);
                 document.getElementById('ad-loader').style.display='flex';
                 try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,1500)); }
                 document.getElementById('ad-loader').style.display='none';
@@ -1211,23 +1187,19 @@
     };
 
     /* =========================================================
-       UPDATE 1: LOTTERY SYSTEM
-       - Lottery Tokens earned only by referring
-       - New prize table: Gold, Diamond, Game Token, Free Spin, Lottery Token
-       - Token spin: uses lottery token (no ad needed)
-       - Ad spin: watch ad (10 daily limit)
+       UPDATED LOTTERY REWARDS
     ========================================================= */
     const LOTTERY_PRIZES = [
-        { id:1,  label:'100 Gold',         icon:'🪙',  type:'coin',     val:100,  weight:10 },
-        { id:2,  label:'200 Gold',         icon:'🪙',  type:'coin',     val:200,  weight:15 },
-        { id:3,  label:'300 Gold',         icon:'🪙',  type:'coin',     val:300,  weight:12 },
-        { id:4,  label:'Free Spin',        icon:'🎰',  type:'freespin', val:1,    weight:15 },
-        { id:5,  label:'700 Gold',         icon:'🪙',  type:'coin',     val:700,  weight:8  },
-        { id:6,  label:'0.3 Diamond',      icon:'💎',  type:'diamond',  val:0.3,  weight:15 },
-        { id:7,  label:'3 Game Tokens',    icon:'🎮',  type:'token',    val:3,    weight:12 },
-        { id:8,  label:'0.5 Diamond',      icon:'💎',  type:'diamond',  val:0.5,  weight:10 },
-        { id:9,  label:'2 Diamond',        icon:'💎',  type:'diamond',  val:2,    weight:1  },
-        { id:10, label:'1 Lottery Token',  icon:'🎫',  type:'lottoken', val:1,    weight:12 },
+        { id:1,  label:'500 🪙 Gold',   icon:'🪙',  type:'coin', val:500,  weight:15 },
+        { id:2,  label:'1000 🪙 Gold',  icon:'🪙',  type:'coin', val:1000, weight:15 },
+        { id:3,  label:'2000 🪙 Gold',  icon:'🪙',  type:'coin', val:2000, weight:12 },
+        { id:4,  label:'5000 🪙 Gold',  icon:'🪙',  type:'coin', val:5000, weight:10 },
+        { id:5,  label:'1 🎮 Token',    icon:'🎮',  type:'token',val:1,    weight:12 },
+        { id:6,  label:'200 🪙 Gold',   icon:'🪙',  type:'coin', val:200,  weight:15 },
+        { id:7,  label:'300 🪙 Gold',   icon:'🪙',  type:'coin', val:300,  weight:12 },
+        { id:8,  label:'800 🪙 Gold',   icon:'🪙',  type:'coin', val:800,  weight:8  },
+        { id:9,  label:'10000 🪙 Gold', icon:'🪙',  type:'coin', val:10000,weight:1  },
+        { id:10, label:'100 🪙 Gold',   icon:'🪙',  type:'coin', val:100,  weight:10 },
     ];
     const SLOT_SYMBOLS = ['🪙','🍋','🎰','7️⃣','⭐','🎮','🍊','🪙','🔔','🍒'];
 
@@ -1238,12 +1210,10 @@
         return LOTTERY_PRIZES[LOTTERY_PRIZES.length-1];
     }
     function getSlotResult(prize){
-        if(prize.type==='lottoken') return ['🎫','🎫','🎫'];
         if(prize.type==='token')    return ['🎮','🎮','🎮'];
-        if(prize.type==='freespin') return ['🎰','🎰','🎰'];
-        if(prize.type==='diamond' && prize.val>=2) return ['💎','💎','💎'];
-        if(prize.type==='diamond') return ['💎','⭐','💎'];
-        if(prize.val>=700) return ['🪙','🪙','🪙'];
+        if(prize.val>=10000) return ['💎','💎','💎'];
+        if(prize.val>=5000) return ['⭐','⭐','⭐'];
+        if(prize.val>=1000) return ['🪙','🪙','🪙'];
         if(prize.val>=300) return ['🔔','🔔','🔔'];
         if(prize.val>=200) return ['🍒','🍒','🍒'];
         return ['🎰','🍊','7️⃣'];
@@ -1303,9 +1273,6 @@
             }
             const res = await apiCall('/api/lottery', { prizeType: prize.type, prizeVal: prize.val, usedToken: useToken });
             if(res.success){
-                if(prize.type === 'freespin'){
-                    window.G.lotteryTokens = (window.G.lotteryTokens||0) + 1;
-                }
                 let rewardMsg = `You won: ${prize.icon} ${prize.label}!`;
                 document.getElementById('lottery-result').textContent = rewardMsg;
                 showToast(rewardMsg);
@@ -1332,7 +1299,6 @@
         await executeSpin(true);
     };
 
-    // Snowflakes
     (function(){
         let wrap=document.getElementById('snowflakes');
         for(let i=0;i<8;i++){
