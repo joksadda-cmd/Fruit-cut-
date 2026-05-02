@@ -1,21 +1,31 @@
 const { db, admin } = require('./utils/firebase');
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    const { telegramId, reward, isAdWatched } = req.body;
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    let finalReward = isAdWatched ? reward * 2 : reward;
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method Not Allowed' });
+
+    const { telegramId, reward } = req.body;
+    if (!telegramId || reward === undefined) return res.status(400).json({ success: false, error: 'Missing data' });
 
     try {
         const userRef = db.collection('users').doc(String(telegramId));
+        const doc = await userRef.get();
+
+        if (!doc.exists) return res.status(404).json({ success: false, error: 'User not found' });
+
+        // গোল্ড যোগ করা এবং গেম খেলার সংখ্যা বাড়ানো
         await userRef.update({
-            coins: admin.firestore.FieldValue.increment(finalReward),
-            stage: admin.firestore.FieldValue.increment(1)
+            coins: admin.firestore.FieldValue.increment(Number(reward)),
+            gamesPlayed: admin.firestore.FieldValue.increment(1)
         });
-        
-        const updatedDoc = await userRef.get();
-        res.status(200).json({ success: true, user: updatedDoc.data() });
+
+        const updatedUser = (await userRef.get()).data();
+        return res.status(200).json({ success: true, user: updatedUser });
     } catch (error) {
-        res.status(500).json({ error: 'Server Error' });
+        return res.status(500).json({ success: false, error: error.message });
     }
 }
