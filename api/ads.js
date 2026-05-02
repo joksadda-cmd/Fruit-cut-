@@ -1,31 +1,51 @@
 const { db, admin } = require('./utils/firebase');
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    const { telegramId, action, coinsToAdd, lootboxPointsToAdd } = req.body; 
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ success: false });
+
+    const { telegramId, action, coinsToAdd } = req.body;
+    if (!telegramId) return res.status(400).json({ success: false, error: 'Missing Telegram ID' });
 
     try {
         const userRef = db.collection('users').doc(String(telegramId));
-        let updates = {
-            coins: admin.firestore.FieldValue.increment(coinsToAdd || 0),
-            lootboxPoints: admin.firestore.FieldValue.increment(lootboxPointsToAdd || 0)
-        };
+        const doc = await userRef.get();
+        if (!doc.exists) return res.status(404).json({ success: false, error: 'User not found' });
 
-        // কোন অ্যাড দেখেছে তার কাউন্ট বাড়ানো
-        if (action === 'adsgram') updates.adsgramCount = admin.firestore.FieldValue.increment(1);
-        if (action === 'adsgramDaily') updates.adsgramDailyCount = admin.firestore.FieldValue.increment(1);
-        if (action === 'gigapub') updates.gigapubCount = admin.firestore.FieldValue.increment(1);
-        if (action === 'monetag') updates.monetagCount = admin.firestore.FieldValue.increment(1);
+        const userData = doc.data();
+
+        // Lootbox Claim Logic
         if (action === 'claim_lootbox') {
-            updates.lootboxPoints = 0; // পয়েন্ট জিরো করে দেওয়া
-            updates.gems = admin.firestore.FieldValue.increment(coinsToAdd); // এখানে coinsToAdd মূলত ডায়মন্ড
-            delete updates.coins;
+            if (userData.lootboxPoints < 500) return res.status(400).json({ success: false, error: 'Not enough points' });
+            
+            await userRef.update({
+                coins: admin.firestore.FieldValue.increment(Number(coinsToAdd)),
+                lootboxPoints: 0 // ক্লেইম করার পর পয়েন্ট ০ হয়ে যাবে
+            });
+        } 
+        // Ads Logic
+        else {
+            const updateData = {
+                coins: admin.firestore.FieldValue.increment(Number(coinsToAdd)),
+                lootboxPoints: admin.firestore.FieldValue.increment(Number(coinsToAdd)) // অ্যাডের গোল্ডের সমান পয়েন্ট লুটবক্সে যাবে
+            };
+
+            // Limit Counters
+            if (action === 'adsgram') updateData.adsgramCount = admin.firestore.FieldValue.increment(1);
+            if (action === 'adsgramDaily') updateData.adsgramDailyCount = admin.firestore.FieldValue.increment(1);
+            if (action === 'gigapub') updateData.gigapubCount = admin.firestore.FieldValue.increment(1);
+            if (action === 'monetag') updateData.monetagCount = admin.firestore.FieldValue.increment(1);
+
+            await userRef.update(updateData);
         }
 
-        await userRef.update(updates);
-        const updatedDoc = await userRef.get();
-        res.status(200).json({ success: true, user: updatedDoc.data() });
+        const updatedUser = (await userRef.get()).data();
+        return res.status(200).json({ success: true, user: updatedUser });
     } catch (error) {
-        res.status(500).json({ error: 'Server Error' });
+        return res.status(500).json({ success: false, error: error.message });
     }
 }
