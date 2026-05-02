@@ -1,6 +1,6 @@
 const { db, admin } = require('./utils/firebase');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -17,7 +17,6 @@ export default async function handler(req, res) {
 
         if (!doc.exists) return res.status(404).json({ success: false, error: 'User not found' });
 
-        // গোল্ড যোগ করা এবং গেম খেলার সংখ্যা বাড়ানো
         await userRef.update({
             coins: admin.firestore.FieldValue.increment(Number(reward)),
             gamesPlayed: admin.firestore.FieldValue.increment(1)
