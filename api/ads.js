@@ -1,6 +1,6 @@
 const { db, admin } = require('./utils/firebase');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,23 +18,20 @@ export default async function handler(req, res) {
 
         const userData = doc.data();
 
-        // Lootbox Claim Logic
         if (action === 'claim_lootbox') {
             if (userData.lootboxPoints < 500) return res.status(400).json({ success: false, error: 'Not enough points' });
             
             await userRef.update({
                 coins: admin.firestore.FieldValue.increment(Number(coinsToAdd)),
-                lootboxPoints: 0 // ক্লেইম করার পর পয়েন্ট ০ হয়ে যাবে
+                lootboxPoints: 0 
             });
         } 
-        // Ads Logic
         else {
             const updateData = {
                 coins: admin.firestore.FieldValue.increment(Number(coinsToAdd)),
-                lootboxPoints: admin.firestore.FieldValue.increment(Number(coinsToAdd)) // অ্যাডের গোল্ডের সমান পয়েন্ট লুটবক্সে যাবে
+                lootboxPoints: admin.firestore.FieldValue.increment(Number(coinsToAdd)) 
             };
 
-            // Limit Counters
             if (action === 'adsgram') updateData.adsgramCount = admin.firestore.FieldValue.increment(1);
             if (action === 'adsgramDaily') updateData.adsgramDailyCount = admin.firestore.FieldValue.increment(1);
             if (action === 'gigapub') updateData.gigapubCount = admin.firestore.FieldValue.increment(1);
