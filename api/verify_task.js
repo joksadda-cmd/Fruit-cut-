@@ -1,59 +1,57 @@
 const { db, admin } = require('./utils/firebase');
-const fetch = require('node-fetch'); // Node 18+ এ ডিফল্ট থাকে, তবুও সিকিউরিটির জন্য
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    const { telegramId, taskId } = req.body;
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if(!telegramId || !taskId) return res.status(400).json({ error: 'Missing data' });
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ success: false });
+
+    const { telegramId, taskId } = req.body;
+    const botToken = process.env.BOT_TOKEN;
 
     try {
         const userRef = db.collection('users').doc(String(telegramId));
         const userDoc = await userRef.get();
-        if ((userDoc.data()?.completedTasks || []).includes(String(taskId))) {
-            return res.status(400).json({ success: false, error: 'Task already completed!' });
+        if (!userDoc.exists) return res.status(404).json({ success: false, error: 'User not found' });
+
+        const userData = userDoc.data();
+        const completedTasks = userData.completedTasks || [];
+        if (completedTasks.includes(String(taskId))) {
+            return res.status(400).json({ success: false, error: 'Task already completed' });
         }
 
-        // ডাটাবেস থেকে টাস্কের ডিটেইলস আনা
-        let taskDoc = await db.collection('tasks').doc(String(taskId)).get();
-        if(!taskDoc.exists) return res.status(400).json({ success: false, error: 'Task not found' });
-        
-        let taskData = taskDoc.data();
-        let taskRewardCoins = taskData.coins || 0; 
-        let taskRewardGems = taskData.gems || 0;
-        let channelId = taskData.verifyChannelId; // e.g. "mychannel"
+        const taskRef = db.collection('tasks').doc(String(taskId));
+        const taskDoc = await taskRef.get();
+        if (!taskDoc.exists) return res.status(404).json({ success: false, error: 'Task not found' });
 
-        // টেলিগ্রাম ভেরিফিকেশন (যদি অ্যাডমিন প্যানেল থেকে channel username দেওয়া থাকে)
-        if (channelId) {
-            const botToken = process.env.BOT_TOKEN;
-            // Channel ID এর আগে @ বসাতে হবে
-            const formattedChannel = channelId.startsWith('@') ? channelId : `@${channelId}`;
-            
-            const tgApiUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=${formattedChannel}&user_id=${telegramId}`;
-            
-            const tgRes = await fetch(tgApiUrl);
+        const taskData = taskDoc.data();
+
+        // Verification Logic via Telegram API
+        if (taskData.verifyChannelId) {
+            const tgUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=@${taskData.verifyChannelId}&user_id=${telegramId}`;
+            const tgRes = await fetch(tgUrl);
             const tgData = await tgRes.json();
-
-            if (!tgData.ok) {
-                return res.status(400).json({ success: false, error: 'Bot is not admin in channel, or channel is wrong.' });
-            }
-
-            const status = tgData.result.status;
-            if (status === 'left' || status === 'kicked') {
-                return res.status(400).json({ success: false, error: 'You have not joined the channel yet!' });
+            
+            // Check if user is member, admin, or creator
+            const isMember = tgData.ok && ['member', 'administrator', 'creator'].includes(tgData.result.status);
+            
+            if (!isMember) {
+                return res.status(400).json({ success: false, error: 'Not joined channel' });
             }
         }
 
-        // ভেরিফাই পাস হলে বা ভেরিফিকেশন না থাকলে রিওয়ার্ড দেওয়া
+        // Add reward
         await userRef.update({
-            completedTasks: admin.firestore.FieldValue.arrayUnion(String(taskId)),
-            coins: admin.firestore.FieldValue.increment(taskRewardCoins),
-            gems: admin.firestore.FieldValue.increment(taskRewardGems)
+            coins: admin.firestore.FieldValue.increment(Number(taskData.coins || 0)),
+            gems: admin.firestore.FieldValue.increment(Number(taskData.gems || 0)),
+            completedTasks: admin.firestore.FieldValue.arrayUnion(String(taskId))
         });
 
-        const updatedDoc = await userRef.get();
-        res.status(200).json({ success: true, user: updatedDoc.data() });
+        const updatedUser = (await userRef.get()).data();
+        return res.status(200).json({ success: true, user: updatedUser });
     } catch (error) {
-        res.status(500).json({ success: false, error: 'Server Error' });
+        return res.status(500).json({ success: false, error: error.message });
     }
 }
