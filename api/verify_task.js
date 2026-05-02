@@ -1,6 +1,6 @@
 const { db, admin } = require('./utils/firebase');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -28,13 +28,11 @@ export default async function handler(req, res) {
 
         const taskData = taskDoc.data();
 
-        // Verification Logic via Telegram API
         if (taskData.verifyChannelId) {
             const tgUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=@${taskData.verifyChannelId}&user_id=${telegramId}`;
             const tgRes = await fetch(tgUrl);
             const tgData = await tgRes.json();
             
-            // Check if user is member, admin, or creator
             const isMember = tgData.ok && ['member', 'administrator', 'creator'].includes(tgData.result.status);
             
             if (!isMember) {
@@ -42,7 +40,6 @@ export default async function handler(req, res) {
             }
         }
 
-        // Add reward
         await userRef.update({
             coins: admin.firestore.FieldValue.increment(Number(taskData.coins || 0)),
             gems: admin.firestore.FieldValue.increment(Number(taskData.gems || 0)),
