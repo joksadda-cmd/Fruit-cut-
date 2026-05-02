@@ -217,35 +217,9 @@
 <body>
 
 <div id="fullscreen-loader">
-    <!-- Telegram Connecting Animation -->
-    <div id="tg-connect-scene" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:0;">
-        <!-- Telegram avatar pulse -->
-        <div style="position:relative;margin-bottom:24px;">
-            <div id="tg-avatar-ring" style="width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#229ED9,#1a7bbf);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(34,158,217,0.6);animation:tgPulse 2s ease-in-out infinite;">
-                <svg width="60" height="60" viewBox="0 0 240 240" fill="none"><path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0z" fill="#229ED9"/><path d="M98 175.3l3.8-57.4L170 62l-88.7 51.5-34.2-10.8c-7.4-2.3-7.5-7.2-.2-10.7L183.7 37c6.1-2.8 12 1.4 9.7 10.4l-23.5 110.7c-1.7 7.7-6.5 9.6-13.2 6l-36.5-26.9-17.6 17c-2 2-3.6 3.6-7.6 3.1z" fill="#fff"/></svg>
-            </div>
-            <!-- orbit dots -->
-            <div style="position:absolute;top:50%;left:50%;width:140px;height:140px;margin:-70px 0 0 -70px;border-radius:50%;border:2px dashed rgba(34,158,217,0.3);animation:orbitSpin 3s linear infinite;"></div>
-            <div id="orbit-dot1" style="position:absolute;top:-6px;left:50%;margin-left:-6px;width:12px;height:12px;background:#229ED9;border-radius:50%;animation:orbitSpin 3s linear infinite;transform-origin:6px 76px;"></div>
-            <div id="orbit-dot2" style="position:absolute;top:-6px;left:50%;margin-left:-6px;width:8px;height:8px;background:#ffcc00;border-radius:50%;animation:orbitSpin 3s linear infinite reverse;transform-origin:6px 76px;animation-delay:-1.5s;"></div>
-        </div>
-        <div style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#fff;letter-spacing:2px;margin-bottom:6px;">CONNECTING...</div>
-        <div id="loader-text" style="color:#7de;font-size:13px;margin-bottom:20px;">Authenticating Telegram ID</div>
-        <!-- signal bars animation -->
-        <div style="display:flex;align-items:flex-end;gap:5px;height:32px;margin-bottom:16px;">
-            <div style="width:8px;background:#229ED9;border-radius:3px;animation:barGrow 1.2s ease-in-out infinite;animation-delay:0s;"></div>
-            <div style="width:8px;background:#229ED9;border-radius:3px;animation:barGrow 1.2s ease-in-out infinite;animation-delay:0.2s;"></div>
-            <div style="width:8px;background:#229ED9;border-radius:3px;animation:barGrow 1.2s ease-in-out infinite;animation-delay:0.4s;"></div>
-            <div style="width:8px;background:#229ED9;border-radius:3px;animation:barGrow 1.2s ease-in-out infinite;animation-delay:0.6s;"></div>
-            <div style="width:8px;background:#229ED9;border-radius:3px;animation:barGrow 1.2s ease-in-out infinite;animation-delay:0.8s;"></div>
-        </div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.5);">Fruit Cut · Slice Mania</div>
-    </div>
-    <style>
-        @keyframes tgPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,158,217,0.6);}50%{box-shadow:0 0 0 22px rgba(34,158,217,0);}}
-        @keyframes orbitSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-        @keyframes barGrow{0%,100%{height:8px;opacity:0.4;}50%{height:32px;opacity:1;}}
-    </style>
+    <div class="spinner"></div>
+    <div style="font-family:'Luckiest Guy',cursive;font-size:24px;color:#fff;letter-spacing:2px;">CONNECTING TO SERVER...</div>
+    <div id="loader-text" style="color:#7de;font-size:13px;margin-top:10px;">Authenticating Telegram ID</div>
 </div>
 
 <div class="bg-stripes"></div>
@@ -422,60 +396,24 @@
 <div class="overlay ptr" id="wallet-modal">
     <div class="modal">
         <div class="mh mh-gold">💳 Withdraw</div>
-        <!-- Diamond balance with animation -->
-        <div style="background:linear-gradient(135deg,rgba(68,170,255,0.15),rgba(0,70,150,0.1));border:2px solid rgba(68,170,255,0.4);border-radius:16px;padding:14px;margin-bottom:10px;text-align:center;position:relative;overflow:hidden;">
-            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4af,transparent);animation:shimmer 2s infinite;"></div>
-            <div style="font-size:11px;color:#7ab;font-weight:800;margin-bottom:4px;">MY DIAMONDS</div>
-            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                <span style="font-size:32px;animation:diamondFloat 2s ease-in-out infinite;">💎</span>
-                <span id="w-gems" style="font-family:'Luckiest Guy',cursive;font-size:36px;color:#4af;">0</span>
-            </div>
-        </div>
-        <!-- Diamond rate display -->
-        <div style="background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;">
-            <div style="font-size:11px;color:#aaa;font-weight:800;text-align:center;margin-bottom:6px;">💱 EXCHANGE RATES</div>
-            <div style="display:flex;justify-content:space-around;text-align:center;">
-                <div><div style="font-size:15px;font-family:'Luckiest Guy',cursive;color:#ffcc00;">120 BDT</div><div style="font-size:10px;color:#888;">per 1000 💎</div></div>
-                <div style="width:1px;background:rgba(255,255,255,0.1);"></div>
-                <div><div style="font-size:15px;font-family:'Luckiest Guy',cursive;color:#4af;">0.075 TON</div><div style="font-size:10px;color:#888;">per 1000 💎</div></div>
-                <div style="width:1px;background:rgba(255,255,255,0.1);"></div>
-                <div><div style="font-size:15px;font-family:'Luckiest Guy',cursive;color:#4caf50;">$1 USD</div><div style="font-size:10px;color:#888;">per 1000 💎</div></div>
-            </div>
-        </div>
+        <div class="mrow"><span class="mrow-label">My Diamonds</span><span class="mrow-val">💎 <span id="w-gems">0</span></span></div>
         <div id="withdraw-req-box" class="withdraw-req">
             ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> and give <strong>2 Refers</strong><br>
             <span id="withdraw-req-status">Tasks: 0/5 · Refers: 0/2</span>
         </div>
-        <select id="w-method" onchange="window.updateWithdrawPreview()">
-            <option value="bkash">bKash (BDT)</option>
-            <option value="ton">Tonkeeper (TON)</option>
-            <option value="usdt">Binance USDT ($)</option>
-        </select>
-        <!-- Amount input with live preview -->
-        <div style="position:relative;">
-            <input type="number" id="w-amount" placeholder="Enter Diamond amount (min 100)" min="100" oninput="window.updateWithdrawPreview()">
-            <!-- Live rate preview -->
-            <div id="withdraw-live-preview" style="display:none;background:linear-gradient(135deg,rgba(0,200,100,0.12),rgba(0,100,50,0.08));border:1px solid rgba(0,200,100,0.3);border-radius:10px;padding:10px 14px;margin-top:4px;text-align:center;animation:previewPop 0.3s ease;">
-                <div style="font-size:11px;color:#aaa;margin-bottom:4px;">YOU WILL RECEIVE</div>
-                <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                    <span id="preview-currency-icon" style="font-size:24px;">💵</span>
-                    <span id="preview-amount" style="font-family:'Luckiest Guy',cursive;font-size:28px;color:#4caf50;">0</span>
-                    <span id="preview-unit" style="font-size:14px;color:#aaa;font-weight:800;">BDT</span>
-                </div>
-                <div style="font-size:10px;color:#7ab;margin-top:2px;" id="preview-rate-info"></div>
-            </div>
+        <div style="margin-bottom:8px;">
+            <div class="w-badge">💎 1000 = $1 USD</div><br><div class="w-badge">💎 1000 = 120 BDT</div><br><div class="w-badge">💎 1000 = 0.75 TON</div>
         </div>
+        <select id="w-method">
+            <option value="bkash">bKash (Min 100 💎 = 12 BDT)</option><option value="tonkeeper">Tonkeeper (Min 100 💎 = 0.075 TON)</option><option value="binance">Binance UID (Min 500 💎 = $0.5)</option>
+        </select>
+        <input type="number" id="w-amount" placeholder="Enter Diamond amount" min="100">
         <input type="text" id="w-address" placeholder="Phone / Wallet Address / UID">
         <button class="btn btn-gold" id="btn-withdraw" onclick="window.doWithdraw()">💸 WITHDRAW NOW</button>
         <div class="info-text">Processing: 24-48 hours after review</div>
         <button class="btn btn-grey" onclick="window.hideModal('wallet-modal')">CLOSE</button>
     </div>
 </div>
-<style>
-@keyframes diamondFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
-@keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
-@keyframes previewPop{from{transform:scale(0.95);opacity:0;}to{transform:scale(1);opacity:1;}}
-</style>
 
 <!-- Refer modal -->
 <div class="overlay ptr" id="share-modal">
@@ -574,22 +512,7 @@
 <div class="overlay ptr" id="task-modal">
     <div class="modal">
         <div class="mh mh-cyan">📋 Tasks</div>
-        <!-- Channel Tasks Section -->
-        <div style="background:linear-gradient(135deg,rgba(0,188,212,0.15),rgba(0,96,100,0.1));border:2px solid rgba(0,188,212,0.35);border-radius:14px;padding:10px 12px;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:900;color:#00e5ff;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                <span>📡</span> Channel Tasks
-                <span style="font-size:10px;color:#aaa;font-weight:700;">(API Verified)</span>
-            </div>
-            <div id="channel-task-list"><div style="text-align:center;color:#aaa;padding:12px;font-size:13px;">Loading...</div></div>
-        </div>
-        <!-- Social Tasks Section -->
-        <div style="background:linear-gradient(135deg,rgba(156,39,176,0.15),rgba(74,0,128,0.1));border:2px solid rgba(156,39,176,0.35);border-radius:14px;padding:10px 12px;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:900;color:#ce93d8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                <span>🌐</span> Social Tasks
-                <span style="font-size:10px;color:#aaa;font-weight:700;">(Random Rewards)</span>
-            </div>
-            <div id="social-task-list"><div style="text-align:center;color:#aaa;padding:12px;font-size:13px;">Loading...</div></div>
-        </div>
+        <div id="task-list"><div style="text-align:center;color:#aaa;padding:20px;">Loading tasks...</div></div>
         <div class="info-text">Complete tasks to earn Gold & Diamonds!</div>
         <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
     </div>
@@ -626,20 +549,6 @@
 </div>
 
 <div id="token-toast"></div>
-
-<!-- Update 4: Support Floating Button -->
-<div id="support-float" style="position:fixed;bottom:90px;right:14px;z-index:9998;cursor:pointer;animation:supportBounce 3s ease-in-out infinite;" onclick="window.openSupport()">
-    <div style="background:linear-gradient(135deg,#229ED9,#1a6fa8);border:3px solid rgba(255,255,255,0.4);border-radius:50%;width:54px;height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,0.4),0 0 0 0 rgba(34,158,217,0.4);animation:supportPing 2.5s ease-in-out infinite;">
-        <span style="font-size:22px;line-height:1;">💬</span>
-    </div>
-    <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:#fff;font-weight:900;white-space:nowrap;text-shadow:1px 1px 2px rgba(0,0,0,0.8);">Support</div>
-    <!-- notification dot -->
-    <div style="position:absolute;top:-2px;right:-2px;width:12px;height:12px;background:#ff3355;border-radius:50%;border:2px solid #004050;animation:badgePulse 1.5s infinite;"></div>
-</div>
-<style>
-@keyframes supportBounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
-@keyframes supportPing{0%,100%{box-shadow:0 6px 20px rgba(0,0,0,0.4),0 0 0 0 rgba(34,158,217,0.5);}60%{box-shadow:0 6px 20px rgba(0,0,0,0.4),0 0 0 16px rgba(34,158,217,0);}}
-</style>
 
 <!-- MAIN SCRIPT -->
 <script>
@@ -723,19 +632,9 @@
     async function initApp() {
         let tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) {
-            document.getElementById('loader-text').textContent = '⚠️ Please open inside Telegram!';
-            document.getElementById('tg-connect-scene').querySelector('div[style*="Luckiest"]').textContent = 'OPEN IN TELEGRAM';
+            document.getElementById('fullscreen-loader').innerHTML = '<h3 style="color:#ff3355;margin-top:20px;">Please open inside Telegram!</h3>';
             return;
         }
-
-        // Animate loading steps
-        const loaderSteps = ['Authenticating Telegram ID...', 'Verifying user data...', 'Loading game profile...', 'Almost ready! ✨'];
-        let stepIdx = 0;
-        let stepTimer = setInterval(()=>{
-            stepIdx = (stepIdx + 1) % loaderSteps.length;
-            let el = document.getElementById('loader-text');
-            if(el) el.textContent = loaderSteps[stepIdx];
-        }, 800);
 
         const userId = String(tgUser.id);
         currentUser = { id: userId };
@@ -747,32 +646,10 @@
             username: tgUser.username,
             referredBy: referredBy
         });
-        clearInterval(stepTimer);
 
         if (res.success) {
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
-
-            // TOKEN BUG FIX: Check if local cache has lower token count than server
-            // This prevents reload from restoring tokens that were already spent
-            try {
-                let tokenCache = localStorage.getItem('fc_token_cache');
-                if(tokenCache){
-                    let tc = JSON.parse(tokenCache);
-                    let cacheAge = Date.now() - (tc.ts || 0);
-                    let hoursPassed = cacheAge / (1000 * 60 * 60);
-                    // Calculate how many tokens should have refilled since cache
-                    let refilledTokens = Math.floor(hoursPassed); // +1 per hour
-                    let expectedTokens = Math.min(10, (tc.tokens || 0) + refilledTokens);
-                    // If server gave MORE tokens than expected (bug), use our calculated value
-                    if(tc.id === currentUser?.id && window.G.tokens > expectedTokens){
-                        console.log(`[TOKEN FIX] Server: ${window.G.tokens}, Expected: ${expectedTokens}. Using expected.`);
-                        window.G.tokens = expectedTokens;
-                    }
-                    // Update cache with current corrected value
-                    localStorage.setItem('fc_token_cache', JSON.stringify({ id: currentUser?.id, tokens: window.G.tokens, ts: tc.ts }));
-                }
-            } catch(e){}
 
             window.G.username = tgUser.username || '';
             window.updateUI();
@@ -793,11 +670,7 @@
 
             document.getElementById('refer-link').textContent = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
 
-            // Smooth hide loader
-            let loader = document.getElementById('fullscreen-loader');
-            loader.style.transition = 'opacity 0.6s';
-            loader.style.opacity = '0';
-            setTimeout(()=>{ loader.style.display = 'none'; }, 600);
+            document.getElementById('fullscreen-loader').style.display = 'none';
             document.getElementById('menu-screen').style.display = 'flex';
 
             startTokenTimer();
@@ -806,16 +679,6 @@
         } else {
             document.getElementById('loader-text').textContent = 'Error connecting to server. Please reload.';
         }
-    }
-
-    function saveTokenCache(){
-        try{
-            localStorage.setItem('fc_token_cache', JSON.stringify({
-                id: currentUser?.id,
-                tokens: window.G.tokens,
-                ts: Date.now()
-            }));
-        }catch(e){}
     }
 
     function startTokenTimer(){
@@ -827,7 +690,6 @@
                     window.G.tokens = Math.min(10, window.G.tokens+1);
                     window.G.tokenRefill = Date.now();
                     showToast(`Token refilled! (${window.G.tokens})`);
-                    saveTokenCache();
                     window.updateUI();
                 } else {
                     let m = Math.floor(left/60000), sec = Math.floor((left%60000)/1000);
@@ -990,68 +852,35 @@
     window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      () => 120, `+{R} Gold! (GigaPub)`);
     window.watchMonetagAd      = () => processAdReward('monetag',      20, window.G.monetagCount,      () => 120, `+{R} Gold! (Monetag)`);
 
-    // ===== TASK SYSTEM (Channel + Social) =====
-    const SOCIAL_TASKS = [
-        { id:'s1', icon:'🐦', name:'Follow us on Twitter/X', reward:150, link:'https://x.com/FruitCutGame' },
-        { id:'s2', icon:'📸', name:'Follow on Instagram', reward:120, link:'https://instagram.com/FruitCutGame' },
-        { id:'s3', icon:'▶️', name:'Subscribe YouTube Channel', reward:200, link:'https://youtube.com/@FruitCutGame' },
-        { id:'s4', icon:'💬', name:'Share to 3 Friends on Telegram', reward:100, link:'https://t.me/share/url?url=https://t.me/FruitCutBot' },
-        { id:'s5', icon:'⭐', name:'Rate the Mini App 5 Stars', reward:180, link:'https://t.me/FruitCutBot' },
-        { id:'s6', icon:'🎮', name:'Invite 1 Friend to Play', reward:250, link:`https://t.me/share/url?url=https://t.me/FruitCutBot/PlayTo_Earn` },
-    ];
-
-    function buildTaskCard(t, done, isChannel) {
-        let card = document.createElement('div');
-        card.className = 'task-card';
-        card.id = 'task-card-' + t.id;
-        card.style.cssText = 'opacity:1;transition:opacity 0.5s,transform 0.5s;';
-        card.innerHTML = `
-            <div class="task-icon">${t.icon || '📋'}</div>
-            <div class="task-info">
-                <div class="task-name">${t.name}</div>
-                <div class="task-reward">${isChannel ? '💎 ' + (t.reward||5) + ' Diamonds' : '🪙 ' + (t.reward||150) + ' Gold'}</div>
-            </div>
-            ${done
-                ? `<button class="task-btn done" disabled style="min-width:64px;">✅ Done</button>`
-                : `<button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${t.link||''}',${isChannel})" style="min-width:64px;">Go →</button>`
-            }`;
-        return card;
-    }
-
     window.renderTasks = async function(){
-        let chEl = document.getElementById('channel-task-list');
-        let soEl = document.getElementById('social-task-list');
-        chEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:12px;font-size:13px;">Loading channel tasks...</div>';
-        soEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:12px;font-size:13px;">Loading social tasks...</div>';
-
-        // Channel tasks (from API - only Telegram channels/groups)
+        let c = document.getElementById('task-list');
+        c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
         try {
-            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', { method:'GET', signal:AbortSignal.timeout(8000) });
+            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', { method: 'GET', signal: AbortSignal.timeout(8000) });
             let tasks = await res.json();
-            // Filter only Telegram channel/group tasks
-            let tgTasks = tasks.filter(t => !t.link || t.link.includes('t.me') || t.type === 'channel');
-            chEl.innerHTML = '';
-            if(!tgTasks.length){
-                chEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:10px;font-size:12px;">No channel tasks right now.</div>';
-            } else {
-                tgTasks.forEach(t => {
-                    let done = (window.G.completedTasks||[]).includes(String(t.id));
-                    chEl.appendChild(buildTaskCard(t, done, true));
-                });
-            }
+            if(!tasks || !tasks.length) throw new Error('No tasks');
+            c.innerHTML = '';
+            tasks.forEach(t => {
+                let done = (window.G.completedTasks||[]).includes(String(t.id));
+                c.innerHTML += `
+                    <div class="task-card" id="task-card-${t.id}">
+                        <div class="task-icon">${t.icon||'📋'}</div>
+                        <div class="task-info">
+                            <div class="task-name">${t.name}</div>
+                            <div class="task-reward">200 Gold reward</div>
+                        </div>
+                        ${done
+                            ? `<button class="task-btn done" disabled>Done</button>`
+                            : `<button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${t.link||''}')">Go</button>`
+                        }
+                    </div>`;
+            });
         } catch(e) {
-            chEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:10px;font-size:12px;">No channel tasks available.</div>';
+            c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No tasks available right now.</div>';
         }
-
-        // Social tasks (static list)
-        soEl.innerHTML = '';
-        SOCIAL_TASKS.forEach(t => {
-            let done = (window.G.completedTasks||[]).includes(String(t.id));
-            soEl.appendChild(buildTaskCard(t, done, false));
-        });
     };
 
-    window.doTask = function(id, link, isChannel){
+    window.doTask = function(id, link){
         let btn = document.getElementById('task-btn-' + id);
         if(!btn || btn.disabled) return;
         if(link && link !== 'undefined') {
@@ -1060,88 +889,36 @@
         }
         btn.disabled = true;
         let countdown = 5;
-        btn.textContent = `${countdown}s`;
+        btn.textContent = `Wait ${countdown}s`;
         btn.style.background = 'linear-gradient(180deg,#ff8c00,#e65100)';
         btn.style.boxShadow = '0 3px 0 #8b3000';
         let timer = setInterval(()=>{
             countdown--;
             if(countdown > 0){
-                btn.textContent = `${countdown}s`;
+                btn.textContent = `Wait ${countdown}s`;
             } else {
                 clearInterval(timer);
                 btn.textContent = 'Claim';
                 btn.style.background = 'linear-gradient(180deg,#4caf50,#2e7d32)';
                 btn.style.boxShadow = '0 3px 0 #1b5e20';
                 btn.disabled = false;
-                btn.onclick = function(){ window.claimTask(id, isChannel); };
+                btn.onclick = function(){ window.claimTask(id); };
             }
         }, 1000);
     };
 
-    window.claimTask = async function(id, isChannel){
+    window.claimTask = async function(id){
         let btn = document.getElementById('task-btn-' + id);
-        if(btn){ btn.disabled = true; btn.textContent = '...'; }
+        if(btn){ btn.disabled = true; btn.textContent = 'Checking...'; }
         
         const res = await apiCall('/api/verify_task', { taskId: id });
         
         if(res.success){
-            showToast('✅ Task Complete! Reward Added!');
-            // Mark button as done
-            if(btn){
-                btn.textContent = '✅ Done';
-                btn.className = 'task-btn done';
-                btn.disabled = true;
-                btn.style.cssText = '';
-            }
-            // Auto vanish after 5 seconds
-            let card = document.getElementById('task-card-' + id);
-            if(card){
-                setTimeout(()=>{
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateX(60px) scale(0.8)';
-                    setTimeout(()=>{ card.remove(); }, 500);
-                }, 5000);
-            }
+            showToast('✅ Task Verified! Reward Added!');
+            window.renderTasks();
         } else {
             showToast('❌ Not verified! Please join the channel first.');
             if(btn){ btn.disabled = false; btn.textContent = 'Claim'; }
-        }
-    };
-
-    // ===== WITHDRAW LIVE PREVIEW =====
-    window.updateWithdrawPreview = function(){
-        let method = document.getElementById('w-method').value;
-        let amount = parseInt(document.getElementById('w-amount').value) || 0;
-        let preview = document.getElementById('withdraw-live-preview');
-        let previewAmount = document.getElementById('preview-amount');
-        let previewUnit = document.getElementById('preview-unit');
-        let previewIcon = document.getElementById('preview-currency-icon');
-        let previewInfo = document.getElementById('preview-rate-info');
-
-        if(amount <= 0){ preview.style.display='none'; return; }
-        preview.style.display = 'block';
-
-        if(method === 'bkash'){
-            let bdt = (amount / 1000) * 120;
-            previewAmount.textContent = bdt.toFixed(2);
-            previewUnit.textContent = 'BDT';
-            previewIcon.textContent = '৳';
-            previewInfo.textContent = `Rate: 1000 💎 = 120 BDT`;
-            previewAmount.style.color = '#ff6b9d';
-        } else if(method === 'ton'){
-            let ton = (amount / 1000) * 0.075;
-            previewAmount.textContent = ton.toFixed(4);
-            previewUnit.textContent = 'TON';
-            previewIcon.textContent = '💎';
-            previewInfo.textContent = `Rate: 1000 💎 = 0.075 TON`;
-            previewAmount.style.color = '#4af';
-        } else if(method === 'usdt'){
-            let usd = (amount / 1000) * 1;
-            previewAmount.textContent = usd.toFixed(2);
-            previewUnit.textContent = 'USDT';
-            previewIcon.textContent = '💵';
-            previewInfo.textContent = `Rate: 1000 💎 = $1 USDT`;
-            previewAmount.style.color = '#4caf50';
         }
     };
 
@@ -1162,22 +939,8 @@
         btn.disabled = true; btn.textContent = "Processing...";
         const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
         btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
-        if(res.success){ window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!'); }
+        if(res.success){ window.hideModal('wallet-modal'); showToast('Withdrawal Request Sent!'); }
         else { showToast('Error: ' + (res.error || 'Server Error')); }
-    };
-
-    // ===== SUPPORT BUTTON =====
-    window.openSupport = function(){
-        let supportUrl = 'https://t.me/Your_Admin11';
-        // Show support info toast first
-        showToast('Opening support chat...');
-        // Open Telegram support
-        if(tg?.openTelegramLink) tg.openTelegramLink(supportUrl);
-        else window.open(supportUrl, '_blank');
-        // Show info message
-        setTimeout(()=>{
-            showToast('💬 You can buy tasks & get any help. Admin will reply soon!');
-        }, 1500);
     };
 
     const canvas = document.getElementById('gc'); const ctx = canvas.getContext('2d');
@@ -1322,30 +1085,9 @@
     window.toggleSound = function(){ window.G.sound = !window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); if(!window.G.sound) stopSound('menu'); else if(gameState === 'menu') playSound('menu'); window.updateUI(); };
     window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
-    window.tryStartGame = async function(forceStart=false){
+    window.tryStartGame = function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
-        
-        if(!forceStart) {
-            // Deduct token on SERVER first (fixes reload bug)
-            let btn = document.querySelector('.start-btn');
-            if(btn){ btn.style.opacity='0.6'; btn.style.pointerEvents='none'; }
-            const res = await apiCall('/api/use_token', { telegramId: currentUser?.id });
-            if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
-            
-            if(!res.success){
-                // Fallback: deduct locally if API endpoint not yet created
-                if(window.G.tokens > 0){
-                    window.G.tokens--;
-                    // Save token locally as backup
-                    try{ localStorage.setItem('fc_token_cache', JSON.stringify({ id: currentUser?.id, tokens: window.G.tokens, ts: Date.now() })); }catch(e){}
-                    window.updateUI();
-                } else {
-                    showToast('No tokens!');
-                    return;
-                }
-            }
-        }
-        
+        if(!forceStart) { window.G.tokens--; window.updateUI(); }
         stopSound('menu');
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
@@ -1353,6 +1095,7 @@
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
         
         cutTarget = 10 + window.G.stage * 2;
+        // 🎮 GAME REWARD UPDATED: Randomly 40 to 120 Gold
         pendingReward = 40 + Math.floor(Math.random() * 81); 
 
         document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
@@ -1422,7 +1165,7 @@
         }
     };
 
-    window.retryGame = async function(){ window.hideModal('over-modal'); if(window.G.tokens <= 0){ window.showNoTokenModal(); return; } await window.tryStartGame(); };
+    window.retryGame = function(){ window.hideModal('over-modal'); if(window.G.tokens <= 0){ window.showNoTokenModal(); return; } window.tryStartGame(); };
 
     window.skipStageWithAd = async function(){
         window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
