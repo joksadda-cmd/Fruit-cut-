@@ -27,7 +27,6 @@
         .ptr{pointer-events:auto;}
         #top-bar{ display:flex;justify-content:space-between;align-items:center; padding:12px 16px;gap:8px; }
         
-        /* Gold currency box */
         .coin-box{ background:rgba(255,240,180,0.95);border:3px solid #e6a800;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #c48000,0 6px 12px rgba(0,0,0,0.3); }
         .coin-label{font-size:11px;color:#6b4400;font-weight:800;line-height:1;}
         .coin-value{font-size:20px;color:#3d2000;font-weight:900;font-family:'Luckiest Guy',cursive;}
@@ -58,7 +57,6 @@
         .spin-badge{ background:#ff3355;color:#fff;font-size:11px;font-family:'Nunito',sans-serif; padding:2px 7px;border-radius:10px;font-weight:900;animation:badgePulse 1s infinite; }
         @keyframes badgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
 
-        /* ---- PLAY AREA LAYOUT ---- */
         .play-center-row { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:6px; }
         .side-panel-btn { display:flex; flex-direction:column; align-items:center; gap:4px; background:rgba(0,0,0,0.4); border:2px solid rgba(255,255,255,0.15); border-radius:16px; padding:10px 10px; cursor:pointer; transition:transform 0.15s; min-width:58px; text-align:center; }
         .side-panel-btn:active{transform:scale(0.92);}
@@ -67,7 +65,6 @@
         .side-panel-btn.task-side { background:linear-gradient(180deg,rgba(0,188,212,0.3),rgba(0,96,100,0.3)); border-color:rgba(0,188,212,0.4); }
         .side-panel-btn.refer-side { background:linear-gradient(180deg,rgba(67,160,71,0.3),rgba(27,94,32,0.3)); border-color:rgba(67,160,71,0.4); }
 
-        /* ---- BOTTOM ICONS ---- */
         #bottom-icons{ display:flex;justify-content:center;gap:10px; padding:10px 10px 16px;width:100%;flex-wrap:wrap; }
         .icon-btn{ display:flex;flex-direction:column;align-items:center;gap:3px; cursor:pointer;transition:transform 0.15s; }
         .icon-btn:active{transform:scale(0.9);}
@@ -787,9 +784,6 @@
         else window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
     };
 
-    /* =========================================================
-       UPDATED ADS & LOOTBOX SYSTEM
-    ========================================================= */
     function updateAdsUI(){
         let agLeft  = 5  - (window.G.adsgramCount||0);
         let agDLeft = 5  - (window.G.adsgramDailyCount||0);
@@ -812,17 +806,15 @@
         document.getElementById('lootbox-pts').textContent = pts;
         let claimBtn = document.getElementById('lootbox-claim-btn');
         claimBtn.disabled = pts < 500;
-        let goldPreview = Math.floor(pts / 2); // Gold Reward
+        let goldPreview = Math.floor(pts / 2);
         claimBtn.textContent = pts >= 500 ? `Claim Reward (+${goldPreview} Gold)` : `Claim Reward (Need 500 pts)`;
     }
 
-    // Lootbox Claim - NO ADS SHOWN HERE!
     window.claimLootbox = async function(){
         if(window.G.lootboxPoints < 500){ showToast('Need at least 500 points to claim!'); return; }
         let goldReward = Math.floor(window.G.lootboxPoints / 2);
         
         document.getElementById('ad-loader').style.display='flex';
-        // HTML এর মাধ্যমে গোল্ড পাঠানো হচ্ছে, API তে ডায়মন্ডের কোড থাকলে গোল্ড সেভ হবে।
         const res = await apiCall('/api/ads', { action: 'claim_lootbox', coinsToAdd: goldReward });
         document.getElementById('ad-loader').style.display='none';
         
@@ -855,7 +847,6 @@
         });
     };
 
-    // Fixed Adsgram Special Reward to 250
     window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      () => 250, `+{R} Gold! (Adsgram Special)`);
     window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, () => 120, `+{R} Gold! (Adsgram Daily)`);
     window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      () => 120, `+{R} Gold! (GigaPub)`);
@@ -919,12 +910,14 @@
     window.claimTask = async function(id){
         let btn = document.getElementById('task-btn-' + id);
         if(btn){ btn.disabled = true; btn.textContent = 'Checking...'; }
-        const res = await apiCall('/api/task_claim', { taskId: id, reward: 200 });
+        
+        const res = await apiCall('/api/verify_task', { taskId: id });
+        
         if(res.success){
-            showToast('Task complete! +200 Gold!');
+            showToast('✅ Task Verified! Reward Added!');
             window.renderTasks();
         } else {
-            showToast('Task not verified. Complete the task first!');
+            showToast('❌ Not verified! Please join the channel first.');
             if(btn){ btn.disabled = false; btn.textContent = 'Claim'; }
         }
     };
@@ -950,9 +943,6 @@
         else { showToast('Error: ' + (res.error || 'Server Error')); }
     };
 
-    /* =========================================================
-       GAME LOGIC
-    ========================================================= */
     const canvas = document.getElementById('gc'); const ctx = canvas.getContext('2d');
     let W, H;
     function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
@@ -1105,8 +1095,8 @@
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
         
         cutTarget = 10 + window.G.stage * 2;
-        // Game Reward Updated: 100 - 150 Gold + Bonus based on stage
-        pendingReward = 100 + Math.floor(Math.random() * 50) + (window.G.stage * 5);
+        // 🎮 GAME REWARD UPDATED: Randomly 40 to 120 Gold
+        pendingReward = 40 + Math.floor(Math.random() * 81); 
 
         document.querySelectorAll('.x-mark').forEach(e=>e.classList.remove('x-active'));
         document.getElementById('comp-reward').textContent = pendingReward;
@@ -1148,7 +1138,6 @@
         document.getElementById('ad-loader').style.display='none'; window.tryStartGame(true);
     };
 
-    // Fix Game Reward Bug
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
         document.getElementById('ad-loader').style.display='flex';
@@ -1171,7 +1160,7 @@
             }
             window.tryStartGame(true);
         } else {
-            showToast('Error Saving Data!');
+            showToast('❌ Error Saving Data! ' + (res.error || ''));
             window.quitGame();
         }
     };
@@ -1187,19 +1176,19 @@
     };
 
     /* =========================================================
-       UPDATED LOTTERY REWARDS
+       🎁 LOTTERY REWARD SYSTEM UPDATED
     ========================================================= */
     const LOTTERY_PRIZES = [
-        { id:1,  label:'500 🪙 Gold',   icon:'🪙',  type:'coin', val:500,  weight:15 },
-        { id:2,  label:'1000 🪙 Gold',  icon:'🪙',  type:'coin', val:1000, weight:15 },
-        { id:3,  label:'2000 🪙 Gold',  icon:'🪙',  type:'coin', val:2000, weight:12 },
-        { id:4,  label:'5000 🪙 Gold',  icon:'🪙',  type:'coin', val:5000, weight:10 },
-        { id:5,  label:'1 🎮 Token',    icon:'🎮',  type:'token',val:1,    weight:12 },
-        { id:6,  label:'200 🪙 Gold',   icon:'🪙',  type:'coin', val:200,  weight:15 },
-        { id:7,  label:'300 🪙 Gold',   icon:'🪙',  type:'coin', val:300,  weight:12 },
-        { id:8,  label:'800 🪙 Gold',   icon:'🪙',  type:'coin', val:800,  weight:8  },
-        { id:9,  label:'10000 🪙 Gold', icon:'🪙',  type:'coin', val:10000,weight:1  },
-        { id:10, label:'100 🪙 Gold',   icon:'🪙',  type:'coin', val:100,  weight:10 },
+        { id:1,  label:'100 🪙 Gold',        icon:'🪙',  type:'coin',     val:100,  weight:10 },
+        { id:2,  label:'200 🪙 Gold',        icon:'🪙',  type:'coin',     val:200,  weight:15 },
+        { id:3,  label:'300 🪙 Gold',        icon:'🪙',  type:'coin',     val:300,  weight:12 },
+        { id:4,  label:'1 Free Spin',        icon:'🎰',  type:'freespin', val:1,    weight:15 },
+        { id:5,  label:'700 🪙 Gold',        icon:'🪙',  type:'coin',     val:700,  weight:8  },
+        { id:6,  label:'0.3 💎 Diamond',     icon:'💎',  type:'diamond',  val:0.3,  weight:15 },
+        { id:7,  label:'3 🎮 Game Token',    icon:'🎮',  type:'token',    val:3,    weight:12 },
+        { id:8,  label:'0.5 💎 Diamond',     icon:'💎',  type:'diamond',  val:0.5,  weight:10 },
+        { id:9,  label:'2 💎 Diamond',       icon:'💎',  type:'diamond',  val:2,    weight:1  },
+        { id:10, label:'1 🎫 Lottery Token', icon:'🎫',  type:'lottoken', val:1,    weight:12 },
     ];
     const SLOT_SYMBOLS = ['🪙','🍋','🎰','7️⃣','⭐','🎮','🍊','🪙','🔔','🍒'];
 
@@ -1209,13 +1198,17 @@
         for(let p of LOTTERY_PRIZES){ acc+=p.weight; if(r<acc) return p; }
         return LOTTERY_PRIZES[LOTTERY_PRIZES.length-1];
     }
+
     function getSlotResult(prize){
+        if(prize.type==='lottoken') return ['🎫','🎫','🎫'];
         if(prize.type==='token')    return ['🎮','🎮','🎮'];
-        if(prize.val>=10000) return ['💎','💎','💎'];
-        if(prize.val>=5000) return ['⭐','⭐','⭐'];
-        if(prize.val>=1000) return ['🪙','🪙','🪙'];
+        if(prize.type==='freespin') return ['🎰','🎰','🎰'];
+        if(prize.type==='diamond' && prize.val>=2) return ['💎','💎','💎'];
+        if(prize.type==='diamond') return ['💎','⭐','💎'];
+        if(prize.val>=700) return ['🪙','🪙','🪙'];
         if(prize.val>=300) return ['🔔','🔔','🔔'];
         if(prize.val>=200) return ['🍒','🍒','🍒'];
+        if(prize.val>=100) return ['🍋','🍋','🍋'];
         return ['🎰','🍊','7️⃣'];
     }
 
@@ -1273,6 +1266,9 @@
             }
             const res = await apiCall('/api/lottery', { prizeType: prize.type, prizeVal: prize.val, usedToken: useToken });
             if(res.success){
+                if(prize.type === 'freespin'){
+                    window.G.lotteryTokens = (window.G.lotteryTokens||0) + 1;
+                }
                 let rewardMsg = `You won: ${prize.icon} ${prize.label}!`;
                 document.getElementById('lottery-result').textContent = rewardMsg;
                 showToast(rewardMsg);
