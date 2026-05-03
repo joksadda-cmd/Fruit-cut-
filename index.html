@@ -655,7 +655,10 @@
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-telegram-init-data': tg?.initData || ''
+                },
                 body: JSON.stringify({ telegramId: currentUser?.id, ...data })
             });
             const result = await response.json();
@@ -758,30 +761,36 @@
     }
 
     function startTokenTimer(){
-        // Update token display every second based on server tokenRefill time
+        // Update token countdown every second using server's tokenRefill timestamp
         setInterval(()=>{
-            if(window.G.tokens < 10){
-                let refillTime = window.G.tokenRefill || 0;
-                let elapsed = Date.now() - refillTime;
-                let left = 60*60*1000 - elapsed;
-                if(left <= 0){
-                    document.getElementById('token-timer').textContent = `(+1 soon)`;
-                } else {
-                    let m = Math.floor(left/60000), sec = Math.floor((left%60000)/1000);
-                    document.getElementById('token-timer').textContent = `(+1 in ${m}:${sec.toString().padStart(2,'0')})`;
-                }
+            let el = document.getElementById('token-timer');
+            if(!el) return;
+            if(window.G.tokens >= 10){
+                el.textContent = 'MAX';
+                return;
+            }
+            let refillTime = window.G.tokenRefill || 0;
+            let elapsed = Date.now() - refillTime;
+            let left = (60 * 60 * 1000) - elapsed; // 1 hour
+            if(left <= 0){
+                el.textContent = '(+1 soon...)';
             } else {
-                document.getElementById('token-timer').textContent = 'MAX';
+                let m = Math.floor(left / 60000);
+                let s = Math.floor((left % 60000) / 1000);
+                el.textContent = `(+1 in ${m}:${s.toString().padStart(2,'0')})`;
             }
         }, 1000);
 
-        // Fix 2: Sync tokens every 60 seconds to catch hourly refill
+        // Sync with server every 60 seconds to catch hourly refill
         setInterval(async ()=>{
             if(window.G.tokens < 10 && currentUser){
                 try {
                     const res = await fetch('/api/init', {
                         method: 'POST',
-                        headers: {'Content-Type':'application/json'},
+                        headers: {
+                            'Content-Type':'application/json',
+                            'x-telegram-init-data': tg?.initData || ''
+                        },
                         body: JSON.stringify({ telegramId: currentUser?.id, syncOnly: true })
                     });
                     const data = await res.json();
@@ -789,7 +798,7 @@
                         let prevTokens = window.G.tokens;
                         Object.assign(window.G, data.user);
                         if(window.G.tokens > prevTokens){
-                            showToast(`🎮 Token refilled! You now have ${window.G.tokens} tokens`);
+                            showToast(`🎮 Token refilled! Now: ${window.G.tokens}/10`);
                         }
                         window.updateUI();
                     }
@@ -1332,7 +1341,7 @@
             if(gameState === 'menu') setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 300);
             // Sync tokens from server on restore
             if(currentUser && window.G.tokens < 10){
-                fetch('/api/init', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ telegramId: currentUser?.id, syncOnly: true }) })
+                fetch('/api/init', { method:'POST', headers:{'Content-Type':'application/json','x-telegram-init-data': tg?.initData||''}, body: JSON.stringify({ telegramId: currentUser?.id, syncOnly: true }) })
                     .then(r=>r.json()).then(data=>{ if(data.success && data.user){ let prev=window.G.tokens; Object.assign(window.G, data.user); if(window.G.tokens > prev) showToast(`Token refilled! (${window.G.tokens})`); window.updateUI(); } }).catch(()=>{});
             }
         }
@@ -1343,11 +1352,9 @@
     window.tryStartGame = async function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
         if(!forceStart) {
-            // Fix 2: Deduct token from server first, then start
-            document.getElementById('ad-loader').style.display='flex';
-            const res = await apiCall('/api/use_token', {});
-            document.getElementById('ad-loader').style.display='none';
-            if(!res.success){ showToast('Error: ' + (res.error || 'Could not use token!')); return; }
+            // Deduct token locally immediately (no separate API needed - game_claim handles server deduction)
+            window.G.tokens--;
+            window.updateUI();
         }
         stopSound('menu');
         document.getElementById('menu-screen').style.display='none';
