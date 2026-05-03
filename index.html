@@ -7,7 +7,21 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
-    <script src="https://ad.gigapub.tech/script?id=6350"></script>
+    <script>
+        // Fix 4: GigaPub setup - expose correct API reference after load
+        window._gigaAPI = null;
+    </script>
+    <script src="https://ad.gigapub.tech/script?id=6350" onload="
+        window._gigaAPI = function(){
+            return new Promise(function(resolve, reject){
+                if(typeof window.showGiga === 'function'){
+                    window.showGiga().then(resolve).catch(function(){ setTimeout(resolve,2000); });
+                } else {
+                    setTimeout(resolve, 2000);
+                }
+            });
+        };
+    "></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
         *{ margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent; }
@@ -306,7 +320,6 @@
         <div class="icon-btn ptr" onclick="window.showModal('shop-modal')"><div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('wallet-modal')"><div class="icon-face ic-wallet">💳</div><span class="icon-label">Wallet</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('ads-modal')"><div class="icon-face ic-ads">📺</div><span class="icon-label">Ads</span></div>
-        <div class="icon-btn ptr" onclick="window.openSupport()"><div class="icon-face" style="background:linear-gradient(135deg,#0088cc,#005588);">💬</div><span class="icon-label">Support</span></div>
     </div>
 </div>
 
@@ -746,14 +759,12 @@
 
     function startTokenTimer(){
         // Update token display every second based on server tokenRefill time
-        // This ensures tokens don't falsely max out on mini-app re-open
         setInterval(()=>{
             if(window.G.tokens < 10){
                 let refillTime = window.G.tokenRefill || 0;
                 let elapsed = Date.now() - refillTime;
                 let left = 60*60*1000 - elapsed;
                 if(left <= 0){
-                    // Don't auto-increment locally — wait for server sync on next API call
                     document.getElementById('token-timer').textContent = `(+1 soon)`;
                 } else {
                     let m = Math.floor(left/60000), sec = Math.floor((left%60000)/1000);
@@ -764,9 +775,9 @@
             }
         }, 1000);
 
-        // Sync tokens from server every 2 minutes to stay accurate
+        // Fix 2: Sync tokens every 60 seconds to catch hourly refill
         setInterval(async ()=>{
-            if(window.G.tokens < 10){
+            if(window.G.tokens < 10 && currentUser){
                 try {
                     const res = await fetch('/api/init', {
                         method: 'POST',
@@ -778,13 +789,13 @@
                         let prevTokens = window.G.tokens;
                         Object.assign(window.G, data.user);
                         if(window.G.tokens > prevTokens){
-                            showToast(`Token refilled! (${window.G.tokens})`);
+                            showToast(`🎮 Token refilled! You now have ${window.G.tokens} tokens`);
                         }
                         window.updateUI();
                     }
                 } catch(e){}
             }
-        }, 2 * 60 * 1000);
+        }, 60 * 1000);
     }
 
     window.showModal = function(id){
@@ -832,6 +843,8 @@
         if(pendingExchangeGold < 1000){ showToast('Minimum 1,000 Gold!'); return; }
         if(pendingExchangeGold > 100000){ showToast('Maximum 100,000 Gold!'); return; }
         if(window.G.coins < pendingExchangeGold){ showToast('Not enough Gold!'); return; }
+        // Fix 3: Show ad before exchange
+        await showGameplayAd();
         document.getElementById('ad-loader').style.display='flex';
         const res = await apiCall('/api/shop', { type: 'gold_to_diamond', goldAmount: pendingExchangeGold });
         document.getElementById('ad-loader').style.display='none';
@@ -916,8 +929,19 @@
                 let AdC = Adsgram.init({ blockId: "28066" }); await AdC.show();
             } else if(actionName === 'adsgramDaily'){
                 let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
-            } else if(actionName === 'gigapub') { await window.showGiga(); }
-            else if(actionName === 'monetag') { await show_10893505(); }
+            } else if(actionName === 'gigapub') {
+                // Fix 4: Use GigaPub correct API
+                await new Promise((resolve, reject)=>{
+                    if(window._gigaAPI){
+                        window._gigaAPI().then(resolve).catch(()=>setTimeout(resolve,2000));
+                    } else {
+                        setTimeout(resolve, 2000);
+                    }
+                });
+            }
+            else if(actionName === 'monetag') {
+                await new Promise((resolve)=>{ try{ show_10893505(); }catch(e){} setTimeout(resolve, 2000); });
+            }
         } catch(e) { await new Promise(r=>setTimeout(r,1500)); }
 
         let reward = getRewardAmount();
@@ -927,11 +951,38 @@
     }
 
     window.showGiga = function(){
-        return new Promise((resolve)=>{
-            try{ if(typeof show_6350 === 'function') show_6350(); } catch(e){}
-            setTimeout(resolve, 2000);
+        return new Promise((resolve, reject)=>{
+            if(typeof window.showGiga_6350 === 'function'){
+                window.showGiga_6350().then(resolve).catch(reject);
+            } else {
+                // Try the window.showGiga() API from GigaPub script
+                try {
+                    let gigaPromise = null;
+                    // GigaPub exposes showGiga globally after script loads
+                    if(typeof window['showGiga'] !== 'undefined' && window['showGiga'] !== window.showGiga){
+                        gigaPromise = window['showGiga']();
+                    } else {
+                        // fallback: try numeric id method
+                        let fn = window['show_' + '6350'];
+                        if(typeof fn === 'function') gigaPromise = Promise.resolve(fn());
+                    }
+                    if(gigaPromise && typeof gigaPromise.then === 'function'){
+                        gigaPromise.then(resolve).catch(()=>setTimeout(resolve,2000));
+                    } else {
+                        setTimeout(resolve, 2000);
+                    }
+                } catch(e){ setTimeout(resolve, 2000); }
+            }
         });
     };
+
+    // Fix 4: Override showGiga after GigaPub script loads
+    window._gigaLoaded = false;
+    (function waitForGiga(){
+        if(typeof window.showGiga_6350 === 'function'){ window._gigaLoaded = true; return; }
+        // GigaPub script defines window.showGiga after load
+        setTimeout(waitForGiga, 500);
+    })();
 
     window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      () => 250, `+{R} Gold! (Adsgram Special)`);
     window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, () => 120, `+{R} Gold! (Adsgram Daily)`);
@@ -1023,21 +1074,19 @@
         
         let res;
         if(taskType === 'channel'){
-            // Channel tasks: verify via API (check if user joined)
             res = await apiCall('/api/verify_task', { taskId: id });
         } else {
-            // Simple tasks (YT, FB, TG bot etc): no API check, just claim
             res = await apiCall('/api/verify_task', { taskId: id, skipVerify: true });
         }
         
         if(res.success){
             showToast('✅ Task Complete! +200 Gold!');
-            // Show "Done" then auto-vanish after 5 seconds
+            // Fix 5: Show "Done" then auto-vanish after 3 seconds (both channel & quick tasks)
             let card = document.getElementById('task-card-' + id);
             if(btn){ btn.classList.add('done'); btn.textContent = '✅ Done'; btn.disabled = true; btn.onclick = null; }
             setTimeout(()=>{
                 if(card){ card.classList.add('vanishing'); setTimeout(()=>{ card.remove(); }, 400); }
-            }, 5000);
+            }, 3000);
         } else {
             showToast('❌ Not verified! Please complete the task first.');
             if(btn){ btn.disabled = false; btn.textContent = 'Claim'; }
@@ -1112,7 +1161,24 @@
     let gameState='menu', objects=[], particles=[], sliceTrail=[], isSlicing=false, mouse={x:0,y:0};
     let cutTarget=0, currentCut=0, missCount=0, pendingReward=0;
     let stagesCompletedSinceAd = 0;
-    let adTriggerThreshold = 2 + Math.floor(Math.random()*2); 
+    let adTriggerThreshold = 2; // Show ad every 2 matches exactly
+
+    // Fix 3: Random ad provider selector for gameplay ads
+    async function showGameplayAd(){
+        let adProviders = ['adsgram', 'gigapub', 'monetag'];
+        let chosen = adProviders[Math.floor(Math.random() * adProviders.length)];
+        document.getElementById('ad-loader').style.display='flex';
+        try {
+            if(chosen === 'adsgram'){
+                let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
+            } else if(chosen === 'gigapub'){
+                if(window._gigaAPI){ await window._gigaAPI(); } else { await new Promise(r=>setTimeout(r,1500)); }
+            } else if(chosen === 'monetag'){
+                await new Promise((resolve)=>{ try{ show_10893505(); }catch(e){} setTimeout(resolve, 2000); });
+            }
+        } catch(e){ await new Promise(r=>setTimeout(r,1500)); }
+        document.getElementById('ad-loader').style.display='none';
+    }
 
     class FruitObj {
         constructor(isMenu=false){
@@ -1246,13 +1312,49 @@
     window.toggleSound = function(){ window.G.sound = !window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); if(!window.G.sound) stopSound('menu'); else if(gameState === 'menu') playSound('menu'); window.updateUI(); };
     window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
-    window.tryStartGame = function(forceStart=false){
+    // Fix 1: Handle app minimize/restore - game should NOT stop
+    document.addEventListener('visibilitychange', function(){
+        if(document.hidden){
+            // App minimized: pause if playing, mute sounds
+            if(gameState === 'playing'){
+                gameState = 'paused';
+                window._wasPlayingBeforeHide = true;
+            } else {
+                window._wasPlayingBeforeHide = false;
+            }
+            stopSound('menu');
+        } else {
+            // App restored: resume if was playing
+            if(window._wasPlayingBeforeHide){
+                gameState = 'playing';
+                window._wasPlayingBeforeHide = false;
+            }
+            if(gameState === 'menu') setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 300);
+            // Sync tokens from server on restore
+            if(currentUser && window.G.tokens < 10){
+                fetch('/api/init', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ telegramId: currentUser?.id, syncOnly: true }) })
+                    .then(r=>r.json()).then(data=>{ if(data.success && data.user){ let prev=window.G.tokens; Object.assign(window.G, data.user); if(window.G.tokens > prev) showToast(`Token refilled! (${window.G.tokens})`); window.updateUI(); } }).catch(()=>{});
+            }
+        }
+    });
+    // Telegram WebApp specific: handle focus events
+    if(tg){ tg.onEvent && tg.onEvent('activated', function(){ if(window._wasPlayingBeforeHide){ gameState='playing'; window._wasPlayingBeforeHide=false; } if(gameState==='menu' && window.G.sound) setTimeout(()=>playSound('menu'),300); }); }
+
+    window.tryStartGame = async function(forceStart=false){
         if(window.G.tokens<=0 && !forceStart){ window.showNoTokenModal(); return; }
-        if(!forceStart) { window.G.tokens--; window.updateUI(); }
+        if(!forceStart) {
+            // Fix 2: Deduct token from server first, then start
+            document.getElementById('ad-loader').style.display='flex';
+            const res = await apiCall('/api/use_token', {});
+            document.getElementById('ad-loader').style.display='none';
+            if(!res.success){ showToast('Error: ' + (res.error || 'Could not use token!')); return; }
+        }
         stopSound('menu');
         document.getElementById('menu-screen').style.display='none';
         document.getElementById('game-hud').style.display='flex';
         document.getElementById('strikes').style.display='flex';
+        // Fix 6: Hide support button during gameplay
+        document.getElementById('support-float').style.display='none';
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0;
         
         cutTarget = 10 + window.G.stage * 2;
@@ -1276,6 +1378,8 @@
         window.hideModal('pause-modal'); window.hideModal('over-modal'); window.hideModal('complete-modal');
         document.getElementById('game-hud').style.display='none'; document.getElementById('strikes').style.display='none';
         document.getElementById('menu-screen').style.display='flex';
+        // Fix 6: Show support button on home screen
+        document.getElementById('support-float').style.display='flex';
         objects=[]; particles=[]; sliceTrail=[]; currentCut=0; missCount=0; gameState='menu'; playSound('menu'); window.updateUI();
     };
 
@@ -1312,12 +1416,10 @@
 
         if(res.success){
             stagesCompletedSinceAd++;
+            // Fix 3: Show ad from random provider every 2 matches exactly
             if(stagesCompletedSinceAd >= adTriggerThreshold){
                 stagesCompletedSinceAd = 0;
-                adTriggerThreshold = 2 + Math.floor(Math.random()*2);
-                document.getElementById('ad-loader').style.display='flex';
-                try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,1500)); }
-                document.getElementById('ad-loader').style.display='none';
+                await showGameplayAd();
             }
             window.tryStartGame(true);
         } else {
