@@ -1,48 +1,88 @@
 const { db, admin } = require('./utils/firebase');
+const { verifyTelegramData } = require('./utils/verifyTelegram');
 
-module.exports = async function handler(req, res) {
+// Daily limits per ad type
+const LIMITS = {
+    adsgram:      5,
+    adsgramDaily: 5,
+    gigapub:      20,
+    monetag:      20,
+};
+
+// Gold reward per ad type
+const REWARDS = {
+    adsgram:      250,
+    adsgramDaily: 120,
+    gigapub:      120,
+    monetag:      120,
+};
+
+// Firestore field name for each action
+const COUNT_FIELDS = {
+    adsgram:      'adsgramCount',
+    adsgramDaily: 'adsgramDailyCount',
+    gigapub:      'gigapubCount',
+    monetag:      'monetagCount',
+};
+
+export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-telegram-init-data');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ success: false });
+    if (req.method !== 'POST')   return res.status(405).send('Method Not Allowed');
 
-    const { telegramId, action, coinsToAdd } = req.body;
-    if (!telegramId) return res.status(400).json({ success: false, error: 'Missing Telegram ID' });
-
-    try {
-        const userRef = db.collection('users').doc(String(telegramId));
-        const doc = await userRef.get();
-        if (!doc.exists) return res.status(404).json({ success: false, error: 'User not found' });
-
-        const userData = doc.data();
-
-        if (action === 'claim_lootbox') {
-            if (userData.lootboxPoints < 500) return res.status(400).json({ success: false, error: 'Not enough points' });
-            
-            await userRef.update({
-                coins: admin.firestore.FieldValue.increment(Number(coinsToAdd)),
-                lootboxPoints: 0 
-            });
-        } 
-        else {
-            const updateData = {
-                coins: admin.firestore.FieldValue.increment(Number(coinsToAdd)),
-                lootboxPoints: admin.firestore.FieldValue.increment(Number(coinsToAdd)) 
-            };
-
-            if (action === 'adsgram') updateData.adsgramCount = admin.firestore.FieldValue.increment(1);
-            if (action === 'adsgramDaily') updateData.adsgramDailyCount = admin.firestore.FieldValue.increment(1);
-            if (action === 'gigapub') updateData.gigapubCount = admin.firestore.FieldValue.increment(1);
-            if (action === 'monetag') updateData.monetagCount = admin.firestore.FieldValue.increment(1);
-
-            await userRef.update(updateData);
-        }
-
-        const updatedUser = (await userRef.get()).data();
-        return res.status(200).json({ success: true, user: updatedUser });
-    } catch (error) {
-        return res.status(500).json({ success: false, error: error.message });
+    // ── Security ─────────────────────────────────────────────────────
+    const initData  = req.headers['x-telegram-init-data'] || '';
+    const BOT_TOKEN = process.env.BOT_TOKEN || '';
+    if (BOT_TOKEN && !verifyTelegramData(initData, BOT_TOKEN)) {
+        return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    const { telegramId, action } = req.body;
+    if (!telegramId) return res.status(400).json({ error: 'Missing Telegram ID' });
+
+    const userRef = db.collection('users').doc(String(telegramId));
+    const doc     = await userRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'User not found' });
+
+    const userData = doc.data();
+
+    // ── Lootbox claim ─────────────────────────────────────────────────
+    if (action === 'claim_lootbox') {
+        const pts = userData.lootboxPoints || 0;
+        if (pts < 500) return res.status(400).json({ error: 'Not enough points' });
+        const goldReward = Math.floor(pts / 2);
+        await userRef.update({
+            coins:         admin.firestore.FieldValue.increment(goldReward),
+            lootboxPoints: 0,
+        });
+        const updated = await userRef.get();
+        return res.status(200).json({ success: true, user: updated.data() });
+    }
+
+    // ── Ad reward ─────────────────────────────────────────────────────
+    const countField = COUNT_FIELDS[action];
+    const limit      = LIMITS[action];
+    const reward     = REWARDS[action];
+
+    if (!countField || limit === undefined) {
+        return res.status(400).json({ error: 'Unknown ad action' });
+    }
+
+    const currentCount = userData[countField] || 0;
+    if (currentCount >= limit) {
+        return res.status(400).json({ error: 'Daily limit reached' });
+    }
+
+    const updates = {
+        [countField]:  currentCount + 1,
+        coins:         admin.firestore.FieldValue.increment(reward),
+        lootboxPoints: admin.firestore.FieldValue.increment(reward),
+    };
+
+    await userRef.update(updates);
+    const updated = await userRef.get();
+    return res.status(200).json({ success: true, user: updated.data() });
 }
