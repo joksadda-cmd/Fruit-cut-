@@ -174,13 +174,20 @@
         .watch-ad-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 3px 0 #111;cursor:not-allowed; }
         .watch-ad-btn.special{ background:linear-gradient(180deg,#ff8c00,#e65100);box-shadow:0 3px 0 #8b3000; }
         
-        .task-card{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12); border-radius:14px;padding:12px 14px;margin-bottom:10px; display:flex;align-items:center;gap:12px; }
+        .task-card{ background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12); border-radius:14px;padding:12px 14px;margin-bottom:10px; display:flex;align-items:center;gap:12px;transition:opacity 0.4s,transform 0.4s; }
+        .task-card.vanishing{opacity:0;transform:scale(0.92);}
+        .task-card.channel-task{border-color:rgba(0,188,212,0.35);background:rgba(0,188,212,0.07);}
+        .task-card.simple-task{border-color:rgba(255,140,0,0.3);background:rgba(255,100,0,0.06);}
+        .task-type-badge{font-size:9px;font-weight:900;padding:2px 7px;border-radius:8px;display:inline-block;margin-bottom:3px;}
+        .badge-channel{background:rgba(0,188,212,0.25);color:#00e5ff;}
+        .badge-simple{background:rgba(255,140,0,0.25);color:#ffb300;}
         .task-icon{font-size:28px;flex-shrink:0;}
         .task-info{flex:1;}
         .task-name{font-size:14px;font-weight:900;color:#fff;}
         .task-reward{font-size:12px;color:#ffcc00;margin-top:2px;}
         .task-btn{ background:linear-gradient(180deg,#00bcd4,#006064); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0; }
         .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
+        .task-section-header{font-size:13px;font-weight:900;color:#7de;margin:10px 0 6px;padding:4px 10px;background:rgba(0,150,200,0.15);border-radius:8px;}
         .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
         
         .unique-code-box{background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;text-align:center;}
@@ -212,6 +219,13 @@
         
         .withdraw-req{ background:rgba(255,50,50,0.1);border:1px solid rgba(255,50,50,0.3);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#ff7788;text-align:center;font-weight:800; }
         .withdraw-req.met{ background:rgba(0,200,100,0.1);border-color:rgba(0,200,100,0.3);color:#4caf50; }
+        @keyframes previewPop{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+        /* Support floating button */
+        #support-float{ position:fixed;bottom:90px;right:12px;z-index:100; width:54px;height:54px;border-radius:50%; background:linear-gradient(135deg,#0088cc,#005588); border:3px solid rgba(255,255,255,0.3); display:flex;align-items:center;justify-content:center; font-size:26px;cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,0.4),0 0 0 0 rgba(0,136,204,0.6); animation:supportPulse 2.5s infinite; }
+        @keyframes supportPulse{0%,100%{box-shadow:0 4px 16px rgba(0,0,0,0.4),0 0 0 0 rgba(0,136,204,0.6);}50%{box-shadow:0 4px 16px rgba(0,0,0,0.4),0 0 0 10px rgba(0,136,204,0);}}
+        #support-float .support-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:900;color:#fff;white-space:nowrap;text-shadow:1px 1px 2px rgba(0,0,0,0.8);}
+        #support-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:200;justify-content:center;align-items:center;}
     </style>
 </head>
 <body>
@@ -292,6 +306,7 @@
         <div class="icon-btn ptr" onclick="window.showModal('shop-modal')"><div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('wallet-modal')"><div class="icon-face ic-wallet">💳</div><span class="icon-label">Wallet</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('ads-modal')"><div class="icon-face ic-ads">📺</div><span class="icon-label">Ads</span></div>
+        <div class="icon-btn ptr" onclick="window.openSupport()"><div class="icon-face" style="background:linear-gradient(135deg,#0088cc,#005588);">💬</div><span class="icon-label">Support</span></div>
     </div>
 </div>
 
@@ -401,13 +416,38 @@
             ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> and give <strong>2 Refers</strong><br>
             <span id="withdraw-req-status">Tasks: 0/5 · Refers: 0/2</span>
         </div>
-        <div style="margin-bottom:8px;">
-            <div class="w-badge">💎 1000 = $1 USD</div><br><div class="w-badge">💎 1000 = 120 BDT</div><br><div class="w-badge">💎 1000 = 0.75 TON</div>
+        <!-- Animated rate display -->
+        <div id="w-rate-display" style="background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1));border:2px solid rgba(100,160,255,0.3);border-radius:14px;padding:12px 14px;margin-bottom:10px;text-align:center;">
+            <div style="font-size:11px;color:#aaa;font-weight:800;margin-bottom:6px;">💱 CURRENT EXCHANGE RATE</div>
+            <div style="display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap;">
+                <div style="background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25);border-radius:10px;padding:6px 10px;">
+                    <div style="font-family:'Luckiest Guy',cursive;font-size:16px;color:#4caf50;">💎100 = 12 BDT</div>
+                    <div style="font-size:10px;color:#888;">bKash</div>
+                </div>
+                <div style="background:rgba(0,150,255,0.1);border:1px solid rgba(0,150,255,0.25);border-radius:10px;padding:6px 10px;">
+                    <div style="font-family:'Luckiest Guy',cursive;font-size:16px;color:#4af;">💎100 = $0.1</div>
+                    <div style="font-size:10px;color:#888;">USDT/Binance</div>
+                </div>
+                <div style="background:rgba(100,0,255,0.1);border:1px solid rgba(100,0,255,0.25);border-radius:10px;padding:6px 10px;">
+                    <div style="font-family:'Luckiest Guy',cursive;font-size:16px;color:#cf6fef;">💎100 = 0.075 TON</div>
+                    <div style="font-size:10px;color:#888;">TON Wallet</div>
+                </div>
+            </div>
         </div>
-        <select id="w-method">
-            <option value="bkash">bKash (Min 100 💎 = 12 BDT)</option><option value="tonkeeper">Tonkeeper (Min 100 💎 = 0.075 TON)</option><option value="binance">Binance UID (Min 500 💎 = $0.5)</option>
+        <select id="w-method" onchange="window.updateWithdrawPreview()">
+            <option value="bkash">bKash</option>
+            <option value="binance">Binance USDT</option>
+            <option value="tonkeeper">Tonkeeper (TON)</option>
         </select>
-        <input type="number" id="w-amount" placeholder="Enter Diamond amount" min="100">
+        <div style="position:relative;">
+            <input type="number" id="w-amount" placeholder="Enter Diamond amount (min 100)" min="100" oninput="window.updateWithdrawPreview()">
+            <!-- Animated preview -->
+            <div id="w-convert-preview" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08));border:2px solid rgba(255,180,0,0.4);border-radius:12px;padding:10px 14px;margin-top:4px;text-align:center;animation:previewPop 0.3s ease;">
+                <div style="font-size:11px;color:#aaa;margin-bottom:4px;">You will receive approximately:</div>
+                <div id="w-convert-value" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;text-shadow:0 2px 8px rgba(255,200,0,0.4);"></div>
+                <div id="w-convert-label" style="font-size:11px;color:#aaa;margin-top:2px;"></div>
+            </div>
+        </div>
         <input type="text" id="w-address" placeholder="Phone / Wallet Address / UID">
         <button class="btn btn-gold" id="btn-withdraw" onclick="window.doWithdraw()">💸 WITHDRAW NOW</button>
         <div class="info-text">Processing: 24-48 hours after review</div>
@@ -550,6 +590,29 @@
 
 <div id="token-toast"></div>
 
+<!-- Support floating button -->
+<div id="support-float" onclick="window.openSupport()">
+    💬
+    <span class="support-label">Support</span>
+</div>
+
+<!-- Support Modal -->
+<div id="support-modal-overlay" class="ptr">
+    <div class="modal" style="max-width:340px;">
+        <div style="text-align:center;font-size:48px;margin-bottom:8px;">🎮</div>
+        <div class="mh mh-cyan" style="font-size:22px;">Customer Support</div>
+        <div style="background:rgba(0,136,204,0.15);border:1px solid rgba(0,136,204,0.35);border-radius:12px;padding:14px;margin-bottom:14px;font-size:13px;color:#cce;line-height:1.7;text-align:center;">
+            You can <strong style="color:#ffcc00;">buy tasks</strong> and get support for any issue.<br>
+            Message the admin — reply guaranteed when online!<br><br>
+            <strong style="color:#4af;">Admin: @Your_Admin11</strong>
+        </div>
+        <button class="btn btn-blue" onclick="window.openTgSupport()" style="font-size:16px;">
+            ✈️ Message Admin on Telegram
+        </button>
+        <button class="btn btn-grey" onclick="document.getElementById('support-modal-overlay').style.display='none'">CLOSE</button>
+    </div>
+</div>
+
 <!-- MAIN SCRIPT -->
 <script>
     const tg = window.Telegram && window.Telegram.WebApp;
@@ -682,15 +745,16 @@
     }
 
     function startTokenTimer(){
+        // Update token display every second based on server tokenRefill time
+        // This ensures tokens don't falsely max out on mini-app re-open
         setInterval(()=>{
             if(window.G.tokens < 10){
-                let elapsed = Date.now() - (window.G.tokenRefill || Date.now());
+                let refillTime = window.G.tokenRefill || 0;
+                let elapsed = Date.now() - refillTime;
                 let left = 60*60*1000 - elapsed;
                 if(left <= 0){
-                    window.G.tokens = Math.min(10, window.G.tokens+1);
-                    window.G.tokenRefill = Date.now();
-                    showToast(`Token refilled! (${window.G.tokens})`);
-                    window.updateUI();
+                    // Don't auto-increment locally — wait for server sync on next API call
+                    document.getElementById('token-timer').textContent = `(+1 soon)`;
                 } else {
                     let m = Math.floor(left/60000), sec = Math.floor((left%60000)/1000);
                     document.getElementById('token-timer').textContent = `(+1 in ${m}:${sec.toString().padStart(2,'0')})`;
@@ -699,6 +763,28 @@
                 document.getElementById('token-timer').textContent = 'MAX';
             }
         }, 1000);
+
+        // Sync tokens from server every 2 minutes to stay accurate
+        setInterval(async ()=>{
+            if(window.G.tokens < 10){
+                try {
+                    const res = await fetch('/api/init', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ telegramId: currentUser?.id, syncOnly: true })
+                    });
+                    const data = await res.json();
+                    if(data.success && data.user){
+                        let prevTokens = window.G.tokens;
+                        Object.assign(window.G, data.user);
+                        if(window.G.tokens > prevTokens){
+                            showToast(`Token refilled! (${window.G.tokens})`);
+                        }
+                        window.updateUI();
+                    }
+                } catch(e){}
+            }
+        }, 2 * 60 * 1000);
     }
 
     window.showModal = function(id){
@@ -860,27 +946,51 @@
             let tasks = await res.json();
             if(!tasks || !tasks.length) throw new Error('No tasks');
             c.innerHTML = '';
-            tasks.forEach(t => {
+
+            // Separate channel tasks (need API verify) and simple tasks (no API)
+            let channelTasks = tasks.filter(t => t.type === 'channel' || t.taskType === 'channel' || (!t.type && (t.link || '').includes('t.me')));
+            let simpleTasks  = tasks.filter(t => t.type === 'simple'  || t.taskType === 'simple');
+
+            function buildCard(t){
                 let done = (window.G.completedTasks||[]).includes(String(t.id));
-                c.innerHTML += `
-                    <div class="task-card" id="task-card-${t.id}">
+                let isChannel = t.type === 'channel' || t.taskType === 'channel' || (!t.type && (t.link||'').includes('t.me'));
+                let cardClass = isChannel ? 'channel-task' : 'simple-task';
+                let badgeClass = isChannel ? 'badge-channel' : 'badge-simple';
+                let badgeText = isChannel ? '📡 Channel Task' : '⚡ Simple Task';
+                return `
+                    <div class="task-card ${cardClass}" id="task-card-${t.id}">
                         <div class="task-icon">${t.icon||'📋'}</div>
                         <div class="task-info">
+                            <span class="task-type-badge ${badgeClass}">${badgeText}</span>
                             <div class="task-name">${t.name}</div>
-                            <div class="task-reward">200 Gold reward</div>
+                            <div class="task-reward">🪙 200 Gold reward</div>
                         </div>
                         ${done
-                            ? `<button class="task-btn done" disabled>Done</button>`
-                            : `<button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${t.link||''}')">Go</button>`
+                            ? `<button class="task-btn done" disabled>✅ Done</button>`
+                            : `<button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${t.link||''}','${isChannel?'channel':'simple'}')">${isChannel?'Join':'Go'}</button>`
                         }
                     </div>`;
-            });
+            }
+
+            if(channelTasks.length){
+                c.innerHTML += `<div class="task-section-header">📡 Channel Tasks — Verified Automatically</div>`;
+                channelTasks.forEach(t => c.innerHTML += buildCard(t));
+            }
+            if(simpleTasks.length){
+                c.innerHTML += `<div class="task-section-header">⚡ Quick Tasks — Complete & Claim</div>`;
+                simpleTasks.forEach(t => c.innerHTML += buildCard(t));
+            }
+            // Fallback: tasks without explicit type shown as simple
+            let unknownTasks = tasks.filter(t => !channelTasks.includes(t) && !simpleTasks.includes(t));
+            if(unknownTasks.length && !channelTasks.length && !simpleTasks.length){
+                unknownTasks.forEach(t => c.innerHTML += buildCard(t));
+            }
         } catch(e) {
             c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No tasks available right now.</div>';
         }
     };
 
-    window.doTask = function(id, link){
+    window.doTask = function(id, link, taskType){
         let btn = document.getElementById('task-btn-' + id);
         if(!btn || btn.disabled) return;
         if(link && link !== 'undefined') {
@@ -902,23 +1012,63 @@
                 btn.style.background = 'linear-gradient(180deg,#4caf50,#2e7d32)';
                 btn.style.boxShadow = '0 3px 0 #1b5e20';
                 btn.disabled = false;
-                btn.onclick = function(){ window.claimTask(id); };
+                btn.onclick = function(){ window.claimTask(id, taskType||'simple'); };
             }
         }, 1000);
     };
 
-    window.claimTask = async function(id){
+    window.claimTask = async function(id, taskType){
         let btn = document.getElementById('task-btn-' + id);
         if(btn){ btn.disabled = true; btn.textContent = 'Checking...'; }
         
-        const res = await apiCall('/api/verify_task', { taskId: id });
+        let res;
+        if(taskType === 'channel'){
+            // Channel tasks: verify via API (check if user joined)
+            res = await apiCall('/api/verify_task', { taskId: id });
+        } else {
+            // Simple tasks (YT, FB, TG bot etc): no API check, just claim
+            res = await apiCall('/api/verify_task', { taskId: id, skipVerify: true });
+        }
         
         if(res.success){
-            showToast('✅ Task Verified! Reward Added!');
-            window.renderTasks();
+            showToast('✅ Task Complete! +200 Gold!');
+            // Show "Done" then auto-vanish after 5 seconds
+            let card = document.getElementById('task-card-' + id);
+            if(btn){ btn.classList.add('done'); btn.textContent = '✅ Done'; btn.disabled = true; btn.onclick = null; }
+            setTimeout(()=>{
+                if(card){ card.classList.add('vanishing'); setTimeout(()=>{ card.remove(); }, 400); }
+            }, 5000);
         } else {
-            showToast('❌ Not verified! Please join the channel first.');
+            showToast('❌ Not verified! Please complete the task first.');
             if(btn){ btn.disabled = false; btn.textContent = 'Claim'; }
+        }
+    };
+
+    // Withdraw conversion rates
+    const WITHDRAW_RATES = {
+        bkash:     { rate: 0.12,    unit: 'BDT',  symbol: '৳',   perDiamond: '1 💎 = 0.12 BDT' },
+        binance:   { rate: 0.001,   unit: 'USDT', symbol: '$',    perDiamond: '1 💎 = $0.001'   },
+        tonkeeper: { rate: 0.00075, unit: 'TON',  symbol: 'TON ', perDiamond: '1 💎 = 0.00075 TON' }
+    };
+
+    window.updateWithdrawPreview = function(){
+        let method = document.getElementById('w-method')?.value || 'bkash';
+        let amount = parseInt(document.getElementById('w-amount')?.value) || 0;
+        let preview = document.getElementById('w-convert-preview');
+        let valEl = document.getElementById('w-convert-value');
+        let labelEl = document.getElementById('w-convert-label');
+        if(!preview) return;
+        if(amount >= 1){
+            let r = WITHDRAW_RATES[method] || WITHDRAW_RATES.bkash;
+            let converted = (amount * r.rate).toFixed(method === 'bkash' ? 2 : 4);
+            preview.style.display = 'block';
+            valEl.textContent = `${r.symbol}${converted} ${r.unit}`;
+            labelEl.textContent = `${amount} Diamonds → ${r.perDiamond}`;
+            // Restart animation
+            preview.style.animation = 'none'; preview.offsetHeight;
+            preview.style.animation = 'previewPop 0.3s ease';
+        } else {
+            preview.style.display = 'none';
         }
     };
 
@@ -939,8 +1089,19 @@
         btn.disabled = true; btn.textContent = "Processing...";
         const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
         btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
-        if(res.success){ window.hideModal('wallet-modal'); showToast('Withdrawal Request Sent!'); }
+        if(res.success){ window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!'); }
         else { showToast('Error: ' + (res.error || 'Server Error')); }
+    };
+
+    // Support functions
+    window.openSupport = function(){
+        document.getElementById('support-modal-overlay').style.display = 'flex';
+    };
+    window.openTgSupport = function(){
+        let url = 'https://t.me/Your_Admin11';
+        if(tg?.openTelegramLink) tg.openTelegramLink(url);
+        else window.open(url, '_blank');
+        document.getElementById('support-modal-overlay').style.display = 'none';
     };
 
     const canvas = document.getElementById('gc'); const ctx = canvas.getContext('2d');
