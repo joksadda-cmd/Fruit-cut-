@@ -1041,49 +1041,89 @@
         let c = document.getElementById('task-list');
         c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
         try {
-            let res = await fetch('https://fruit-cut-eight.vercel.app/api/tasks', { method: 'GET', signal: AbortSignal.timeout(8000) });
-            let tasks = await res.json();
-            if(!tasks || !tasks.length) throw new Error('No tasks');
+            // Load both verified (tasks collection) and quick (quick_tasks collection) in parallel
+            const [verRes, qtRes] = await Promise.all([
+                fetch('https://fruit-cut-eight.vercel.app/api/tasks',             { method:'GET', signal:AbortSignal.timeout(8000) }),
+                fetch('https://fruit-cut-eight.vercel.app/api/tasks?type=quick',  { method:'GET', signal:AbortSignal.timeout(8000) }).catch(()=>null)
+            ]);
+
+            let verifiedTasks = [];
+            let quickTasks    = [];
+
+            try { verifiedTasks = await verRes.json(); if(!Array.isArray(verifiedTasks)) verifiedTasks=[]; } catch(e){}
+            try { if(qtRes){ quickTasks = await qtRes.json(); if(!Array.isArray(quickTasks)) quickTasks=[]; } } catch(e){}
+
+            verifiedTasks.forEach(t => { t._src = 'channel'; });
+            quickTasks.forEach(t    => { t._src = 'quick';   });
+
             c.innerHTML = '';
 
-            // Separate channel tasks (need API verify) and simple tasks (no API)
-            let channelTasks = tasks.filter(t => t.type === 'channel' || t.taskType === 'channel' || (!t.type && (t.link || '').includes('t.me')));
-            let simpleTasks  = tasks.filter(t => t.type === 'simple'  || t.taskType === 'simple');
+            // ── Permanent Official Links (always shown at top) ────────
+            c.innerHTML += `
+                <div class="task-section-header" style="background:linear-gradient(90deg,rgba(0,150,136,0.3),transparent);border-left:3px solid #00bcd4;">
+                    📌 Official Community — Join & Stay Updated
+                </div>
+                <div class="task-card channel-task" style="border-color:rgba(0,188,212,0.5);background:linear-gradient(135deg,rgba(0,188,212,0.12),rgba(0,100,120,0.08));">
+                    <div class="task-icon" style="font-size:26px;">📢</div>
+                    <div class="task-info">
+                        <span class="task-type-badge badge-channel">📡 Official Channel</span>
+                        <div class="task-name" style="font-weight:900;">Fruit Cut — Official Channel</div>
+                        <div class="task-reward" style="color:#00c6d4;">📣 News · Updates · Announcements</div>
+                    </div>
+                    <button class="task-btn" style="background:linear-gradient(180deg,#00bcd4,#006070);box-shadow:0 3px 0 #004050;"
+                        onclick="tg?.openLink ? tg.openLink('https://t.me/fruit_cut_play') : window.open('https://t.me/fruit_cut_play','_blank')">
+                        Join
+                    </button>
+                </div>
+                <div class="task-card channel-task" style="border-color:rgba(76,175,80,0.5);background:linear-gradient(135deg,rgba(76,175,80,0.12),rgba(27,94,32,0.08));">
+                    <div class="task-icon" style="font-size:26px;">👥</div>
+                    <div class="task-info">
+                        <span class="task-type-badge" style="background:rgba(76,175,80,0.25);color:#81c784;">👥 Official Group</span>
+                        <div class="task-name" style="font-weight:900;">Fruit Cut — Community Group</div>
+                        <div class="task-reward" style="color:#81c784;">💬 Chat · Help · Community</div>
+                    </div>
+                    <button class="task-btn" style="background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;"
+                        onclick="tg?.openLink ? tg.openLink('https://t.me/earn_fruit_game') : window.open('https://t.me/earn_fruit_game','_blank')">
+                        Join
+                    </button>
+                </div>
+            `;
 
-            function buildCard(t){
+            function buildCard(t, src){
                 let done = (window.G.completedTasks||[]).includes(String(t.id));
-                let isChannel = t.type === 'channel' || t.taskType === 'channel' || (!t.type && (t.link||'').includes('t.me'));
-                let cardClass = isChannel ? 'channel-task' : 'simple-task';
+                let isChannel  = src === 'channel';
+                let cardClass  = isChannel ? 'channel-task' : 'simple-task';
                 let badgeClass = isChannel ? 'badge-channel' : 'badge-simple';
-                let badgeText = isChannel ? '📡 Channel Task' : '⚡ Simple Task';
+                let badgeText  = isChannel ? '📡 Channel Task' : '⚡ Quick Task';
+                let btnLabel   = isChannel ? 'Join' : 'Go';
+                let reward     = t.coins || 200;
                 return `
                     <div class="task-card ${cardClass}" id="task-card-${t.id}">
                         <div class="task-icon">${t.icon||'📋'}</div>
                         <div class="task-info">
                             <span class="task-type-badge ${badgeClass}">${badgeText}</span>
                             <div class="task-name">${t.name}</div>
-                            <div class="task-reward">🪙 200 Gold reward</div>
+                            <div class="task-reward">🪙 ${reward} Gold${t.gems?` + 💎${t.gems}`:''}</div>
                         </div>
                         ${done
                             ? `<button class="task-btn done" disabled>✅ Done</button>`
-                            : `<button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${t.link||''}','${isChannel?'channel':'simple'}')">${isChannel?'Join':'Go'}</button>`
+                            : `<button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.link||'').replace(/'/g,"\\'")}','${src}')">${btnLabel}</button>`
                         }
                     </div>`;
             }
 
-            if(channelTasks.length){
+            if(verifiedTasks.length){
                 c.innerHTML += `<div class="task-section-header">📡 Channel Tasks — Verified Automatically</div>`;
-                channelTasks.forEach(t => c.innerHTML += buildCard(t));
+                verifiedTasks.forEach(t => c.innerHTML += buildCard(t, 'channel'));
             }
-            if(simpleTasks.length){
+            if(quickTasks.length){
                 c.innerHTML += `<div class="task-section-header">⚡ Quick Tasks — Complete & Claim</div>`;
-                simpleTasks.forEach(t => c.innerHTML += buildCard(t));
+                quickTasks.forEach(t => c.innerHTML += buildCard(t, 'quick'));
             }
-            // Fallback: tasks without explicit type shown as simple
-            let unknownTasks = tasks.filter(t => !channelTasks.includes(t) && !simpleTasks.includes(t));
-            if(unknownTasks.length && !channelTasks.length && !simpleTasks.length){
-                unknownTasks.forEach(t => c.innerHTML += buildCard(t));
+            if(!verifiedTasks.length && !quickTasks.length){
+                c.innerHTML += `<div style="text-align:center;color:#aaa;padding:16px 0;">More tasks coming soon! Stay tuned 🎯</div>`;
             }
+
         } catch(e) {
             c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No tasks available right now.</div>';
         }
@@ -1128,8 +1168,9 @@
         }
         
         if(res.success){
-            showToast('✅ Task Complete! +200 Gold!');
-            // Fix 5: Show "Done" then auto-vanish after 3 seconds (both channel & quick tasks)
+            let rewardMsg = `✅ Task Complete! +${res.coinsReward||200} Gold!`;
+            if(res.gemsReward > 0) rewardMsg += ` +${res.gemsReward} 💎`;
+            showToast(rewardMsg);
             let card = document.getElementById('task-card-' + id);
             if(btn){ btn.classList.add('done'); btn.textContent = '✅ Done'; btn.disabled = true; btn.onclick = null; }
             setTimeout(()=>{
