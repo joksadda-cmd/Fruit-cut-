@@ -1,21 +1,32 @@
 const { db, admin } = require('./utils/firebase');
-const { verifyTelegramData } = require('./utils/verifyTelegram');
+const crypto = require('crypto');
 
-const MAX_DAILY_AD_SPINS = 10;
-const MAX_TOKENS         = 10;
+const MAX_TOKENS = 10;
 
-export default async function handler(req, res) {
+function verifyTelegram(initData, botToken) {
+    if (!initData || !botToken) return false;
+    try {
+        const params = new URLSearchParams(initData);
+        const hash = params.get('hash');
+        if (!hash) return false;
+        params.delete('hash');
+        const checkStr = [...params.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([k,v]) => `${k}=${v}`).join('\n');
+        const secret = crypto.createHmac('sha256','WebAppData').update(botToken).digest();
+        const expected = crypto.createHmac('sha256', secret).update(checkStr).digest('hex');
+        return hash === expected;
+    } catch(e) { return false; }
+}
+
+module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-telegram-init-data');
-
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST')   return res.status(405).send('Method Not Allowed');
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-    // ── Security ─────────────────────────────────────────────────────
-    const initData  = req.headers['x-telegram-init-data'] || '';
     const BOT_TOKEN = process.env.BOT_TOKEN || '';
-    if (BOT_TOKEN && !verifyTelegramData(initData, BOT_TOKEN)) {
+    const initData  = req.headers['x-telegram-init-data'] || '';
+    if (BOT_TOKEN && initData && !verifyTelegram(initData, BOT_TOKEN)) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -28,24 +39,20 @@ export default async function handler(req, res) {
 
     const userData = doc.data();
 
-    // ── Validate spin eligibility ─────────────────────────────────────
+    // ── Spin eligibility ──────────────────────────────────────────────
     if (usedToken) {
-        const lotTokens = userData.lotteryTokens || 0;
-        if (lotTokens <= 0) {
+        if ((userData.lotteryTokens || 0) <= 0) {
             return res.status(400).json({ error: 'No lottery tokens' });
         }
     } else {
-        const dailySpins = userData.lotteryDailySpins || 0;
-        if (dailySpins >= MAX_DAILY_AD_SPINS) {
-            return res.status(400).json({ error: 'Daily ad spin limit reached' });
+        if ((userData.lotteryDailySpins || 0) >= 10) {
+            return res.status(400).json({ error: 'Daily ad spin limit reached (10/day)' });
         }
     }
 
-    // ── Build update ──────────────────────────────────────────────────
     const updates = {
         lotteryTotalSpins: admin.firestore.FieldValue.increment(1),
     };
-
     if (usedToken) {
         updates.lotteryTokens = admin.firestore.FieldValue.increment(-1);
     } else {
@@ -56,29 +63,22 @@ export default async function handler(req, res) {
 
     if (prizeType === 'coin') {
         updates.coins = admin.firestore.FieldValue.increment(val);
-        updates.lotteryDiamondsEarned = userData.lotteryDiamondsEarned || 0; // no change
     } else if (prizeType === 'diamond') {
-        // fractional diamonds stored as float — accumulate until >= 1
-        const curGems   = userData.gems || 0;
+        // Fractional diamond support (e.g. 0.3 + 0.3 + 0.4 = 1 full diamond)
         const curFrac   = userData.gemsFraction || 0;
         const newFrac   = curFrac + val;
-        const wholePart = Math.floor(newFrac);
-        updates.gems          = admin.firestore.FieldValue.increment(wholePart);
-        updates.gemsFraction  = newFrac - wholePart;
+        const whole     = Math.floor(newFrac);
+        updates.gems         = admin.firestore.FieldValue.increment(whole);
+        updates.gemsFraction = newFrac - whole;
         updates.lotteryDiamondsEarned = admin.firestore.FieldValue.increment(val);
     } else if (prizeType === 'token') {
-        // Game token from lottery — capped at MAX_TOKENS
-        const curTok  = userData.tokens || 0;
-        const newTok  = Math.min(MAX_TOKENS, curTok + val);
+        // Game token — capped at MAX_TOKENS
+        const newTok = Math.min(MAX_TOKENS, (userData.tokens || 0) + val);
         updates.tokens = newTok;
-    } else if (prizeType === 'lottoken') {
-        // Free lottery spin token
-        updates.lotteryTokens = admin.firestore.FieldValue.increment(1);
-    } else if (prizeType === 'freespin') {
+    } else if (prizeType === 'lottoken' || prizeType === 'freespin') {
         updates.lotteryTokens = admin.firestore.FieldValue.increment(1);
     }
 
     await userRef.update(updates);
-    const updated = await userRef.get();
-    return res.status(200).json({ success: true, user: updated.data() });
-}
+    return res.status(200).json({ success: true, user: (await userRef.get()).data() });
+};
