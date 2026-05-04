@@ -823,7 +823,7 @@
             let settingUname = document.getElementById('setting-tg-username');
             if(settingUname) settingUname.textContent = `@${tgUser.username||'unknown'}`;
 
-            document.getElementById('refer-link').textContent = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
+            document.getElementById('refer-link').textContent = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
 
             let loader = document.getElementById('fullscreen-loader');
             loader.style.transition = 'opacity 0.5s ease';
@@ -958,14 +958,14 @@
     };
 
     window.copyRefer = function(){
-        let txt = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
+        let txt = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
         navigator.clipboard?.writeText(txt).then(()=>{
             document.getElementById('copy-status').textContent='Copied!';
             setTimeout(()=>document.getElementById('copy-status').textContent='', 2000);
         });
     };
     window.shareToTelegram = function(){
-        let link = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
+        let link = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
         let text = `Join me on Fruit Cut & Earn real rewards! Earn Diamonds & Withdraw via bKash or TON!`;
         if(tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
         else window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
@@ -1157,7 +1157,8 @@
     };
 
     window.claimTask = async function(id, taskType){
-        let btn = document.getElementById('task-btn-' + id);
+        let btn  = document.getElementById('task-btn-' + id);
+        let card = document.getElementById('task-card-' + id);
         if(btn){ btn.disabled = true; btn.textContent = 'Checking...'; }
         
         let res;
@@ -1171,11 +1172,24 @@
             let rewardMsg = `✅ Task Complete! +${res.coinsReward||200} Gold!`;
             if(res.gemsReward > 0) rewardMsg += ` +${res.gemsReward} 💎`;
             showToast(rewardMsg);
-            let card = document.getElementById('task-card-' + id);
+            // Show Done on button
             if(btn){ btn.classList.add('done'); btn.textContent = '✅ Done'; btn.disabled = true; btn.onclick = null; }
+            // Vanish card after 2.5s
             setTimeout(()=>{
-                if(card){ card.classList.add('vanishing'); setTimeout(()=>{ card.remove(); }, 400); }
-            }, 3000);
+                let c = document.getElementById('task-card-' + id) || card;
+                if(c){
+                    c.style.transition = 'opacity 0.4s, transform 0.4s, max-height 0.4s';
+                    c.style.opacity = '0';
+                    c.style.transform = 'scale(0.9)';
+                    c.style.maxHeight = c.offsetHeight + 'px';
+                    setTimeout(()=>{
+                        c.style.maxHeight = '0';
+                        c.style.margin = '0';
+                        c.style.padding = '0';
+                        setTimeout(()=>{ c.remove(); }, 350);
+                    }, 400);
+                }
+            }, 2500);
         } else {
             showToast('❌ Not verified! Please complete the task first.');
             if(btn){ btn.disabled = false; btn.textContent = 'Claim'; }
