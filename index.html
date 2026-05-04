@@ -8,20 +8,32 @@
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script>
-        // Fix 4: GigaPub setup - expose correct API reference after load
-        window._gigaAPI = null;
-    </script>
-    <script src="https://ad.gigapub.tech/script?id=6350" onload="
+        // GigaPub: load script, then wire up showGiga()
+        window._gigaReady = false;
         window._gigaAPI = function(){
-            return new Promise(function(resolve, reject){
+            return new Promise(function(resolve){
+                var start = Date.now();
+                function finish(){ var elapsed = Date.now()-start; var left = Math.max(0, 6000-elapsed); setTimeout(resolve, left); }
+                // GigaPub script sets window.showGiga after load
                 if(typeof window.showGiga === 'function'){
-                    window.showGiga().then(resolve).catch(function(){ setTimeout(resolve,2000); });
+                    window.showGiga().then(finish).catch(finish);
                 } else {
-                    setTimeout(resolve, 2000);
+                    // Not loaded yet — wait up to 3s
+                    var waited = 0;
+                    var check = setInterval(function(){
+                        waited += 100;
+                        if(typeof window.showGiga === 'function'){
+                            clearInterval(check);
+                            window.showGiga().then(finish).catch(finish);
+                        } else if(waited >= 3000){
+                            clearInterval(check); finish();
+                        }
+                    }, 100);
                 }
             });
         };
-    "></script>
+    </script>
+    <script src="https://ad.gigapub.tech/script?id=6350" onload="window._gigaReady=true;"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
         *{ margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent; }
@@ -165,8 +177,48 @@
         .cp{position:absolute;width:10px;height:14px;animation:fall linear infinite;}
         @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
         
-        #fullscreen-loader, #ad-loader{ display:flex;position:fixed;top:0;left:0;width:100%;height:100%; background:rgba(0,64,80,0.95);z-index:9999; justify-content:center;align-items:center;flex-direction:column;gap:16px; }
-        #ad-loader{ background:rgba(0,0,0,0.9); display:none; }
+        /* ── BEAUTIFUL LOADING SCREEN ── */
+        #fullscreen-loader{
+            display:flex;position:fixed;top:0;left:0;width:100%;height:100%;
+            background:linear-gradient(160deg,#003040 0%,#005060 50%,#002030 100%);
+            z-index:9999;justify-content:center;align-items:center;flex-direction:column;gap:0;
+            overflow:hidden;
+        }
+        .fl-bg-glow{
+            position:absolute;width:300px;height:300px;border-radius:50%;
+            background:radial-gradient(circle,rgba(0,198,212,0.18) 0%,transparent 70%);
+            top:50%;left:50%;transform:translate(-50%,-60%);
+            animation:glowPulse 2.5s ease-in-out infinite;pointer-events:none;
+        }
+        @keyframes glowPulse{0%,100%{transform:translate(-50%,-60%) scale(1);opacity:0.6;}50%{transform:translate(-50%,-60%) scale(1.3);opacity:1;}}
+        .fl-fruits{font-size:44px;letter-spacing:-4px;margin-bottom:0;animation:fruitsFloat 2s ease-in-out infinite;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.5));}
+        @keyframes fruitsFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+        .fl-title-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:32px;}
+        .fl-title-fruit{font-family:'Luckiest Guy',cursive;font-size:54px;color:#7dff00;-webkit-text-stroke:3px #2a7000;text-shadow:0 6px 0 #2a7000,0 10px 24px rgba(0,0,0,0.5);line-height:1;}
+        .fl-title-cut{font-family:'Luckiest Guy',cursive;font-size:54px;color:#ffcc00;-webkit-text-stroke:3px #996600;text-shadow:0 6px 0 #996600,0 10px 24px rgba(0,0,0,0.5);line-height:0.9;}
+        .fl-sub{font-size:12px;color:rgba(255,255,255,0.6);letter-spacing:4px;font-weight:800;margin-top:6px;}
+        /* Fruit orbit animation */
+        .fl-orbit{position:relative;width:120px;height:120px;margin-bottom:28px;}
+        .fl-orbit-ring{position:absolute;inset:0;border:2px solid rgba(255,255,255,0.08);border-radius:50%;}
+        .fl-orbit-fruit{position:absolute;top:50%;left:50%;font-size:26px;transform-origin:0 0;animation:orbitSpin 3s linear infinite;}
+        .fl-orbit-fruit:nth-child(2){animation-delay:-1s;font-size:22px;}
+        .fl-orbit-fruit:nth-child(3){animation-delay:-2s;font-size:20px;}
+        @keyframes orbitSpin{
+            0%  {transform:rotate(0deg)   translate(52px) rotate(0deg);}
+            100%{transform:rotate(360deg) translate(52px) rotate(-360deg);}
+        }
+        /* Progress bar */
+        .fl-progress-wrap{width:200px;margin-bottom:16px;}
+        .fl-progress-bar{width:100%;height:6px;background:rgba(255,255,255,0.12);border-radius:10px;overflow:hidden;}
+        .fl-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#00c6d4,#ffcc00);border-radius:10px;animation:loadBar 2.2s ease-in-out forwards;}
+        @keyframes loadBar{0%{width:0%;}60%{width:75%;}90%{width:90%;}100%{width:100%;}}
+        .fl-status{font-size:12px;color:rgba(125,210,220,0.8);font-weight:700;letter-spacing:1px;text-align:center;}
+        #loader-text{font-size:12px;color:rgba(125,210,220,0.8);font-weight:700;letter-spacing:1px;text-align:center;margin-top:8px;}
+        /* dots animation */
+        .fl-dots::after{content:'';animation:dots 1.2s steps(4,end) infinite;}
+        @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}100%{content:'';}}
+
+        #ad-loader{ background:rgba(0,0,0,0.92);display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;justify-content:center;align-items:center;flex-direction:column;gap:16px; }
         .spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,0.2);border-top-color:#ffcc00;border-radius:50%;animation:spin 1s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
         #token-toast{ position:fixed;bottom:120px;left:50%;transform:translateX(-50%); background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px; padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999; display:none;animation:fadeUp 0.3s ease;white-space:nowrap; }
@@ -245,9 +297,33 @@
 <body>
 
 <div id="fullscreen-loader">
-    <div class="spinner"></div>
-    <div style="font-family:'Luckiest Guy',cursive;font-size:24px;color:#fff;letter-spacing:2px;">CONNECTING TO SERVER...</div>
-    <div id="loader-text" style="color:#7de;font-size:13px;margin-top:10px;">Authenticating Telegram ID</div>
+    <div class="fl-bg-glow"></div>
+
+    <!-- Fruit orbit spinner -->
+    <div class="fl-orbit">
+        <div class="fl-orbit-ring"></div>
+        <div class="fl-orbit-fruit">🍉</div>
+        <div class="fl-orbit-fruit">🍊</div>
+        <div class="fl-orbit-fruit">🥝</div>
+    </div>
+
+    <!-- Title -->
+    <div class="fl-title-wrap">
+        <div class="fl-fruits">🍓🗡️🍋</div>
+        <div class="fl-title-fruit">FRUIT</div>
+        <div class="fl-title-cut">CUT</div>
+        <div class="fl-sub">✨ SLICE MANIA ✨</div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="fl-progress-wrap">
+        <div class="fl-progress-bar">
+            <div class="fl-progress-fill"></div>
+        </div>
+    </div>
+
+    <div class="fl-status fl-dots">Connecting</div>
+    <div id="loader-text" style="margin-top:4px;"></div>
 </div>
 
 <div class="bg-stripes"></div>
@@ -749,7 +825,10 @@
 
             document.getElementById('refer-link').textContent = `https://t.me/FruitCutBot/PlayTo_Earn?startapp=${window.G.referCode}`;
 
-            document.getElementById('fullscreen-loader').style.display = 'none';
+            let loader = document.getElementById('fullscreen-loader');
+            loader.style.transition = 'opacity 0.5s ease';
+            loader.style.opacity = '0';
+            setTimeout(()=>{ loader.style.display = 'none'; loader.style.opacity = '1'; }, 500);
             document.getElementById('menu-screen').style.display = 'flex';
 
             startTokenTimer();
@@ -939,59 +1018,19 @@
             } else if(actionName === 'adsgramDaily'){
                 let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
             } else if(actionName === 'gigapub') {
-                // Fix 4: Use GigaPub correct API
-                await new Promise((resolve, reject)=>{
-                    if(window._gigaAPI){
-                        window._gigaAPI().then(resolve).catch(()=>setTimeout(resolve,2000));
-                    } else {
-                        setTimeout(resolve, 2000);
-                    }
-                });
+                // GigaPub: correct API + minimum 6 seconds enforced inside _gigaAPI
+                await window._gigaAPI();
+            } else if(actionName === 'monetag') {
+                // Monetag: minimum 6 seconds
+                await showMonetagAd();
             }
-            else if(actionName === 'monetag') {
-                await new Promise((resolve)=>{ try{ show_10893505(); }catch(e){} setTimeout(resolve, 2000); });
-            }
-        } catch(e) { await new Promise(r=>setTimeout(r,1500)); }
+        } catch(e) { await new Promise(r=>setTimeout(r,6000)); }
 
         let reward = getRewardAmount();
-        const res = await apiCall('/api/ads', { action: actionName, coinsToAdd: reward, lootboxPointsToAdd: reward });
+        const res = await apiCall('/api/ads', { action: actionName });
         document.getElementById('ad-loader').style.display='none';
         if(res.success){ updateAdsUI(); showToast(successMsg.replace('{R}', reward)); }
     }
-
-    window.showGiga = function(){
-        return new Promise((resolve, reject)=>{
-            if(typeof window.showGiga_6350 === 'function'){
-                window.showGiga_6350().then(resolve).catch(reject);
-            } else {
-                // Try the window.showGiga() API from GigaPub script
-                try {
-                    let gigaPromise = null;
-                    // GigaPub exposes showGiga globally after script loads
-                    if(typeof window['showGiga'] !== 'undefined' && window['showGiga'] !== window.showGiga){
-                        gigaPromise = window['showGiga']();
-                    } else {
-                        // fallback: try numeric id method
-                        let fn = window['show_' + '6350'];
-                        if(typeof fn === 'function') gigaPromise = Promise.resolve(fn());
-                    }
-                    if(gigaPromise && typeof gigaPromise.then === 'function'){
-                        gigaPromise.then(resolve).catch(()=>setTimeout(resolve,2000));
-                    } else {
-                        setTimeout(resolve, 2000);
-                    }
-                } catch(e){ setTimeout(resolve, 2000); }
-            }
-        });
-    };
-
-    // Fix 4: Override showGiga after GigaPub script loads
-    window._gigaLoaded = false;
-    (function waitForGiga(){
-        if(typeof window.showGiga_6350 === 'function'){ window._gigaLoaded = true; return; }
-        // GigaPub script defines window.showGiga after load
-        setTimeout(waitForGiga, 500);
-    })();
 
     window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      () => 250, `+{R} Gold! (Adsgram Special)`);
     window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, () => 120, `+{R} Gold! (Adsgram Daily)`);
@@ -1170,9 +1209,20 @@
     let gameState='menu', objects=[], particles=[], sliceTrail=[], isSlicing=false, mouse={x:0,y:0};
     let cutTarget=0, currentCut=0, missCount=0, pendingReward=0;
     let stagesCompletedSinceAd = 0;
-    let adTriggerThreshold = 2; // Show ad every 2 matches exactly
+    const adTriggerThreshold = 2; // Show ad every 2 matches exactly
+    // Monetag: show ad and enforce minimum 6 seconds watch time
+    function showMonetagAd(){
+        return new Promise(function(resolve){
+            var start = Date.now();
+            function finish(){ var left = Math.max(0, 6000-(Date.now()-start)); setTimeout(resolve, left); }
+            try { show_10893505(); } catch(e){}
+            // Monetag fires show_10893505 and the SDK calls resolve when done
+            // We enforce minimum 6s ourselves
+            setTimeout(finish, 6000);
+        });
+    }
 
-    // Fix 3: Random ad provider selector for gameplay ads
+    // Random ad provider every 2 matches
     async function showGameplayAd(){
         let adProviders = ['adsgram', 'gigapub', 'monetag'];
         let chosen = adProviders[Math.floor(Math.random() * adProviders.length)];
@@ -1181,11 +1231,11 @@
             if(chosen === 'adsgram'){
                 let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
             } else if(chosen === 'gigapub'){
-                if(window._gigaAPI){ await window._gigaAPI(); } else { await new Promise(r=>setTimeout(r,1500)); }
+                await window._gigaAPI();
             } else if(chosen === 'monetag'){
-                await new Promise((resolve)=>{ try{ show_10893505(); }catch(e){} setTimeout(resolve, 2000); });
+                await showMonetagAd();
             }
-        } catch(e){ await new Promise(r=>setTimeout(r,1500)); }
+        } catch(e){ await new Promise(r=>setTimeout(r,6000)); }
         document.getElementById('ad-loader').style.display='none';
     }
 
