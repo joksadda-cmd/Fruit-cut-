@@ -49,13 +49,38 @@ module.exports = async function handler(req, res) {
             const refDoc = await refRef.get();
             if (refDoc.exists) {
                 const rd = refDoc.data();
-                // +1 game token capped at 10, +1 lottery token
                 const newTok = Math.min(MAX_TOKENS, (rd.tokens || 0) + 1);
                 await refRef.update({
                     referCount:    admin.firestore.FieldValue.increment(1),
                     tokens:        newTok,
                     lotteryTokens: admin.firestore.FieldValue.increment(1),
                 });
+
+                // ── Send Telegram notification to referrer ────────────
+                const newUsername = username ? `@${username}` : 'A new user';
+                const notifMsg = `🎉 *Refer Reward Received!*\n\n` +
+                    `${newUsername} joined using your invite link\\!\n\n` +
+                    `🎮 *\\+1 Game Token* added to your account\\!\n` +
+                    `🎰 *\\+1 Lottery Token* added to your account\\!\n\n` +
+                    `Keep referring to earn more rewards\\! 🚀`;
+
+                try {
+                    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id:    referredBy,
+                            text:       notifMsg,
+                            parse_mode: 'MarkdownV2',
+                            reply_markup: {
+                                inline_keyboard: [[{
+                                    text: '🎮 Open Game',
+                                    web_app: { url: 'https://fruit-cut-eight.vercel.app' }
+                                }]]
+                            }
+                        })
+                    });
+                } catch(e) { /* notification failure should not block init */ }
             }
         }
 
