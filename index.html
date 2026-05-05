@@ -540,6 +540,16 @@
         <input type="text" id="w-address" placeholder="Phone / Wallet Address / UID">
         <button class="btn btn-gold" id="btn-withdraw" onclick="window.doWithdraw()">💸 WITHDRAW NOW</button>
         <div class="info-text">Processing: 24-48 hours after review</div>
+
+        <!-- Withdraw History -->
+        <div style="margin-top:12px;border-top:1px dashed rgba(255,255,255,0.12);padding-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:900;color:#aadddd;">📋 Withdraw History</span>
+                <span id="wd-hist-toggle" onclick="window.toggleWdHistory()" style="font-size:11px;color:#ffcc00;cursor:pointer;font-weight:800;padding:4px 10px;background:rgba(255,200,0,0.1);border-radius:8px;border:1px solid rgba(255,200,0,0.2);">▼ Show</span>
+            </div>
+            <div id="wd-history-list" style="display:none;max-height:260px;overflow-y:auto;display:none;flex-direction:column;gap:8px;"></div>
+        </div>
+
         <button class="btn btn-grey" onclick="window.hideModal('wallet-modal')">CLOSE</button>
     </div>
 </div>
@@ -893,7 +903,14 @@
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
         if(id==='shop-modal'){ updateShopUI(); }
-        if(id==='wallet-modal'){ updateWithdrawReqUI(); }
+        if(id==='wallet-modal'){
+            updateWithdrawReqUI();
+            // Reset history panel on open
+            let list = document.getElementById('wd-history-list');
+            let tog  = document.getElementById('wd-hist-toggle');
+            if(list){ list.style.display='none'; list.innerHTML=''; }
+            if(tog)  tog.textContent='▼ Show';
+        }
         if(id==='over-modal'){ let el=document.getElementById('over-tokens'); if(el) el.textContent=window.G.tokens; }
     };
 
@@ -1233,17 +1250,98 @@
             return;
         }
         let method = document.getElementById('w-method').value;
-        let addr = document.getElementById('w-address').value.trim();
+        let addr   = document.getElementById('w-address').value.trim();
         let amount = parseInt(document.getElementById('w-amount').value)||0;
-        if(!addr) return showToast('Enter address!');
-        if(amount < 100) return showToast('Min 100 Diamonds!');
+        if(!addr)          return showToast('Enter address!');
+        if(amount < 100)   return showToast('Min 100 Diamonds!');
         if(window.G.gems < amount) return showToast('Not enough Diamonds!');
         let btn = document.getElementById('btn-withdraw');
         btn.disabled = true; btn.textContent = "Processing...";
         const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
         btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
-        if(res.success){ window.hideModal('wallet-modal'); showToast('✅ Withdrawal Request Sent!'); }
-        else { showToast('Error: ' + (res.error || 'Server Error')); }
+        if(res.success){
+            showToast('✅ Withdrawal Request Sent! Check history below.');
+            document.getElementById('w-amount').value  = '';
+            document.getElementById('w-address').value = '';
+            document.getElementById('w-convert-preview').style.display = 'none';
+            // Auto-show history after submit
+            window.loadWdHistory(true);
+        } else {
+            showToast('Error: ' + (res.error || 'Server Error'));
+        }
+    };
+
+    // ── Withdraw History ──────────────────────────────────────────────
+    const WD_RATES = {
+        bkash:     { sym:'৳',  unit:'BDT',  rate:0.12,  label:'bKash' },
+        binance:   { sym:'$',  unit:'USDT', rate:0.001, label:'Binance USDT' },
+        tonkeeper: { sym:'',   unit:'TON',  rate:0.00075, label:'TON Wallet' },
+    };
+
+    window.toggleWdHistory = function(){
+        let list = document.getElementById('wd-history-list');
+        let tog  = document.getElementById('wd-hist-toggle');
+        if(!list) return;
+        if(list.style.display === 'none' || list.style.display === ''){
+            tog.textContent = '▲ Hide';
+            window.loadWdHistory(false);
+        } else {
+            list.style.display = 'none';
+            tog.textContent = '▼ Show';
+        }
+    };
+
+    window.loadWdHistory = async function(autoOpen=false){
+        let list = document.getElementById('wd-history-list');
+        let tog  = document.getElementById('wd-hist-toggle');
+        if(!list) return;
+        list.style.display = 'flex';
+        tog.textContent = '▲ Hide';
+        list.innerHTML = '<div style="text-align:center;color:#aaa;font-size:12px;padding:10px;">Loading...</div>';
+
+        try {
+            const res = await apiCall('/api/withdraw_history', {});
+            if(!res.success || !res.history || !res.history.length){
+                list.innerHTML = '<div style="text-align:center;color:#aaa;font-size:12px;padding:12px;">No withdrawal history yet.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            res.history.forEach(w => {
+                const r     = WD_RATES[w.method] || WD_RATES.bkash;
+                const conv  = (w.amount * r.rate).toFixed(w.method==='bkash'?2:4);
+                const isPending  = w.status === 'pending';
+                const isApproved = w.status === 'approved';
+                const isRejected = w.status === 'rejected';
+
+                const statusColor = isApproved ? '#4caf50' : isRejected ? '#ff3355' : '#ff9800';
+                const statusIcon  = isApproved ? '✅' : isRejected ? '❌' : '⏳';
+                const statusText  = isApproved ? 'Approved' : isRejected ? 'Rejected' : 'Pending';
+
+                // Format date
+                let dateStr = '-';
+                if(w.requestedAt){ try{ dateStr = new Date(w.requestedAt._seconds*1000).toLocaleDateString('en-BD',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){} }
+
+                const card = document.createElement('div');
+                card.style.cssText = `background:rgba(0,0,0,0.35);border-radius:12px;padding:11px 13px;border:1px solid ${statusColor}33;`;
+                card.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                        <span style="font-size:13px;font-weight:900;color:#fff;">💎 ${w.amount} Diamonds</span>
+                        <span style="font-size:11px;font-weight:900;color:${statusColor};">${statusIcon} ${statusText}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:4px;">
+                        <span>💳 ${r.label}</span>
+                        <span style="color:#ffcc00;font-weight:800;">${r.sym}${conv} ${r.unit}</span>
+                    </div>
+                    <div style="font-size:11px;color:#777;border-top:1px solid rgba(255,255,255,0.05);padding-top:5px;margin-top:4px;">
+                        📅 ${dateStr}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        } catch(e){
+            list.innerHTML = '<div style="text-align:center;color:#aaa;font-size:12px;padding:10px;">Could not load history.</div>';
+        }
     };
 
     // Support functions
