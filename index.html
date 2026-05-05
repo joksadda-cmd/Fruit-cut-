@@ -1172,23 +1172,24 @@
             let rewardMsg = `✅ Task Complete! +${res.coinsReward||200} Gold!`;
             if(res.gemsReward > 0) rewardMsg += ` +${res.gemsReward} 💎`;
             showToast(rewardMsg);
-            // Show Done on button
             if(btn){ btn.classList.add('done'); btn.textContent = '✅ Done'; btn.disabled = true; btn.onclick = null; }
-            // Vanish card after 2.5s
+            // Vanish after 2.5s
             setTimeout(()=>{
                 let c = document.getElementById('task-card-' + id) || card;
-                if(c){
-                    c.style.transition = 'opacity 0.4s, transform 0.4s, max-height 0.4s';
-                    c.style.opacity = '0';
-                    c.style.transform = 'scale(0.9)';
-                    c.style.maxHeight = c.offsetHeight + 'px';
-                    setTimeout(()=>{
-                        c.style.maxHeight = '0';
-                        c.style.margin = '0';
-                        c.style.padding = '0';
-                        setTimeout(()=>{ c.remove(); }, 350);
-                    }, 400);
-                }
+                if(!c) return;
+                // Step 1: fade + shrink
+                c.style.overflow = 'hidden';
+                c.style.maxHeight = c.scrollHeight + 'px';
+                c.style.marginBottom = c.style.marginBottom || '10px';
+                // Force reflow so browser registers starting values
+                c.getBoundingClientRect();
+                c.style.transition = 'opacity 0.35s ease, transform 0.35s ease, max-height 0.45s ease, margin-bottom 0.45s ease, padding 0.45s ease';
+                c.style.opacity    = '0';
+                c.style.transform  = 'scaleY(0.85)';
+                c.style.maxHeight  = '0px';
+                c.style.marginBottom = '0px';
+                c.style.padding    = '0px';
+                setTimeout(()=>{ c.remove(); }, 500);
             }, 2500);
         } else {
             showToast('❌ Not verified! Please complete the task first.');
