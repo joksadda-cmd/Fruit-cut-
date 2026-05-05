@@ -56,31 +56,32 @@ module.exports = async function handler(req, res) {
                     lotteryTokens: admin.firestore.FieldValue.increment(1),
                 });
 
-                // ── Send Telegram notification to referrer ────────────
-                const newUsername = username ? `@${username}` : 'A new user';
-                const notifMsg = `🎉 *Refer Reward Received!*\n\n` +
-                    `${newUsername} joined using your invite link\\!\n\n` +
-                    `🎮 *\\+1 Game Token* added to your account\\!\n` +
-                    `🎰 *\\+1 Lottery Token* added to your account\\!\n\n` +
-                    `Keep referring to earn more rewards\\! 🚀`;
+                // ── Telegram notification — fire and forget (NO await) ─
+                // Never block init response for notification
+                const newUsername = username ? `@${username}` : 'Someone';
+                const notifText = `🎉 Refer Reward Received!\n\n`+
+                    `${newUsername} joined using your invite link!\n\n`+
+                    `🎮 +1 Game Token added!\n`+
+                    `🎰 +1 Lottery Token added!\n\n`+
+                    `Keep inviting friends to earn more! 🚀`;
 
-                try {
-                    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-                        method: 'POST',
+                if (process.env.BOT_TOKEN) {
+                    fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+                        method:  'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             chat_id:    referredBy,
-                            text:       notifMsg,
-                            parse_mode: 'MarkdownV2',
-                            reply_markup: {
+                            text:       notifText,
+                            parse_mode: 'HTML',
+                            reply_markup: JSON.stringify({
                                 inline_keyboard: [[{
-                                    text: '🎮 Open Game',
+                                    text: '🎮 Open Game & Collect Reward',
                                     web_app: { url: 'https://fruit-cut-eight.vercel.app' }
                                 }]]
-                            }
+                            })
                         })
-                    });
-                } catch(e) { /* notification failure should not block init */ }
+                    }).catch(() => {}); // intentionally NOT awaited
+                }
             }
         }
 
