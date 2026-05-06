@@ -547,7 +547,7 @@
                 <span style="font-size:13px;font-weight:900;color:#aadddd;">📋 Withdraw History</span>
                 <span id="wd-hist-toggle" onclick="window.toggleWdHistory()" style="font-size:11px;color:#ffcc00;cursor:pointer;font-weight:800;padding:4px 10px;background:rgba(255,200,0,0.1);border-radius:8px;border:1px solid rgba(255,200,0,0.2);">▼ Show</span>
             </div>
-            <div id="wd-history-list" style="display:none;max-height:260px;overflow-y:auto;display:none;flex-direction:column;gap:8px;"></div>
+            <div id="wd-history-list" style="display:none;max-height:260px;overflow-y:auto;flex-direction:column;gap:8px;"></div>
         </div>
 
         <button class="btn btn-grey" onclick="window.hideModal('wallet-modal')">CLOSE</button>
@@ -1179,37 +1179,50 @@
         if(btn){ btn.disabled = true; btn.textContent = 'Checking...'; }
         
         let res;
-        if(taskType === 'channel'){
-            res = await apiCall('/api/verify_task', { taskId: id });
-        } else {
-            res = await apiCall('/api/verify_task', { taskId: id, skipVerify: true });
-        }
-        
-        if(res.success){
-            let rewardMsg = `✅ Task Complete! +${res.coinsReward||200} Gold!`;
-            if(res.gemsReward > 0) rewardMsg += ` +${res.gemsReward} 💎`;
-            showToast(rewardMsg);
-            if(btn){ btn.classList.add('done'); btn.textContent = '✅ Done'; btn.disabled = true; btn.onclick = null; }
-            // Vanish after 2.5s
-            setTimeout(()=>{
+        try {
+            if(taskType === 'channel'){
+                res = await apiCall('/api/verify_task', { taskId: id });
+            } else {
+                res = await apiCall('/api/verify_task', { taskId: id, skipVerify: true });
+            }
+        } catch(e){ res = { success: false, error: 'Network error' }; }
+
+        if(res && res.success){
+            let gold = res.coinsReward || res.coins || 200;
+            let gems = res.gemsReward  || res.gems  || 0;
+            let msg  = `✅ Task Complete! +${gold} Gold!`;
+            if(gems > 0) msg += ` +${gems} 💎`;
+            showToast(msg);
+
+            // Mark button done immediately
+            if(btn){
+                btn.classList.add('done');
+                btn.textContent = '✅ Done';
+                btn.disabled    = true;
+                btn.onclick     = null;
+            }
+
+            // Vanish card after 2s
+            function vanishCard(){
                 let c = document.getElementById('task-card-' + id) || card;
                 if(!c) return;
-                // Step 1: fade + shrink
-                c.style.overflow = 'hidden';
-                c.style.maxHeight = c.scrollHeight + 'px';
-                c.style.marginBottom = c.style.marginBottom || '10px';
-                // Force reflow so browser registers starting values
-                c.getBoundingClientRect();
-                c.style.transition = 'opacity 0.35s ease, transform 0.35s ease, max-height 0.45s ease, margin-bottom 0.45s ease, padding 0.45s ease';
-                c.style.opacity    = '0';
-                c.style.transform  = 'scaleY(0.85)';
-                c.style.maxHeight  = '0px';
+                c.style.overflow     = 'hidden';
+                c.style.maxHeight    = c.scrollHeight + 'px';
+                c.style.marginBottom = '10px';
+                // Force reflow
+                void c.offsetHeight;
+                c.style.transition   = 'opacity 0.4s ease, max-height 0.5s ease, margin-bottom 0.5s ease, padding 0.5s ease';
+                c.style.opacity      = '0';
+                c.style.maxHeight    = '0px';
                 c.style.marginBottom = '0px';
-                c.style.padding    = '0px';
-                setTimeout(()=>{ c.remove(); }, 500);
-            }, 2500);
+                c.style.padding      = '0px';
+                setTimeout(()=>{ if(c.parentNode) c.remove(); }, 550);
+            }
+            setTimeout(vanishCard, 2000);
+
         } else {
-            showToast('❌ Not verified! Please complete the task first.');
+            let errMsg = (res && res.error) ? res.error : 'Not verified! Please complete the task first.';
+            showToast('❌ ' + errMsg);
             if(btn){ btn.disabled = false; btn.textContent = 'Claim'; }
         }
     };
@@ -1296,12 +1309,14 @@
         let tog  = document.getElementById('wd-hist-toggle');
         if(!list) return;
         list.style.display = 'flex';
-        tog.textContent = '▲ Hide';
+        list.style.flexDirection = 'column';
+        list.style.gap = '8px';
+        if(tog) tog.textContent = '▲ Hide';
         list.innerHTML = '<div style="text-align:center;color:#aaa;font-size:12px;padding:10px;">Loading...</div>';
 
         try {
             const res = await apiCall('/api/withdraw_history', {});
-            if(!res.success || !res.history || !res.history.length){
+            if(!res || !res.success || !res.history || !res.history.length){
                 list.innerHTML = '<div style="text-align:center;color:#aaa;font-size:12px;padding:12px;">No withdrawal history yet.</div>';
                 return;
             }
@@ -1310,22 +1325,22 @@
             res.history.forEach(w => {
                 const r     = WD_RATES[w.method] || WD_RATES.bkash;
                 const conv  = (w.amount * r.rate).toFixed(w.method==='bkash'?2:4);
-                const isPending  = w.status === 'pending';
                 const isApproved = w.status === 'approved';
                 const isRejected = w.status === 'rejected';
-
                 const statusColor = isApproved ? '#4caf50' : isRejected ? '#ff3355' : '#ff9800';
                 const statusIcon  = isApproved ? '✅' : isRejected ? '❌' : '⏳';
                 const statusText  = isApproved ? 'Approved' : isRejected ? 'Rejected' : 'Pending';
 
-                // Format date
                 let dateStr = '-';
-                if(w.requestedAt){ try{ dateStr = new Date(w.requestedAt._seconds*1000).toLocaleDateString('en-BD',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){} }
+                try {
+                    let ts = w.requestedAt || w.createdAt;
+                    if(ts && ts._seconds) dateStr = new Date(ts._seconds*1000).toLocaleString('en-BD',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+                } catch(e){}
 
                 const card = document.createElement('div');
-                card.style.cssText = `background:rgba(0,0,0,0.35);border-radius:12px;padding:11px 13px;border:1px solid ${statusColor}33;`;
+                card.style.cssText = `background:rgba(0,0,0,0.35);border-radius:12px;padding:11px 13px;border:1px solid ${statusColor}44;flex-shrink:0;`;
                 card.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
                         <span style="font-size:13px;font-weight:900;color:#fff;">💎 ${w.amount} Diamonds</span>
                         <span style="font-size:11px;font-weight:900;color:${statusColor};">${statusIcon} ${statusText}</span>
                     </div>
@@ -1333,9 +1348,7 @@
                         <span>💳 ${r.label}</span>
                         <span style="color:#ffcc00;font-weight:800;">${r.sym}${conv} ${r.unit}</span>
                     </div>
-                    <div style="font-size:11px;color:#777;border-top:1px solid rgba(255,255,255,0.05);padding-top:5px;margin-top:4px;">
-                        📅 ${dateStr}
-                    </div>
+                    <div style="font-size:11px;color:#666;border-top:1px solid rgba(255,255,255,0.05);padding-top:4px;margin-top:3px;">📅 ${dateStr}</div>
                 `;
                 list.appendChild(card);
             });
