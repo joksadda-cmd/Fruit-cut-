@@ -1221,7 +1221,8 @@
     };
 
     window.doTask = function(id, link, taskType){
-        let btn = document.getElementById('task-btn-' + id);
+        let btn  = document.getElementById('task-btn-'  + id);
+        let card = document.getElementById('task-card-' + id);
         if(!btn || btn.disabled) return;
         if(link && link !== 'undefined') {
             if(tg?.openLink) tg.openLink(link);
@@ -1231,7 +1232,7 @@
         let countdown = 5;
         btn.textContent = `Wait ${countdown}s`;
         btn.style.background = 'linear-gradient(180deg,#ff8c00,#e65100)';
-        btn.style.boxShadow = '0 3px 0 #8b3000';
+        btn.style.boxShadow  = '0 3px 0 #8b3000';
         let timer = setInterval(()=>{
             countdown--;
             if(countdown > 0){
@@ -1240,34 +1241,56 @@
                 clearInterval(timer);
                 btn.textContent = 'Claim';
                 btn.style.background = 'linear-gradient(180deg,#4caf50,#2e7d32)';
-                btn.style.boxShadow = '0 3px 0 #1b5e20';
+                btn.style.boxShadow  = '0 3px 0 #1b5e20';
                 btn.disabled = false;
-                btn.onclick = function(){ window.claimTask(id, taskType||'simple'); };
+                btn.onclick  = function(){ window.claimTask(id, taskType || 'quick'); };
             }
         }, 1000);
     };
 
     window.claimTask = async function(id, taskType){
-        let btn  = document.getElementById('task-btn-' + id);
+        let btn  = document.getElementById('task-btn-'  + id);
         let card = document.getElementById('task-card-' + id);
+
         if(btn){ btn.disabled = true; btn.textContent = 'Checking...'; }
-        
-        let res;
+
+        // Call API directly — do NOT use apiCall() which triggers updateUI() and re-renders DOM
+        let res = { success: false };
         try {
-            if(taskType === 'channel'){
-                res = await apiCall('/api/verify_task', { taskId: id });
-            } else {
-                res = await apiCall('/api/verify_task', { taskId: id, skipVerify: true });
+            const response = await fetch('/api/verify_task', {
+                method:  'POST',
+                headers: {
+                    'Content-Type':            'application/json',
+                    'x-telegram-init-data':    tg?.initData || ''
+                },
+                body: JSON.stringify({
+                    telegramId: currentUser?.id,
+                    taskId:     id,
+                    skipVerify: (taskType !== 'channel')
+                })
+            });
+            res = await response.json();
+            // Manually update G without triggering full UI re-render
+            if(res.success && res.user){
+                window.G.coins          = res.user.coins          ?? window.G.coins;
+                window.G.gems           = res.user.gems           ?? window.G.gems;
+                window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
+                // Update only coin/gem display, not the whole UI
+                let coinEl = document.getElementById('ui-coins');
+                let gemEl  = document.getElementById('ui-gems');
+                if(coinEl) coinEl.textContent = window.G.coins;
+                if(gemEl)  gemEl.textContent  = window.G.gems;
             }
         } catch(e){ res = { success: false, error: 'Network error' }; }
 
         if(res && res.success){
-            let gold = res.coinsReward || res.coins || 200;
-            let gems = res.gemsReward  || res.gems  || 0;
+            let gold = res.coinsReward || 200;
+            let gems = res.gemsReward  || 0;
             let msg  = `✅ Task Complete! +${gold} Gold!`;
             if(gems > 0) msg += ` +${gems} 💎`;
             showToast(msg);
 
+            // Mark button done
             if(btn){
                 btn.classList.add('done');
                 btn.textContent = '✅ Done';
@@ -1275,19 +1298,21 @@
                 btn.onclick     = null;
             }
 
-            // Vanish using the card reference captured before async call
+            // Vanish card — use fresh DOM lookup AND the pre-captured reference
             setTimeout(()=>{
-                if(!card || !card.parentNode) return;
-                card.style.overflow     = 'hidden';
-                card.style.maxHeight    = card.scrollHeight + 'px';
-                card.style.marginBottom = '10px';
-                void card.offsetHeight; // force reflow
-                card.style.transition   = 'opacity 0.4s ease, max-height 0.5s ease, margin-bottom 0.5s ease, padding 0.5s ease';
-                card.style.opacity      = '0';
-                card.style.maxHeight    = '0px';
-                card.style.marginBottom = '0px';
-                card.style.padding      = '0px';
-                setTimeout(()=>{ if(card.parentNode) card.remove(); }, 550);
+                // Try fresh lookup first, fallback to pre-captured reference
+                let c = document.getElementById('task-card-' + id) || card;
+                if(!c || !c.parentNode) return;
+                c.style.overflow     = 'hidden';
+                c.style.maxHeight    = c.scrollHeight + 'px';
+                c.style.marginBottom = '10px';
+                void c.offsetHeight;
+                c.style.transition   = 'opacity 0.4s ease, max-height 0.5s ease, margin-bottom 0.5s ease, padding 0.5s ease';
+                c.style.opacity      = '0';
+                c.style.maxHeight    = '0px';
+                c.style.marginBottom = '0px';
+                c.style.padding      = '0px';
+                setTimeout(()=>{ if(c && c.parentNode) c.remove(); }, 550);
             }, 2000);
 
         } else {
