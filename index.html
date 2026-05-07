@@ -797,22 +797,54 @@
     async function initApp() {
         let tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) {
-            document.getElementById('fullscreen-loader').innerHTML = '<h3 style="color:#ff3355;margin-top:20px;">Please open inside Telegram!</h3>';
+            document.getElementById('fullscreen-loader').innerHTML = `
+                <div style="text-align:center;padding:30px;">
+                    <div style="font-size:48px;margin-bottom:16px;">🍉</div>
+                    <h3 style="color:#ff3355;font-family:'Luckiest Guy',cursive;">Please open inside Telegram!</h3>
+                </div>`;
             return;
         }
 
-        const userId = String(tgUser.id);
-        currentUser = { id: userId };
+        const userId   = String(tgUser.id);
+        currentUser    = { id: userId };
         let startParam = tg.initDataUnsafe?.start_param;
-        let referredBy = (startParam && startParam !== `FC${userId}`) ? startParam.replace('FC', '') : null;
+        let referredBy = (startParam && startParam !== `FC${userId}`) ? startParam.replace('FC','') : null;
 
-        const res = await apiCall('/api/init', {
-            telegramId: userId,
-            username: tgUser.username,
-            referredBy: referredBy
-        });
+        // ── Auto retry: 3 attempts with increasing delay ─────────────
+        let res = null;
+        const maxTries = 3;
+        for(let attempt = 1; attempt <= maxTries; attempt++){
+            let loaderText = document.getElementById('loader-text');
+            if(loaderText){
+                loaderText.textContent = attempt === 1
+                    ? 'Connecting...'
+                    : `Retrying... (${attempt}/${maxTries})`;
+            }
+            try {
+                const response = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-init-data': tg?.initData || ''
+                    },
+                    body: JSON.stringify({ telegramId: userId, username: tgUser.username, referredBy }),
+                    signal: AbortSignal.timeout(12000) // 12s timeout per attempt
+                });
+                res = await response.json();
+                if(res.success) break; // success — stop retrying
+            } catch(e){
+                res = { success: false, error: 'Network Error' };
+            }
 
-        if (res.success) {
+            // Wait before next retry (2s, then 4s)
+            if(attempt < maxTries){
+                await new Promise(r => setTimeout(r, attempt * 2000));
+            }
+        }
+
+        if (res && res.success) {
+            if(res.user) Object.assign(window.G, res.user);
+
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
 
@@ -820,7 +852,7 @@
             window.updateUI();
 
             let uiTg = document.getElementById('tg-user-info');
-            uiTg.textContent = `👤 ${tgUser.first_name||''} (@${tgUser.username||'unknown'})`;
+            if(uiTg) uiTg.textContent = `👤 ${tgUser.first_name||''} (@${tgUser.username||'unknown'})`;
 
             let settingCode = document.getElementById('setting-unique-code');
             if(settingCode){
@@ -837,15 +869,35 @@
 
             let loader = document.getElementById('fullscreen-loader');
             loader.style.transition = 'opacity 0.5s ease';
-            loader.style.opacity = '0';
-            setTimeout(()=>{ loader.style.display = 'none'; loader.style.opacity = '1'; }, 500);
+            loader.style.opacity    = '0';
+            setTimeout(()=>{ loader.style.display='none'; loader.style.opacity='1'; }, 500);
             document.getElementById('menu-screen').style.display = 'flex';
 
             startTokenTimer();
             requestAnimationFrame(window.loop);
-            setTimeout(() => { if(window.G.sound) playSound('menu'); }, 500);
+            setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 500);
+
         } else {
-            document.getElementById('loader-text').textContent = 'Error connecting to server. Please reload.';
+            // All retries failed — show reload button
+            let loader = document.getElementById('fullscreen-loader');
+            loader.innerHTML = `
+                <div style="text-align:center;padding:30px;max-width:300px;">
+                    <div style="font-size:52px;margin-bottom:12px;">🍉</div>
+                    <div style="font-family:'Luckiest Guy',cursive;font-size:28px;color:#ffcc00;margin-bottom:8px;">FRUIT CUT</div>
+                    <div style="color:#ff6b6b;font-size:14px;font-weight:800;margin-bottom:20px;">
+                        ⚠️ Connection failed.<br>Check your internet and try again.
+                    </div>
+                    <button onclick="location.reload()" style="
+                        background:linear-gradient(180deg,#ffcc00,#ff8c00);
+                        border:none;border-radius:14px;padding:14px 32px;
+                        font-family:'Luckiest Guy',cursive;font-size:18px;
+                        color:#000;cursor:pointer;box-shadow:0 4px 0 #cc6600;
+                        width:100%;
+                    ">🔄 TAP TO RETRY</button>
+                    <div style="color:#aaa;font-size:11px;margin-top:14px;">
+                        If problem persists, close and reopen the app.
+                    </div>
+                </div>`;
         }
     }
 
@@ -1029,23 +1081,45 @@
         if(currentCount >= maxLimit){ showToast('Daily limit reached!'); return; }
         
         document.getElementById('ad-loader').style.display='flex';
+        let adWatched = false;
+        const startTime = Date.now();
+
         try {
             if(actionName === 'adsgram'){
-                let AdC = Adsgram.init({ blockId: "28066" }); await AdC.show();
+                let AdC = Adsgram.init({ blockId: "28066" });
+                await AdC.show();
+                adWatched = true;
             } else if(actionName === 'adsgramDaily'){
-                let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
-            } else if(actionName === 'gigapub') {
-                // GigaPub: correct API + minimum 6 seconds enforced inside _gigaAPI
+                let AdC = Adsgram.init({ blockId: "int-28067" });
+                await AdC.show();
+                adWatched = true;
+            } else if(actionName === 'gigapub'){
                 await window._gigaAPI();
-            } else if(actionName === 'monetag') {
-                // Monetag: minimum 6 seconds
+                adWatched = true;
+            } else if(actionName === 'monetag'){
                 await showMonetagAd();
+                adWatched = true;
             }
-        } catch(e) { await new Promise(r=>setTimeout(r,6000)); }
+        } catch(e){
+            // Ad was skipped/closed/errored — do NOT give reward
+            adWatched = false;
+        }
+
+        // Enforce minimum 6 seconds watch time
+        const elapsed = Date.now() - startTime;
+        if(elapsed < 6000){
+            await new Promise(r => setTimeout(r, 6000 - elapsed));
+        }
+
+        document.getElementById('ad-loader').style.display='none';
+
+        if(!adWatched){
+            showToast('⚠️ Please watch the full ad to get reward!');
+            return;
+        }
 
         let reward = getRewardAmount();
         const res = await apiCall('/api/ads', { action: actionName });
-        document.getElementById('ad-loader').style.display='none';
         if(res.success){ updateAdsUI(); showToast(successMsg.replace('{R}', reward)); }
     }
 
@@ -1194,7 +1268,6 @@
             if(gems > 0) msg += ` +${gems} 💎`;
             showToast(msg);
 
-            // Mark button done immediately
             if(btn){
                 btn.classList.add('done');
                 btn.textContent = '✅ Done';
@@ -1202,23 +1275,20 @@
                 btn.onclick     = null;
             }
 
-            // Vanish card after 2s
-            function vanishCard(){
-                let c = document.getElementById('task-card-' + id) || card;
-                if(!c) return;
-                c.style.overflow     = 'hidden';
-                c.style.maxHeight    = c.scrollHeight + 'px';
-                c.style.marginBottom = '10px';
-                // Force reflow
-                void c.offsetHeight;
-                c.style.transition   = 'opacity 0.4s ease, max-height 0.5s ease, margin-bottom 0.5s ease, padding 0.5s ease';
-                c.style.opacity      = '0';
-                c.style.maxHeight    = '0px';
-                c.style.marginBottom = '0px';
-                c.style.padding      = '0px';
-                setTimeout(()=>{ if(c.parentNode) c.remove(); }, 550);
-            }
-            setTimeout(vanishCard, 2000);
+            // Vanish using the card reference captured before async call
+            setTimeout(()=>{
+                if(!card || !card.parentNode) return;
+                card.style.overflow     = 'hidden';
+                card.style.maxHeight    = card.scrollHeight + 'px';
+                card.style.marginBottom = '10px';
+                void card.offsetHeight; // force reflow
+                card.style.transition   = 'opacity 0.4s ease, max-height 0.5s ease, margin-bottom 0.5s ease, padding 0.5s ease';
+                card.style.opacity      = '0';
+                card.style.maxHeight    = '0px';
+                card.style.marginBottom = '0px';
+                card.style.padding      = '0px';
+                setTimeout(()=>{ if(card.parentNode) card.remove(); }, 550);
+            }, 2000);
 
         } else {
             let errMsg = (res && res.error) ? res.error : 'Not verified! Please complete the task first.';
