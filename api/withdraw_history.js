@@ -34,14 +34,21 @@ module.exports = async function handler(req, res) {
     if (!telegramId) return res.status(400).json({ success: false, error: 'Missing ID' });
 
     try {
+        // No orderBy — avoids Firebase composite index requirement
         const snap = await db.collection('withdrawals')
             .where('userId', '==', String(telegramId))
-            .orderBy('requestedAt', 'desc')
             .limit(20)
             .get();
 
         const history = [];
         snap.forEach(d => history.push({ id: d.id, ...d.data() }));
+
+        // Sort by requestedAt descending (client-side)
+        history.sort((a, b) => {
+            const ta = a.requestedAt?._seconds || a.createdAt?._seconds || 0;
+            const tb = b.requestedAt?._seconds || b.createdAt?._seconds || 0;
+            return tb - ta;
+        });
 
         return res.status(200).json({ success: true, history });
     } catch(e) {
