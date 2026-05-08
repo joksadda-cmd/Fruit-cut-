@@ -6,7 +6,7 @@
     <title>Fruit Cut - Slice Mania (TON)</title>
     <!-- Only Telegram SDK here — everything else loads AFTER game opens -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
+    <script defer src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script>
         // Ad SDK stubs — prevent errors before scripts load
         window._gigaReady = false;
@@ -31,7 +31,7 @@
             });
         };
 
-        // Load all ad SDKs dynamically AFTER game has opened — never blocks page
+        // Load ad SDKs dynamically AFTER game opens — never blocks page
         window._loadAdScripts = function(){
             if(window._adsLoaded) return;
             window._adsLoaded = true;
@@ -39,18 +39,13 @@
             var s1=document.createElement('script');
             s1.src='https://sad.adsgram.ai/js/sad.min.js';
             s1.async=true; document.head.appendChild(s1);
-            // Monetag
-            var s2=document.createElement('script');
-            s2.src='//libtl.com/sdk.js';
-            s2.setAttribute('data-zone','10893505');
-            s2.setAttribute('data-sdk','show_10893505');
-            s2.async=true; document.head.appendChild(s2);
             // GigaPub
             var s3=document.createElement('script');
             s3.src='https://ad.gigapub.tech/script?id=6350';
             s3.async=true;
             s3.onload=function(){ window._gigaReady=true; };
             document.head.appendChild(s3);
+            // Monetag already loaded via defer in head — no duplicate needed
         };
     </script>
     <style>
