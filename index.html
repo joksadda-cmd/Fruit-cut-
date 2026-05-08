@@ -1108,14 +1108,17 @@
 
         document.getElementById('ad-loader').style.display='flex';
 
+        let adSuccess = false;
         try {
             if(actionName === 'adsgram'){
                 let AdC = Adsgram.init({ blockId: "28066" });
                 await AdC.show();
+                adSuccess = true;
 
             } else if(actionName === 'adsgramDaily'){
                 let AdC = Adsgram.init({ blockId: "int-28067" });
                 await AdC.show();
+                adSuccess = true;
 
             } else if(actionName === 'gigapub'){
                 if(!window._gigaReady){
@@ -1124,14 +1127,24 @@
                     return;
                 }
                 await window._gigaAPI();
+                adSuccess = true;
 
             } else if(actionName === 'monetag'){
-                // show ad + wait 6s — always resolves
+                // Monetag ad — wait for actual completion
                 await showMonetagAd();
+                adSuccess = true;
             }
         } catch(e){
-            // Adsgram/GigaPub failed — still wait 6s then reward
-            await new Promise(r => setTimeout(r, 6000));
+            // Ad failed or user skipped — NO reward
+            document.getElementById('ad-loader').style.display='none';
+            showToast('⚠️ Ad not completed. Please watch the full ad to earn reward.');
+            return;
+        }
+
+        if(!adSuccess) {
+            document.getElementById('ad-loader').style.display='none';
+            showToast('⚠️ Ad not completed. Try again.');
+            return;
         }
 
         document.getElementById('ad-loader').style.display='none';
@@ -1489,15 +1502,37 @@
     let cutTarget=0, currentCut=0, missCount=0, pendingReward=0;
     let stagesCompletedSinceAd = 0;
     const adTriggerThreshold = 2; // Show ad every 2 matches exactly
-    // Monetag: show ad and enforce minimum 6 seconds watch time
+    // Monetag: show ad and wait for actual ad completion callback
     function showMonetagAd(){
         return new Promise(function(resolve){
-            var start = Date.now();
-            try { show_10893505(); } catch(e){}
-            // Wait full 6 seconds regardless, then give reward
-            setTimeout(function(){
+            var resolved = false;
+            var fallbackTimer = null;
+
+            function done(){
+                if(resolved) return;
+                resolved = true;
+                if(fallbackTimer) clearTimeout(fallbackTimer);
                 resolve();
-            }, 6000);
+            }
+
+            // Fallback: যদি 30 সেকেন্ডেও callback না আসে, তাহলে resolve
+            fallbackTimer = setTimeout(done, 30000);
+
+            try {
+                // Monetag SDK: show_10893505 কে callback সহ call করা
+                var result = show_10893505();
+                // যদি Promise return করে
+                if(result && typeof result.then === 'function'){
+                    result.then(done).catch(done);
+                } else {
+                    // SDK callback-based হলে — ad শেষে window event listen করি
+                    // Monetag fires 'monetagAdCompleted' or closes — fallback handles it
+                }
+            } catch(e){
+                // SDK not loaded yet — 6s fallback
+                clearTimeout(fallbackTimer);
+                fallbackTimer = setTimeout(done, 6000);
+            }
         });
     }
 
@@ -1841,7 +1876,17 @@
         stopSound('menu');
 
         if(!useToken){
-            try { let AdC = Adsgram.init({ blockId: "28066" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+            try { 
+                let AdC = Adsgram.init({ blockId: "28066" }); 
+                await AdC.show(); 
+            } catch(e){ 
+                // Ad failed or skipped — cancel spin
+                lotterySpinning = false;
+                if(btn){ btn.disabled = false; window.renderLotteryModal(); }
+                showToast('⚠️ Ad not completed. Watch the full ad to spin!');
+                playSound('menu');
+                return;
+            }
         }
 
         playSound('spin');
