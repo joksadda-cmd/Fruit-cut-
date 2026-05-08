@@ -4,61 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fruit Cut - Slice Mania (TON)</title>
+    <!-- Only Telegram SDK here — everything else loads AFTER game opens -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script>
-        // GigaPub: load script, then wire up showGiga()
+        // Ad SDK stubs — prevent errors before scripts load
         window._gigaReady = false;
-        // GigaPub API — isolated in its own namespace to avoid Monetag conflict
-        window._gigaReady = false;
+        window._adsLoaded = false;
+        window.show_10893505 = window.show_10893505 || function(){};
+
         window._gigaAPI = function(){
             return new Promise(function(resolve){
                 var start = Date.now();
-                function finish(){
-                    var elapsed = Date.now() - start;
-                    var left = Math.max(0, 6000 - elapsed);
-                    setTimeout(resolve, left);
-                }
-
-                // Only use window.showGiga if it was set by GigaPub script (not Monetag)
-                // GigaPub sets _gigaReady=true onload, so we only call showGiga if ready
-                if(window._gigaReady && typeof window.showGiga === 'function'){
-                    try {
-                        var p = window.showGiga();
-                        if(p && typeof p.then === 'function'){
-                            p.then(finish).catch(finish);
-                        } else {
-                            finish();
-                        }
-                    } catch(e){ finish(); }
-                } else if(!window._gigaReady){
-                    // Wait for GigaPub script to load (max 4s)
-                    var waited = 0;
-                    var check = setInterval(function(){
-                        waited += 100;
-                        if(window._gigaReady && typeof window.showGiga === 'function'){
-                            clearInterval(check);
-                            try {
-                                var p = window.showGiga();
-                                if(p && typeof p.then === 'function'){
-                                    p.then(finish).catch(finish);
-                                } else { finish(); }
-                            } catch(e){ finish(); }
-                        } else if(waited >= 4000){
-                            clearInterval(check);
-                            // GigaPub failed to load — do NOT give reward, just resolve silently
-                            resolve();
-                        }
-                    }, 100);
+                function finish(){ var e=Date.now()-start; setTimeout(resolve,Math.max(0,6000-e)); }
+                if(window._gigaReady && typeof window.showGiga==='function'){
+                    try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }catch(e){finish();}
                 } else {
-                    // showGiga not available — resolve without reward signal
-                    resolve();
+                    var w=0,c=setInterval(function(){
+                        w+=100;
+                        if(window._gigaReady&&typeof window.showGiga==='function'){
+                            clearInterval(c);
+                            try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }catch(e){finish();}
+                        } else if(w>=5000){ clearInterval(c); resolve(); }
+                    },100);
                 }
             });
         };
+
+        // Load all ad SDKs dynamically AFTER game has opened — never blocks page
+        window._loadAdScripts = function(){
+            if(window._adsLoaded) return;
+            window._adsLoaded = true;
+            // Adsgram
+            var s1=document.createElement('script');
+            s1.src='https://sad.adsgram.ai/js/sad.min.js';
+            s1.async=true; document.head.appendChild(s1);
+            // Monetag
+            var s2=document.createElement('script');
+            s2.src='//libtl.com/sdk.js';
+            s2.setAttribute('data-zone','10893505');
+            s2.setAttribute('data-sdk','show_10893505');
+            s2.async=true; document.head.appendChild(s2);
+            // GigaPub
+            var s3=document.createElement('script');
+            s3.src='https://ad.gigapub.tech/script?id=6350';
+            s3.async=true;
+            s3.onload=function(){ window._gigaReady=true; };
+            document.head.appendChild(s3);
+        };
     </script>
-    <script src="https://ad.gigapub.tech/script?id=6350" onload="window._gigaReady=true;"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
         *{ margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent; }
@@ -835,35 +828,45 @@
         let startParam = tg.initDataUnsafe?.start_param;
         let referredBy = (startParam && startParam !== `FC${userId}`) ? startParam.replace('FC','') : null;
 
-        // ── Auto retry: 3 attempts with increasing delay ─────────────
+        // ── Auto retry: 5 attempts ────────────────────────────────────
         let res = null;
-        const maxTries = 3;
-        for(let attempt = 1; attempt <= maxTries; attempt++){
+        const maxTries = 5;
+        const msgs = [
+            'Connecting to server...',
+            'Server is waking up... please wait',
+            'Still trying... (slow network?)',
+            'Almost there...',
+            'Last attempt...'
+        ];
+        const delays = [0, 3000, 4000, 5000, 6000]; // wait before each attempt
+
+        for(let attempt = 0; attempt < maxTries; attempt++){
+            // Update loading text
             let loaderText = document.getElementById('loader-text');
-            if(loaderText){
-                loaderText.textContent = attempt === 1
-                    ? 'Connecting...'
-                    : `Retrying... (${attempt}/${maxTries})`;
-            }
-            try {
-                const response = await fetch('/api/init', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-telegram-init-data': tg?.initData || ''
-                    },
-                    body: JSON.stringify({ telegramId: userId, username: tgUser.username, referredBy }),
-                    signal: AbortSignal.timeout(12000) // 12s timeout per attempt
-                });
-                res = await response.json();
-                if(res.success) break; // success — stop retrying
-            } catch(e){
-                res = { success: false, error: 'Network Error' };
+            if(loaderText) loaderText.textContent = msgs[attempt] || 'Connecting...';
+
+            // Wait before retry (first attempt: no wait)
+            if(delays[attempt] > 0){
+                await new Promise(r => setTimeout(r, delays[attempt]));
             }
 
-            // Wait before next retry (2s, then 4s)
-            if(attempt < maxTries){
-                await new Promise(r => setTimeout(r, attempt * 2000));
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 15000); // 15s per attempt
+                const response = await fetch('/api/init', {
+                    method:  'POST',
+                    headers: {
+                        'Content-Type':         'application/json',
+                        'x-telegram-init-data': tg?.initData || ''
+                    },
+                    body:   JSON.stringify({ telegramId: userId, username: tgUser.username, referredBy }),
+                    signal: controller.signal
+                });
+                clearTimeout(timer);
+                res = await response.json();
+                if(res && res.success) break; // ✅ success
+            } catch(e){
+                res = { success: false, error: String(e) };
             }
         }
 
@@ -901,9 +904,11 @@
             startTokenTimer();
             requestAnimationFrame(window.loop);
             setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 500);
+            // Load ad SDKs AFTER game opens — user never sees blank screen
+            setTimeout(window._loadAdScripts, 2000);
 
         } else {
-            // All retries failed — show reload button
+            // All retries failed — show retry button
             let loader = document.getElementById('fullscreen-loader');
             loader.innerHTML = `
                 <div style="text-align:center;padding:30px;max-width:300px;">
@@ -947,7 +952,7 @@
             }
         }, 1000);
 
-        // Sync with server every 60 seconds to catch hourly refill
+        // Sync with server every 5 minutes — reduces Firebase writes by 80%
         setInterval(async ()=>{
             if(window.G.tokens < 10 && currentUser){
                 try {
@@ -970,7 +975,7 @@
                     }
                 } catch(e){}
             }
-        }, 60 * 1000);
+        }, 5 * 60 * 1000); // 5 minutes
     }
 
     window.showModal = function(id){
