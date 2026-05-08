@@ -1126,25 +1126,27 @@
                 adWatched = true;
 
             } else if(actionName === 'gigapub'){
-                // Only reward if GigaPub actually loaded and showed an ad
                 if(!window._gigaReady){
                     document.getElementById('ad-loader').style.display='none';
-                    showToast('⚠️ GigaPub ad not ready. Try again in a moment.');
+                    showToast('⚠️ Ad not ready. Try again in a moment.');
                     return;
                 }
                 await window._gigaAPI();
-                // Only mark watched if enough time passed (6s = real ad)
                 adWatched = (Date.now() - startTime) >= 5500;
 
             } else if(actionName === 'monetag'){
+                // showMonetagAd now rejects if SDK not loaded
                 await showMonetagAd();
                 adWatched = (Date.now() - startTime) >= 5500;
             }
         } catch(e){
-            adWatched = false;
+            // SDK not loaded or ad was closed/skipped
+            document.getElementById('ad-loader').style.display='none';
+            showToast('⚠️ Ad not available. Please try again in a moment.');
+            return; // Don't give reward
         }
 
-        // Enforce minimum 6 seconds
+        // Enforce minimum 6 seconds total
         const elapsed = Date.now() - startTime;
         if(elapsed < 6000){
             await new Promise(r => setTimeout(r, 6000 - elapsed));
@@ -1513,13 +1515,46 @@
     const adTriggerThreshold = 2; // Show ad every 2 matches exactly
     // Monetag: show ad and enforce minimum 6 seconds watch time
     function showMonetagAd(){
-        return new Promise(function(resolve){
+        return new Promise(function(resolve, reject){
             var start = Date.now();
-            function finish(){ var left = Math.max(0, 6000-(Date.now()-start)); setTimeout(resolve, left); }
-            try { show_10893505(); } catch(e){}
-            // Monetag fires show_10893505 and the SDK calls resolve when done
-            // We enforce minimum 6s ourselves
-            setTimeout(finish, 6000);
+
+            // Check if Monetag SDK is actually loaded (not the stub)
+            function isMonetagReady(){
+                return typeof show_10893505 === 'function' &&
+                       show_10893505.toString().length > 20; // stub is short: "function(){}"
+            }
+
+            function tryShow(){
+                if(!isMonetagReady()){
+                    reject(new Error('Monetag SDK not loaded'));
+                    return;
+                }
+                try {
+                    show_10893505();
+                    // Monetag popup opened — wait minimum 6s then resolve
+                    var elapsed = Date.now() - start;
+                    setTimeout(resolve, Math.max(0, 6000 - elapsed));
+                } catch(e){
+                    reject(e);
+                }
+            }
+
+            if(isMonetagReady()){
+                tryShow();
+            } else {
+                // Wait up to 5s for SDK to load
+                var waited = 0;
+                var check = setInterval(function(){
+                    waited += 200;
+                    if(isMonetagReady()){
+                        clearInterval(check);
+                        tryShow();
+                    } else if(waited >= 5000){
+                        clearInterval(check);
+                        reject(new Error('Monetag SDK timeout'));
+                    }
+                }, 200);
+            }
         });
     }
 
