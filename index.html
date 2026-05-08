@@ -6,11 +6,11 @@
     <title>Fruit Cut - Slice Mania (TON)</title>
     <!-- Only Telegram SDK here — everything else loads AFTER game opens -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Monetag MUST be in head — dynamic loading breaks Promise API -->
+    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script>
-        // Ad SDK stubs — prevent errors before scripts load
         window._gigaReady = false;
         window._adsLoaded = false;
-        window.show_10893505 = window.show_10893505 || function(){};
 
         window._gigaAPI = function(){
             return new Promise(function(resolve){
@@ -30,21 +30,13 @@
             });
         };
 
-        // Load all ad SDKs dynamically AFTER game has opened — never blocks page
+        // Load Adsgram + GigaPub dynamically AFTER game opens
         window._loadAdScripts = function(){
             if(window._adsLoaded) return;
             window._adsLoaded = true;
-            // Adsgram
             var s1=document.createElement('script');
             s1.src='https://sad.adsgram.ai/js/sad.min.js';
             s1.async=true; document.head.appendChild(s1);
-            // Monetag
-            var s2=document.createElement('script');
-            s2.src='//libtl.com/sdk.js';
-            s2.setAttribute('data-zone','10893505');
-            s2.setAttribute('data-sdk','show_10893505');
-            s2.async=true; document.head.appendChild(s2);
-            // GigaPub
             var s3=document.createElement('script');
             s3.src='https://ad.gigapub.tech/script?id=6350';
             s3.async=true;
@@ -1112,7 +1104,6 @@
         
         document.getElementById('ad-loader').style.display='flex';
         let adWatched = false;
-        const startTime = Date.now();
 
         try {
             if(actionName === 'adsgram'){
@@ -1128,36 +1119,29 @@
             } else if(actionName === 'gigapub'){
                 if(!window._gigaReady){
                     document.getElementById('ad-loader').style.display='none';
-                    showToast('⚠️ Ad not ready. Try again in a moment.');
+                    showToast('⚠️ Ad not ready. Please try again.');
                     return;
                 }
                 await window._gigaAPI();
-                adWatched = (Date.now() - startTime) >= 5500;
+                adWatched = true;
 
             } else if(actionName === 'monetag'){
-                // showMonetagAd now rejects if SDK not loaded
+                // Monetag Promise resolves ONLY when user watches the full ad
+                // If user closes early, it rejects — so adWatched stays false
                 await showMonetagAd();
-                adWatched = (Date.now() - startTime) >= 5500;
+                adWatched = true;
             }
-        } catch(e){
-            // SDK not loaded or ad was closed/skipped
-            document.getElementById('ad-loader').style.display='none';
-            showToast('⚠️ Ad not available. Please try again in a moment.');
-            return; // Don't give reward
-        }
 
-        // Enforce minimum 6 seconds total
-        const elapsed = Date.now() - startTime;
-        if(elapsed < 6000){
-            await new Promise(r => setTimeout(r, 6000 - elapsed));
+        } catch(e){
+            // User closed ad early or SDK not loaded
+            document.getElementById('ad-loader').style.display='none';
+            showToast('⚠️ Watch the full ad to earn reward!');
+            return;
         }
 
         document.getElementById('ad-loader').style.display='none';
 
-        if(!adWatched){
-            showToast('⚠️ Please watch the full ad to get reward!');
-            return;
-        }
+        if(!adWatched){ return; }
 
         let reward = getRewardAmount();
         const res = await apiCall('/api/ads', { action: actionName });
@@ -1516,45 +1500,14 @@
     // Monetag: show ad and enforce minimum 6 seconds watch time
     function showMonetagAd(){
         return new Promise(function(resolve, reject){
-            var start = Date.now();
-
-            // Check if Monetag SDK is actually loaded (not the stub)
-            function isMonetagReady(){
-                return typeof show_10893505 === 'function' &&
-                       show_10893505.toString().length > 20; // stub is short: "function(){}"
+            if(typeof show_10893505 !== 'function'){
+                reject(new Error('Monetag not loaded'));
+                return;
             }
-
-            function tryShow(){
-                if(!isMonetagReady()){
-                    reject(new Error('Monetag SDK not loaded'));
-                    return;
-                }
-                try {
-                    show_10893505();
-                    // Monetag popup opened — wait minimum 6s then resolve
-                    var elapsed = Date.now() - start;
-                    setTimeout(resolve, Math.max(0, 6000 - elapsed));
-                } catch(e){
-                    reject(e);
-                }
-            }
-
-            if(isMonetagReady()){
-                tryShow();
-            } else {
-                // Wait up to 5s for SDK to load
-                var waited = 0;
-                var check = setInterval(function(){
-                    waited += 200;
-                    if(isMonetagReady()){
-                        clearInterval(check);
-                        tryShow();
-                    } else if(waited >= 5000){
-                        clearInterval(check);
-                        reject(new Error('Monetag SDK timeout'));
-                    }
-                }, 200);
-            }
+            // Correct Monetag Promise-based API
+            show_10893505()
+                .then(function(){ resolve(); })
+                .catch(function(e){ reject(e); });
         });
     }
 
