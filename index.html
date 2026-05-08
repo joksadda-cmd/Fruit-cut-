@@ -10,25 +10,50 @@
     <script>
         // GigaPub: load script, then wire up showGiga()
         window._gigaReady = false;
+        // GigaPub API — isolated in its own namespace to avoid Monetag conflict
+        window._gigaReady = false;
         window._gigaAPI = function(){
             return new Promise(function(resolve){
                 var start = Date.now();
-                function finish(){ var elapsed = Date.now()-start; var left = Math.max(0, 6000-elapsed); setTimeout(resolve, left); }
-                // GigaPub script sets window.showGiga after load
-                if(typeof window.showGiga === 'function'){
-                    window.showGiga().then(finish).catch(finish);
-                } else {
-                    // Not loaded yet — wait up to 3s
+                function finish(){
+                    var elapsed = Date.now() - start;
+                    var left = Math.max(0, 6000 - elapsed);
+                    setTimeout(resolve, left);
+                }
+
+                // Only use window.showGiga if it was set by GigaPub script (not Monetag)
+                // GigaPub sets _gigaReady=true onload, so we only call showGiga if ready
+                if(window._gigaReady && typeof window.showGiga === 'function'){
+                    try {
+                        var p = window.showGiga();
+                        if(p && typeof p.then === 'function'){
+                            p.then(finish).catch(finish);
+                        } else {
+                            finish();
+                        }
+                    } catch(e){ finish(); }
+                } else if(!window._gigaReady){
+                    // Wait for GigaPub script to load (max 4s)
                     var waited = 0;
                     var check = setInterval(function(){
                         waited += 100;
-                        if(typeof window.showGiga === 'function'){
+                        if(window._gigaReady && typeof window.showGiga === 'function'){
                             clearInterval(check);
-                            window.showGiga().then(finish).catch(finish);
-                        } else if(waited >= 3000){
-                            clearInterval(check); finish();
+                            try {
+                                var p = window.showGiga();
+                                if(p && typeof p.then === 'function'){
+                                    p.then(finish).catch(finish);
+                                } else { finish(); }
+                            } catch(e){ finish(); }
+                        } else if(waited >= 4000){
+                            clearInterval(check);
+                            // GigaPub failed to load — do NOT give reward, just resolve silently
+                            resolve();
                         }
                     }, 100);
+                } else {
+                    // showGiga not available — resolve without reward signal
+                    resolve();
                 }
             });
         };
@@ -1089,23 +1114,32 @@
                 let AdC = Adsgram.init({ blockId: "28066" });
                 await AdC.show();
                 adWatched = true;
+
             } else if(actionName === 'adsgramDaily'){
                 let AdC = Adsgram.init({ blockId: "int-28067" });
                 await AdC.show();
                 adWatched = true;
+
             } else if(actionName === 'gigapub'){
+                // Only reward if GigaPub actually loaded and showed an ad
+                if(!window._gigaReady){
+                    document.getElementById('ad-loader').style.display='none';
+                    showToast('⚠️ GigaPub ad not ready. Try again in a moment.');
+                    return;
+                }
                 await window._gigaAPI();
-                adWatched = true;
+                // Only mark watched if enough time passed (6s = real ad)
+                adWatched = (Date.now() - startTime) >= 5500;
+
             } else if(actionName === 'monetag'){
                 await showMonetagAd();
-                adWatched = true;
+                adWatched = (Date.now() - startTime) >= 5500;
             }
         } catch(e){
-            // Ad was skipped/closed/errored — do NOT give reward
             adWatched = false;
         }
 
-        // Enforce minimum 6 seconds watch time
+        // Enforce minimum 6 seconds
         const elapsed = Date.now() - startTime;
         if(elapsed < 6000){
             await new Promise(r => setTimeout(r, 6000 - elapsed));
