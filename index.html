@@ -1231,7 +1231,10 @@
             `;
 
             function buildCard(t, src){
+                // completed task গুলো render করবে না — পুরোপুরি vanish
                 let done = (window.G.completedTasks||[]).includes(String(t.id));
+                if(done) return '';
+
                 let isChannel  = src === 'channel';
                 let cardClass  = isChannel ? 'channel-task' : 'simple-task';
                 let badgeClass = isChannel ? 'badge-channel' : 'badge-simple';
@@ -1246,10 +1249,7 @@
                             <div class="task-name">${t.name}</div>
                             <div class="task-reward">🪙 ${reward} Gold${t.gems?` + 💎${t.gems}`:''}</div>
                         </div>
-                        ${done
-                            ? `<button class="task-btn done" disabled>✅ Done</button>`
-                            : `<button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.link||'').replace(/'/g,"\\'")}','${src}')">${btnLabel}</button>`
-                        }
+                        <button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.link||'').replace(/'/g,"\'")}','${src}')">${btnLabel}</button>
                     </div>`;
             }
 
@@ -1348,22 +1348,21 @@
                 btn.onclick     = null;
             }
 
-            // Vanish card — use fresh DOM lookup AND the pre-captured reference
+            // Vanish card — animate then remove from DOM
             setTimeout(()=>{
-                // Try fresh lookup first, fallback to pre-captured reference
                 let c = document.getElementById('task-card-' + id) || card;
                 if(!c || !c.parentNode) return;
                 c.style.overflow     = 'hidden';
                 c.style.maxHeight    = c.scrollHeight + 'px';
                 c.style.marginBottom = '10px';
-                void c.offsetHeight;
+                void c.offsetHeight; // force reflow
                 c.style.transition   = 'opacity 0.4s ease, max-height 0.5s ease, margin-bottom 0.5s ease, padding 0.5s ease';
                 c.style.opacity      = '0';
                 c.style.maxHeight    = '0px';
                 c.style.marginBottom = '0px';
                 c.style.padding      = '0px';
                 setTimeout(()=>{ if(c && c.parentNode) c.remove(); }, 550);
-            }, 2000);
+            }, 1500);
 
         } else {
             let errMsg = (res && res.error) ? res.error : 'Not verified! Please complete the task first.';
