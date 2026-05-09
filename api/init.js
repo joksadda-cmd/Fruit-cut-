@@ -21,9 +21,16 @@ function verifyTelegram(initData, botToken) {
 
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-telegram-init-data');
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // ── KEEP-ALIVE PING (Cron job এই GET request পাঠাবে) ─────────────
+    // Firebase একটুও touch হবে না — শুধু server জাগিয়ে রাখে
+    if (req.method === 'GET') {
+        return res.status(200).json({ ok: true, ts: Date.now() });
+    }
+
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
     // Security check — skip if BOT_TOKEN not set yet
@@ -57,7 +64,6 @@ module.exports = async function handler(req, res) {
                 });
 
                 // ── Telegram notification — fire and forget (NO await) ─
-                // Never block init response for notification
                 const newUsername = username ? `@${username}` : 'Someone';
                 const notifText = `🎉 Refer Reward Received!\n\n`+
                     `${newUsername} joined using your invite link!\n\n`+
@@ -139,7 +145,7 @@ module.exports = async function handler(req, res) {
                 updates.tokenRefill      = lastRefill + hrs * REFILL_MS;
             }
         } else {
-            updates.tokenRefill = now; // reset clock when at max
+            updates.tokenRefill = now;
         }
 
         if (Object.keys(updates).length > 0) {
