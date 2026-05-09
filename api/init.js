@@ -21,19 +21,17 @@ function verifyTelegram(initData, botToken) {
 
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-telegram-init-data');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // ── KEEP-ALIVE PING ───────────────────────────────────────────────
-    // UptimeRobot GET request পাঠাবে — Firebase touch হবে না
-    if (req.method === 'GET') {
+    // UptimeRobot GET/HEAD ping — Firebase touch হবে না
+    if (req.method === 'GET' || req.method === 'HEAD') {
         return res.status(200).json({ ok: true, ts: Date.now() });
     }
 
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-    // Security check
     const BOT_TOKEN = process.env.BOT_TOKEN || '';
     const initData  = req.headers['x-telegram-init-data'] || '';
     if (BOT_TOKEN && initData && !verifyTelegram(initData, BOT_TOKEN)) {
