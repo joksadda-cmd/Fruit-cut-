@@ -4,20 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fruit Cut - Slice Mania (TON)</title>
+    <!-- Preconnect for faster resource loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <script>
-        // Ad state flags — set before SDKs load
-        window._gigaReady = false;
+        // ── Ad SDK stubs — prevent errors before lazy load ────────────
+        window._gigaReady   = false;
+        window._adsgramReady= false;
+        window._monetagReady= false;
+        window._adSdksLoaded= false;
         window._isAdRunning = false;
-    </script>
 
-    <!-- AD SDKs — async so they NEVER block page render -->
-    <script async src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    <script async src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
-    <script async src="https://ad.gigapub.tech/script?id=6350" onload="window._gigaReady=true;"></script>
+        // Stubs so calls before load don't crash
+        window.show_10893505 = function(){ return Promise.reject('not loaded'); };
+
+        // Lazy load ALL ad SDKs only when user opens Ads section
+        window._loadAdSDKs = function(){
+            if(window._adSdksLoaded) return;
+            window._adSdksLoaded = true;
+
+            // Adsgram
+            var s1 = document.createElement('script');
+            s1.src = 'https://sad.adsgram.ai/js/sad.min.js';
+            s1.onload = function(){ window._adsgramReady = true; };
+            document.head.appendChild(s1);
+
+            // Monetag
+            var s2 = document.createElement('script');
+            s2.src  = '//libtl.com/sdk.js';
+            s2.setAttribute('data-zone','10893505');
+            s2.setAttribute('data-sdk','show_10893505');
+            s2.onload = function(){ window._monetagReady = true; };
+            document.head.appendChild(s2);
+
+            // GigaPub
+            var s3 = document.createElement('script');
+            s3.src = 'https://ad.gigapub.tech/script?id=6350';
+            s3.onload = function(){ window._gigaReady = true; };
+            document.head.appendChild(s3);
+        };
+
+        // GigaPub API wrapper
+        window._gigaAPI = function(){
+            return new Promise(function(resolve){
+                var start = Date.now();
+                function finish(){ setTimeout(resolve, Math.max(0, 6000-(Date.now()-start))); }
+                if(window._gigaReady && typeof window.showGiga === 'function'){
+                    try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }
+                    catch(e){ finish(); }
+                } else {
+                    var w=0, c=setInterval(function(){
+                        w+=100;
+                        if(window._gigaReady && typeof window.showGiga === 'function'){
+                            clearInterval(c);
+                            try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }
+                            catch(e){ finish(); }
+                        } else if(w >= 5000){ clearInterval(c); resolve(); }
+                    }, 100);
+                }
+            });
+        };
+    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
         *{ margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent; }
         :root{ --teal1:#00c6d4; --teal2:#007a8a; --gold:#ffcc00; --gold2:#e6a800; --red:#ff3355; --red2:#cc0033; --green:#4caf50; --green2:#2e7d32; --purple:#9c27b0; --purple2:#6a0080; --orange:#ff6600; --orange2:#cc4400; --panel-bg:rgba(10,40,50,0.88); --btn-shadow:0 6px 0; }
         body{ font-family:'Nunito',sans-serif; background:linear-gradient(180deg,#0a8fa0 0%,#006070 40%,#004050 100%); overflow:hidden;touch-action:none;width:100vw;height:100vh;position:relative; }
@@ -942,8 +992,13 @@
 
     window.showModal = function(id){
         document.getElementById(id).style.display='flex';
-        if(id==='ads-modal'){ updateAdsUI(); stopSound('menu'); }
-        if(id==='lottery-modal'){ window.renderLotteryModal(); }
+        if(id==='ads-modal'){
+            updateAdsUI();
+            stopSound('menu');
+            // Lazy load ad SDKs only now — not on startup
+            window._loadAdSDKs();
+        }
+        if(id==='lottery-modal'){ window.renderLotteryModal(); window._loadAdSDKs(); }
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
         if(id==='shop-modal'){ updateShopUI(); }
@@ -1079,12 +1134,32 @@
         if(window.Adsgram){ window.Adsgram.init({blockId:"int-28067"}).show().then(res).catch(rej); }
         else { rej(new Error('Adsgram SDK not ready yet. Try again.')); }
     });
-    const showMonetagAd = () => new Promise((res, rej) => {
-        if(typeof show_10893505 === 'function'){
-            const t = setTimeout(() => res(), 15000); // 15s max wait
-            show_10893505().then(() => { clearTimeout(t); res(); }).catch(() => { clearTimeout(t); res(); });
+    const showMonetagAd = () => new Promise((resolve, reject) => {
+        function tryShow(){
+            try {
+                show_10893505();
+                // Wait 6 seconds then resolve (reward)
+                setTimeout(resolve, 6000);
+            } catch(e){
+                reject(new Error('Monetag failed'));
+            }
+        }
+
+        if(window._monetagReady){
+            tryShow();
         } else {
-            rej(new Error('Monetag SDK not ready yet. Try again.'));
+            // SDK not loaded yet — wait up to 6s for it
+            var waited = 0;
+            var check = setInterval(function(){
+                waited += 200;
+                if(window._monetagReady){
+                    clearInterval(check);
+                    tryShow();
+                } else if(waited >= 6000){
+                    clearInterval(check);
+                    reject(new Error('Monetag SDK not ready. Try again in a moment.'));
+                }
+            }, 200);
         }
     });
     const showGigaPubAd = () => new Promise((res, rej) => {
