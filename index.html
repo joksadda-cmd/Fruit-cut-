@@ -4,49 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fruit Cut - Slice Mania (TON)</title>
-    <!-- Only Telegram SDK here — everything else loads AFTER game opens -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script defer src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
+
+    <!-- AD SDKs — load immediately like NEWTUBE pattern -->
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
+    <script src="https://ad.gigapub.tech/script?id=6350"></script>
+
     <script>
-        // Ad SDK stubs — prevent errors before scripts load
+        // Ad state flags
         window._gigaReady = false;
-        window._adsLoaded = false;
-        window.show_10893505 = window.show_10893505 || function(){};
+        window._isAdRunning = false;
 
-        window._gigaAPI = function(){
-            return new Promise(function(resolve){
-                var start = Date.now();
-                function finish(){ var e=Date.now()-start; setTimeout(resolve,Math.max(0,6000-e)); }
-                if(window._gigaReady && typeof window.showGiga==='function'){
-                    try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }catch(e){finish();}
-                } else {
-                    var w=0,c=setInterval(function(){
-                        w+=100;
-                        if(window._gigaReady&&typeof window.showGiga==='function'){
-                            clearInterval(c);
-                            try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }catch(e){finish();}
-                        } else if(w>=5000){ clearInterval(c); resolve(); }
-                    },100);
-                }
-            });
-        };
-
-        // Load ad SDKs dynamically AFTER game opens — never blocks page
-        window._loadAdScripts = function(){
-            if(window._adsLoaded) return;
-            window._adsLoaded = true;
-            // Adsgram
-            var s1=document.createElement('script');
-            s1.src='https://sad.adsgram.ai/js/sad.min.js';
-            s1.async=true; document.head.appendChild(s1);
-            // GigaPub
-            var s3=document.createElement('script');
-            s3.src='https://ad.gigapub.tech/script?id=6350';
-            s3.async=true;
-            s3.onload=function(){ window._gigaReady=true; };
-            document.head.appendChild(s3);
-            // Monetag already loaded via defer in head — no duplicate needed
-        };
+        // GigaPub ready detection
+        var _gigaCheckInterval = setInterval(function(){
+            if(typeof window.showGiga === 'function'){
+                window._gigaReady = true;
+                clearInterval(_gigaCheckInterval);
+            }
+        }, 300);
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
@@ -900,8 +876,6 @@
             startTokenTimer();
             requestAnimationFrame(window.loop);
             setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 500);
-            // Load ad SDKs AFTER game opens — user never sees blank screen
-            setTimeout(window._loadAdScripts, 2000);
 
         } else {
             // All retries failed — show retry button
@@ -1103,60 +1077,95 @@
         if(res.success){ updateAdsUI(); showToast(`Lootbox claimed! +${goldReward} Gold!`); }
     };
 
-    async function processAdReward(actionName, maxLimit, currentCount, getRewardAmount, successMsg) {
+    // ── AD FUNCTIONS (NEWTUBE pattern) ──────────────────────────────
+    const showAdsgramSpecialAd = () => new Promise((res, rej) => {
+        if(window.Adsgram){ window.Adsgram.init({blockId:"28066"}).show().then(res).catch(rej); }
+        else { rej(new Error('Adsgram not loaded')); }
+    });
+    const showAdsgramDailyAd = () => new Promise((res, rej) => {
+        if(window.Adsgram){ window.Adsgram.init({blockId:"int-28067"}).show().then(res).catch(rej); }
+        else { rej(new Error('Adsgram not loaded')); }
+    });
+    const showMonetagAd = () => new Promise((res) => {
+        if(typeof show_10893505 === 'function'){
+            const t = setTimeout(res, 15000);
+            show_10893505().then(() => { clearTimeout(t); res(); }).catch(() => { clearTimeout(t); res(); });
+        } else { setTimeout(res, 3000); }
+    });
+    const showGigaPubAd = () => new Promise((res) => {
+        if(typeof window.showGiga === 'function'){
+            const t = setTimeout(res, 15000);
+            window.showGiga("main").then(() => { clearTimeout(t); res(); }).catch(() => { clearTimeout(t); res(); });
+        } else { setTimeout(res, 3000); }
+    });
+
+    // NEWTUBE এর runAdAndVerifyTime — ad skip করলে NO reward
+    async function runAdAndVerifyTime(btnId, adFunc) {
+        if(window._isAdRunning){ showToast('⚠️ An ad is already playing.'); return false; }
+        const btn = document.getElementById(btnId);
+        if(!btn) return false;
+        window._isAdRunning = true;
+        btn.dataset.busy = 'true'; btn.disabled = true;
+        const originalText = btn.textContent;
+        const minDuration = 6000;
+        const startTime = Date.now();
+        const timer = setInterval(() => {
+            const left = Math.ceil((minDuration - (Date.now() - startTime)) / 1000);
+            btn.textContent = left > 0 ? `Wait ${left}s...` : 'Checking...';
+        }, 500);
+
+        return new Promise(async (resolve) => {
+            let closedEarly = false;
+            const visHandler = () => {
+                if(!document.hidden && (Date.now() - startTime) < minDuration) closedEarly = true;
+            };
+            document.addEventListener('visibilitychange', visHandler);
+            try {
+                const adStart = Date.now();
+                if(adFunc) await adFunc();
+                if((Date.now() - adStart) > 500 && (Date.now() - adStart) < minDuration) closedEarly = true;
+                const remaining = minDuration - (Date.now() - startTime);
+                if(remaining > 0) await new Promise(r => setTimeout(r, remaining));
+            } catch(e) { closedEarly = true; }
+
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', visHandler);
+            window._isAdRunning = false;
+            btn.dataset.busy = 'false';
+            btn.textContent = originalText;
+            btn.disabled = false;
+
+            if(closedEarly){
+                showToast('⚠️ Ad skipped too early. No reward!');
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        });
+    }
+
+    // Main ad reward handler
+    async function processAdReward(actionName, maxLimit, currentCount, btnId, getRewardAmount, successMsg) {
         if(currentCount >= maxLimit){ showToast('Daily limit reached!'); return; }
 
-        document.getElementById('ad-loader').style.display='flex';
+        let adFunc;
+        if(actionName === 'adsgram')      adFunc = showAdsgramSpecialAd;
+        else if(actionName === 'adsgramDaily') adFunc = showAdsgramDailyAd;
+        else if(actionName === 'gigapub') adFunc = showGigaPubAd;
+        else if(actionName === 'monetag') adFunc = showMonetagAd;
 
-        let adSuccess = false;
-        try {
-            if(actionName === 'adsgram'){
-                let AdC = Adsgram.init({ blockId: "28066" });
-                await AdC.show();
-                adSuccess = true;
+        const ok = await runAdAndVerifyTime(btnId, adFunc);
+        if(!ok) return; // Ad skipped — no reward
 
-            } else if(actionName === 'adsgramDaily'){
-                let AdC = Adsgram.init({ blockId: "int-28067" });
-                await AdC.show();
-                adSuccess = true;
-
-            } else if(actionName === 'gigapub'){
-                if(!window._gigaReady){
-                    document.getElementById('ad-loader').style.display='none';
-                    showToast('⚠️ Ad not ready. Try again.');
-                    return;
-                }
-                await window._gigaAPI();
-                adSuccess = true;
-
-            } else if(actionName === 'monetag'){
-                // Monetag ad — wait for actual completion
-                await showMonetagAd();
-                adSuccess = true;
-            }
-        } catch(e){
-            // Ad failed or user skipped — NO reward
-            document.getElementById('ad-loader').style.display='none';
-            showToast('⚠️ Ad not completed. Please watch the full ad to earn reward.');
-            return;
-        }
-
-        if(!adSuccess) {
-            document.getElementById('ad-loader').style.display='none';
-            showToast('⚠️ Ad not completed. Try again.');
-            return;
-        }
-
-        document.getElementById('ad-loader').style.display='none';
         let reward = getRewardAmount();
         const res = await apiCall('/api/ads', { action: actionName });
         if(res.success){ updateAdsUI(); showToast(successMsg.replace('{R}', reward)); }
     }
 
-    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      () => 250, `+{R} Gold! (Adsgram Special)`);
-    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, () => 120, `+{R} Gold! (Adsgram Daily)`);
-    window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      () => 120, `+{R} Gold! (GigaPub)`);
-    window.watchMonetagAd      = () => processAdReward('monetag',      20, window.G.monetagCount,      () => 120, `+{R} Gold! (Monetag)`);
+    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      'adsgram-btn',       () => 250, `+{R} Gold! (Adsgram Special)`);
+    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, 'adsgram-daily-btn', () => 120, `+{R} Gold! (Adsgram Daily)`);
+    window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      'gigapub-btn',       () => 120, `+{R} Gold! (GigaPub)`);
+    window.watchMonetagAd      = () => processAdReward('monetag',      20, window.G.monetagCount,      'monetag-btn',       () => 120, `+{R} Gold! (Monetag)`);
 
     window.renderTasks = async function(){
         let c = document.getElementById('task-list');
@@ -1502,54 +1511,13 @@
     let cutTarget=0, currentCut=0, missCount=0, pendingReward=0;
     let stagesCompletedSinceAd = 0;
     const adTriggerThreshold = 2; // Show ad every 2 matches exactly
-    // Monetag: show ad and wait for actual ad completion callback
-    function showMonetagAd(){
-        return new Promise(function(resolve){
-            var resolved = false;
-            var fallbackTimer = null;
 
-            function done(){
-                if(resolved) return;
-                resolved = true;
-                if(fallbackTimer) clearTimeout(fallbackTimer);
-                resolve();
-            }
-
-            // Fallback: যদি 30 সেকেন্ডেও callback না আসে, তাহলে resolve
-            fallbackTimer = setTimeout(done, 30000);
-
-            try {
-                // Monetag SDK: show_10893505 কে callback সহ call করা
-                var result = show_10893505();
-                // যদি Promise return করে
-                if(result && typeof result.then === 'function'){
-                    result.then(done).catch(done);
-                } else {
-                    // SDK callback-based হলে — ad শেষে window event listen করি
-                    // Monetag fires 'monetagAdCompleted' or closes — fallback handles it
-                }
-            } catch(e){
-                // SDK not loaded yet — 6s fallback
-                clearTimeout(fallbackTimer);
-                fallbackTimer = setTimeout(done, 6000);
-            }
-        });
-    }
-
-    // Random ad provider every 2 matches
+    // Gameplay interstitial ad — between matches (no reward, just show)
     async function showGameplayAd(){
-        let adProviders = ['adsgram', 'gigapub', 'monetag'];
-        let chosen = adProviders[Math.floor(Math.random() * adProviders.length)];
+        const adProviders = [showAdsgramDailyAd, showGigaPubAd, showMonetagAd];
+        const adFunc = adProviders[Math.floor(Math.random() * adProviders.length)];
         document.getElementById('ad-loader').style.display='flex';
-        try {
-            if(chosen === 'adsgram'){
-                let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show();
-            } else if(chosen === 'gigapub'){
-                await window._gigaAPI();
-            } else if(chosen === 'monetag'){
-                await showMonetagAd();
-            }
-        } catch(e){ await new Promise(r=>setTimeout(r,6000)); }
+        try { await adFunc(); } catch(e){}
         document.getElementById('ad-loader').style.display='none';
     }
 
@@ -1876,14 +1844,11 @@
         stopSound('menu');
 
         if(!useToken){
-            try { 
-                let AdC = Adsgram.init({ blockId: "28066" }); 
-                await AdC.show(); 
-            } catch(e){ 
-                // Ad failed or skipped — cancel spin
+            // Use NEWTUBE pattern — ad skip = no spin
+            const adOk = await runAdAndVerifyTime('lottery-spin-btn', showAdsgramSpecialAd);
+            if(!adOk){
                 lotterySpinning = false;
-                if(btn){ btn.disabled = false; window.renderLotteryModal(); }
-                showToast('⚠️ Ad not completed. Watch the full ad to spin!');
+                window.renderLotteryModal();
                 playSound('menu');
                 return;
             }
