@@ -6,24 +6,16 @@
     <title>Fruit Cut - Slice Mania (TON)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <!-- AD SDKs — load immediately like NEWTUBE pattern -->
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
-    <script src="https://ad.gigapub.tech/script?id=6350"></script>
-
     <script>
-        // Ad state flags
+        // Ad state flags — set before SDKs load
         window._gigaReady = false;
         window._isAdRunning = false;
-
-        // GigaPub ready detection
-        var _gigaCheckInterval = setInterval(function(){
-            if(typeof window.showGiga === 'function'){
-                window._gigaReady = true;
-                clearInterval(_gigaCheckInterval);
-            }
-        }, 300);
     </script>
+
+    <!-- AD SDKs — async so they NEVER block page render -->
+    <script async src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <script async src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
+    <script async src="https://ad.gigapub.tech/script?id=6350" onload="window._gigaReady=true;"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap');
         *{ margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent; }
@@ -1077,26 +1069,31 @@
         if(res.success){ updateAdsUI(); showToast(`Lootbox claimed! +${goldReward} Gold!`); }
     };
 
-    // ── AD FUNCTIONS (NEWTUBE pattern) ──────────────────────────────
+    // ── AD FUNCTIONS ─────────────────────────────────────────────────
+    // SDK async load হয় — ready না থাকলে reject করো (reward দেওয়া হবে না)
     const showAdsgramSpecialAd = () => new Promise((res, rej) => {
         if(window.Adsgram){ window.Adsgram.init({blockId:"28066"}).show().then(res).catch(rej); }
-        else { rej(new Error('Adsgram not loaded')); }
+        else { rej(new Error('Adsgram SDK not ready yet. Try again.')); }
     });
     const showAdsgramDailyAd = () => new Promise((res, rej) => {
         if(window.Adsgram){ window.Adsgram.init({blockId:"int-28067"}).show().then(res).catch(rej); }
-        else { rej(new Error('Adsgram not loaded')); }
+        else { rej(new Error('Adsgram SDK not ready yet. Try again.')); }
     });
-    const showMonetagAd = () => new Promise((res) => {
+    const showMonetagAd = () => new Promise((res, rej) => {
         if(typeof show_10893505 === 'function'){
-            const t = setTimeout(res, 15000);
+            const t = setTimeout(() => res(), 15000); // 15s max wait
             show_10893505().then(() => { clearTimeout(t); res(); }).catch(() => { clearTimeout(t); res(); });
-        } else { setTimeout(res, 3000); }
+        } else {
+            rej(new Error('Monetag SDK not ready yet. Try again.'));
+        }
     });
-    const showGigaPubAd = () => new Promise((res) => {
+    const showGigaPubAd = () => new Promise((res, rej) => {
         if(typeof window.showGiga === 'function'){
-            const t = setTimeout(res, 15000);
+            const t = setTimeout(() => res(), 15000);
             window.showGiga("main").then(() => { clearTimeout(t); res(); }).catch(() => { clearTimeout(t); res(); });
-        } else { setTimeout(res, 3000); }
+        } else {
+            rej(new Error('GigaPub SDK not ready yet. Try again.'));
+        }
     });
 
     // NEWTUBE এর runAdAndVerifyTime — ad skip করলে NO reward
@@ -1126,7 +1123,21 @@
                 if((Date.now() - adStart) > 500 && (Date.now() - adStart) < minDuration) closedEarly = true;
                 const remaining = minDuration - (Date.now() - startTime);
                 if(remaining > 0) await new Promise(r => setTimeout(r, remaining));
-            } catch(e) { closedEarly = true; }
+            } catch(e) {
+                // SDK not ready বা user skip — no reward
+                clearInterval(timer);
+                document.removeEventListener('visibilitychange', visHandler);
+                window._isAdRunning = false;
+                btn.dataset.busy = 'false';
+                btn.textContent = originalText;
+                btn.disabled = false;
+                const msg = e && e.message && e.message.includes('not ready')
+                    ? '⚠️ Ad not loaded yet. Please wait a moment and try again.'
+                    : '⚠️ Ad skipped. Watch the full ad to earn reward.';
+                showToast(msg);
+                resolve(false);
+                return;
+            }
 
             clearInterval(timer);
             document.removeEventListener('visibilitychange', visHandler);
@@ -1913,7 +1924,35 @@
         }
     })();
 
-    window.onload = initApp;
+    // Blank screen guard: যদি 30s এর মধ্যে loader না সরে → retry button দেখাও
+    window.onload = function(){
+        const BLANK_SCREEN_TIMEOUT = 30000;
+        const blankGuard = setTimeout(function(){
+            const loader = document.getElementById('fullscreen-loader');
+            if(loader && loader.style.display !== 'none'){
+                loader.innerHTML = `
+                    <div style="text-align:center;padding:30px;max-width:300px;">
+                        <div style="font-size:52px;margin-bottom:12px;">🍉</div>
+                        <div style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;margin-bottom:8px;">FRUIT CUT</div>
+                        <div style="color:#ff6b6b;font-size:14px;font-weight:800;margin-bottom:20px;">
+                            ⚠️ Loading took too long.<br>Please check your internet.
+                        </div>
+                        <button onclick="location.reload()" style="
+                            background:linear-gradient(180deg,#ffcc00,#ff8c00);
+                            border:none;border-radius:14px;padding:14px 32px;
+                            font-family:'Luckiest Guy',cursive;font-size:18px;
+                            color:#000;cursor:pointer;box-shadow:0 4px 0 #cc6600;width:100%;
+                        ">🔄 TAP TO RETRY</button>
+                    </div>`;
+            }
+        }, BLANK_SCREEN_TIMEOUT);
+
+        initApp().then(function(){
+            clearTimeout(blankGuard);
+        }).catch(function(){
+            clearTimeout(blankGuard);
+        });
+    };
 </script>
 </body>
 </html>
