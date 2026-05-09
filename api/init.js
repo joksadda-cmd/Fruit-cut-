@@ -21,12 +21,19 @@ function verifyTelegram(initData, botToken) {
 
 module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-telegram-init-data');
     if (req.method === 'OPTIONS') return res.status(200).end();
+
+    // ── KEEP-ALIVE PING ───────────────────────────────────────────────
+    // UptimeRobot GET request পাঠাবে — Firebase touch হবে না
+    if (req.method === 'GET') {
+        return res.status(200).json({ ok: true, ts: Date.now() });
+    }
+
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-    // Security check — skip if BOT_TOKEN not set yet
+    // Security check
     const BOT_TOKEN = process.env.BOT_TOKEN || '';
     const initData  = req.headers['x-telegram-init-data'] || '';
     if (BOT_TOKEN && initData && !verifyTelegram(initData, BOT_TOKEN)) {
@@ -43,7 +50,6 @@ module.exports = async function handler(req, res) {
     let userData;
 
     if (!doc.exists) {
-        // ── Refer reward ─────────────────────────────────────────────
         if (referredBy) {
             const refRef = db.collection('users').doc(String(referredBy));
             const refDoc = await refRef.get();
@@ -56,8 +62,6 @@ module.exports = async function handler(req, res) {
                     lotteryTokens: admin.firestore.FieldValue.increment(1),
                 });
 
-                // ── Telegram notification — fire and forget (NO await) ─
-                // Never block init response for notification
                 const newUsername = username ? `@${username}` : 'Someone';
                 const notifText = `🎉 Refer Reward Received!\n\n`+
                     `${newUsername} joined using your invite link!\n\n`+
@@ -80,12 +84,11 @@ module.exports = async function handler(req, res) {
                                 }]]
                             })
                         })
-                    }).catch(() => {}); // intentionally NOT awaited
+                    }).catch(() => {});
                 }
             }
         }
 
-        // ── New user ──────────────────────────────────────────────────
         userData = {
             telegramId: String(telegramId), username: username || 'unknown',
             coins: 0, gems: 0, gemsFraction: 0, stage: 1,
@@ -105,7 +108,6 @@ module.exports = async function handler(req, res) {
         userData = doc.data();
         const updates = {};
 
-        // ── Daily reset ───────────────────────────────────────────────
         if (userData.adsDayStamp !== today) {
             Object.assign(updates, {
                 adsDayStamp: today,
@@ -115,7 +117,6 @@ module.exports = async function handler(req, res) {
             });
         }
 
-        // ── Hourly token refill: +1/hr, max 10, max 24/day ───────────
         let curTok     = userData.tokens          ?? 3;
         let lastRefill = userData.tokenRefill      || now;
         let dayStamp   = userData.tokensDayStamp   || today;
@@ -139,7 +140,7 @@ module.exports = async function handler(req, res) {
                 updates.tokenRefill      = lastRefill + hrs * REFILL_MS;
             }
         } else {
-            updates.tokenRefill = now; // reset clock when at max
+            updates.tokenRefill = now;
         }
 
         if (Object.keys(updates).length > 0) {
@@ -148,7 +149,6 @@ module.exports = async function handler(req, res) {
         }
     }
 
-    // ── Broadcast list ────────────────────────────────────────────────
     try {
         await db.collection('system').doc('broadcast_list').set(
             { ids: admin.firestore.FieldValue.arrayUnion(String(telegramId)) },
