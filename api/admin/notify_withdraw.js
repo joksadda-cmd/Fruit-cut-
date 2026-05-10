@@ -1,4 +1,4 @@
-const { db } = require('../utils/firebase');
+const { db } = require('../../utils/firebase');
 
 const RATES = {
     bkash:     { label: 'bKash',        sym: '৳', unit: 'BDT',  rate: 0.12    },
