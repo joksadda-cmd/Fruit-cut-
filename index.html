@@ -9,16 +9,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Monetag: in head directly for correct Promise API -->
+    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script>
         // ── Ad SDK stubs — prevent errors before lazy load ────────────
         window._gigaReady   = false;
         window._adsgramReady= false;
-        window._monetagReady= false;
         window._adSdksLoaded= false;
         window._isAdRunning = false;
 
         // Stubs so calls before load don't crash
-        window.show_10893505 = function(){ return Promise.reject('not loaded'); };
 
         // Lazy load ALL ad SDKs only when user opens Ads section
         window._loadAdSDKs = function(){
@@ -30,14 +30,6 @@
             s1.src = 'https://sad.adsgram.ai/js/sad.min.js';
             s1.onload = function(){ window._adsgramReady = true; };
             document.head.appendChild(s1);
-
-            // Monetag
-            var s2 = document.createElement('script');
-            s2.src  = '//libtl.com/sdk.js';
-            s2.setAttribute('data-zone','10893505');
-            s2.setAttribute('data-sdk','show_10893505');
-            s2.onload = function(){ window._monetagReady = true; };
-            document.head.appendChild(s2);
 
             // GigaPub
             var s3 = document.createElement('script');
@@ -1135,31 +1127,13 @@
         else { rej(new Error('Adsgram SDK not ready yet. Try again.')); }
     });
     const showMonetagAd = () => new Promise((resolve, reject) => {
-        function tryShow(){
-            try {
-                show_10893505();
-                // Wait 6 seconds then resolve (reward)
-                setTimeout(resolve, 6000);
-            } catch(e){
-                reject(new Error('Monetag failed'));
-            }
-        }
-
-        if(window._monetagReady){
-            tryShow();
-        } else {
-            // SDK not loaded yet — wait up to 6s for it
-            var waited = 0;
-            var check = setInterval(function(){
-                waited += 200;
-                if(window._monetagReady){
-                    clearInterval(check);
-                    tryShow();
-                } else if(waited >= 6000){
-                    clearInterval(check);
-                    reject(new Error('Monetag SDK not ready. Try again in a moment.'));
-                }
-            }, 200);
+        // Correct Monetag implementation — show ad, reward on .then()
+        try {
+            show_10893505()
+                .then(function(){ resolve(); })
+                .catch(function(){ reject(new Error('Ad closed or failed')); });
+        } catch(e){
+            reject(new Error('Monetag not available'));
         }
     });
     const showGigaPubAd = () => new Promise((res, rej) => {
@@ -1598,8 +1572,9 @@
     const adTriggerThreshold = 2; // Show ad every 2 matches exactly
 
     // Gameplay interstitial ad — between matches (no reward, just show)
+    // Only Adsgram + GigaPub — Monetag is for Ads section only
     async function showGameplayAd(){
-        const adProviders = [showAdsgramDailyAd, showGigaPubAd, showMonetagAd];
+        const adProviders = [showAdsgramDailyAd, showGigaPubAd];
         const adFunc = adProviders[Math.floor(Math.random() * adProviders.length)];
         document.getElementById('ad-loader').style.display='flex';
         try { await adFunc(); } catch(e){}
@@ -1839,12 +1814,6 @@
         document.getElementById('ad-loader').style.display='none';
 
         if(res.success){
-            stagesCompletedSinceAd++;
-            // Fix 3: Show ad from random provider every 2 matches exactly
-            if(stagesCompletedSinceAd >= adTriggerThreshold){
-                stagesCompletedSinceAd = 0;
-                await showGameplayAd();
-            }
             window.tryStartGame(true);
         } else {
             showToast('❌ Error Saving Data! ' + (res.error || ''));
