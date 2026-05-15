@@ -1,9 +1,10 @@
 const { db, admin } = require('./utils/firebase');
 const crypto = require('crypto');
 
-const MAX_TOKENS = 10;
-const MIN_REWARD = 40;
-const MAX_REWARD = 240; // 120 * 2 (ad watched)
+const MAX_TOKENS   = 10;
+const MIN_REWARD   = 40;
+const MAX_REWARD   = 240;
+const TOKEN_REFILL_MS = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 function verifyTelegram(initData, botToken) {
     if (!initData || !botToken) return false;
@@ -12,7 +13,10 @@ function verifyTelegram(initData, botToken) {
         const hash = params.get('hash');
         if (!hash) return false;
         params.delete('hash');
-        const checkStr = [...params.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([k,v]) => `${k}=${v}`).join('\n');
+        const checkStr = [...params.entries()]
+            .sort(([a],[b]) => a.localeCompare(b))
+            .map(([k,v]) => `${k}=${v}`)
+            .join('\n');
         const secret = crypto.createHmac('sha256','WebAppData').update(botToken).digest();
         const expected = crypto.createHmac('sha256', secret).update(checkStr).digest('hex');
         return hash === expected;
@@ -42,27 +46,40 @@ module.exports = async function handler(req, res) {
     const userData = doc.data();
     const now      = Date.now();
 
-    // ── Server-side reward validation (prevent cheating) ─────────────
-    let baseReward = Math.max(MIN_REWARD, Math.min(120, Number(reward) || MIN_REWARD));
+    // ── Server-side reward validation (cheat protection) ─────────────
+    let baseReward  = Math.max(MIN_REWARD, Math.min(120, Number(reward) || MIN_REWARD));
     const finalReward = isAdWatched ? baseReward * 2 : baseReward;
 
     // ── Token deduction ───────────────────────────────────────────────
-    let curTok     = userData.tokens ?? 0;
+    let curTok      = userData.tokens ?? 0;
     let tokenRefill = userData.tokenRefill || now;
 
+    // ── Auto refill: check how many tokens should have been refilled ──
+    // Since last tokenRefill timestamp, how many 6-hour slots passed?
+    if (curTok < MAX_TOKENS) {
+        const elapsed   = now - (userData.tokenRefill || now);
+        const refillsEarned = Math.floor(elapsed / TOKEN_REFILL_MS);
+        if (refillsEarned > 0) {
+            curTok = Math.min(MAX_TOKENS, curTok + refillsEarned);
+            // Move tokenRefill forward by the slots consumed
+            tokenRefill = (userData.tokenRefill || now) + refillsEarned * TOKEN_REFILL_MS;
+        }
+    }
+
+    // ── Deduct 1 token for this game ─────────────────────────────────
     if (curTok > 0) {
         curTok -= 1;
-        // Start refill clock when dropping below max
+        // Reset refill clock from now if still below max
         if (curTok < MAX_TOKENS) tokenRefill = now;
     }
     if (curTok < 0) curTok = 0;
 
     const updates = {
-        coins:        admin.firestore.FieldValue.increment(finalReward),
-        gamesPlayed:  admin.firestore.FieldValue.increment(1),
-        stage:        (userData.stage || 1) + 1,
-        tokens:       curTok,
-        tokenRefill:  tokenRefill,
+        coins:       admin.firestore.FieldValue.increment(finalReward),
+        gamesPlayed: admin.firestore.FieldValue.increment(1),
+        stage:       (userData.stage || 1) + 1,
+        tokens:      curTok,
+        tokenRefill: tokenRefill,
     };
 
     await userRef.update(updates);
