@@ -493,7 +493,20 @@
                 <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)"><span class="tsc-badge">HOT</span><span class="tsc-icon">🎮🎮🎮</span><div class="tsc-amount">×5 Token</div><div class="tsc-price">250 🪙 Gold</div></div>
                 <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)"><span class="tsc-badge">MAX</span><span class="tsc-icon">🎮🎮🎮🎮</span><div class="tsc-amount">×10 Token</div><div class="tsc-price">500 🪙 Gold</div></div>
             </div>
-            <div class="info-text">Use Tokens to play games · Max 10 tokens · Auto +1 refill every hour</div>
+            <div class="info-text">Use Tokens to play games · Max 10 tokens · Auto +1 refill every 6 hours</div>
+
+            <!-- ── Earn Token via Ads ── -->
+            <div style="margin-top:12px;background:linear-gradient(135deg,rgba(255,120,0,0.15),rgba(200,60,0,0.10));border:2px solid rgba(255,160,0,0.4);border-radius:16px;padding:14px;">
+                <div style="font-family:'Luckiest Guy',cursive;font-size:18px;color:#ffcc00;margin-bottom:4px;">📺 Watch Ads → Earn Tokens</div>
+                <div style="font-size:11px;color:#aaa;margin-bottom:10px;">Watch Adsgram Special ad to earn 1 Game Token. Max <strong style="color:#fff;">10 times/day</strong>. FREE!</div>
+                <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:12px;color:#aaa;font-weight:800;">Claimed today:</span>
+                    <span style="font-size:16px;font-family:'Luckiest Guy',cursive;color:#fff;"><span id="shop-ad-token-count">0</span><span style="color:#aaa;font-size:12px;">/10</span></span>
+                </div>
+                <button class="btn btn-gold" id="shop-ad-token-btn" onclick="window.watchAdForToken()" style="margin-top:0;">
+                    📺 Watch Ad → +1 Token
+                </button>
+            </div>
         </div>
         <div class="shop-panel" id="shop-panel-exchange">
             <div class="gold-exchange-info">
@@ -750,6 +763,7 @@
         lotteryFreeUsed: false, lotteryTotalSpins: 0, lotteryDailySpins: 0,
         lotteryDiamondsEarned: 0, referDiamonds: 0,
         shopTokenBought: 0, shopDiamondExchanged: 0,
+        shopAdTokenClaimed: 0,
         referredBy: null, validReferRewardGiven: false,
         username: '', lotteryTokens: 0
     };
@@ -799,6 +813,10 @@
         if(sg) sg.textContent = window.G.coins;
         if(sd) sd.textContent = window.G.gems;
         updateWithdrawReqUI();
+        // Sync shop UI if open
+        if(document.getElementById('shop-modal') && document.getElementById('shop-modal').style.display === 'flex'){
+            updateShopUI();
+        }
     };
 
     function updateWithdrawReqUI(){
@@ -946,7 +964,7 @@
             }
             let refillTime = window.G.tokenRefill || 0;
             let elapsed = Date.now() - refillTime;
-            let left = (60 * 60 * 1000) - elapsed; // 1 hour
+            let left = (6 * 60 * 60 * 1000) - elapsed; // 6 hours
             if(left <= 0){
                 el.textContent = '(+1 soon...)';
             } else {
@@ -1010,7 +1028,7 @@
         if(id==='ads-modal' && gameState === 'menu'){ playSound('menu'); }
     };
 
-    window.showTokenInfo = function(){ showToast('Tokens: 1 token = 1 game. Max 10. Refills +1 every 1 hour!'); };
+    window.showTokenInfo = function(){ showToast('Tokens: 1 token = 1 game. Max 10. Refills +1 every 6 hours!'); };
 
     window.buyTokenShop = async function(qty){
         let cost = qty * 50;
@@ -1063,6 +1081,50 @@
         document.querySelectorAll('.shop-panel').forEach(p => p.classList.remove('active'));
         document.getElementById('tab-' + tab).classList.add('active');
         document.getElementById('shop-panel-' + tab).classList.add('active');
+    };
+
+    function updateShopUI(){
+        let sg = document.getElementById('shop-my-gold');
+        let sd = document.getElementById('shop-my-diamond');
+        if(sg) sg.textContent = window.G.coins;
+        if(sd) sd.textContent = window.G.gems;
+
+        // Token left
+        let tokenLeft = document.getElementById('shop-token-left');
+        if(tokenLeft){
+            let bought = window.G.shopTokenBought || 0;
+            tokenLeft.textContent = Math.max(0, 10 - bought);
+        }
+
+        // Ad token count
+        let adCount = document.getElementById('shop-ad-token-count');
+        if(adCount) adCount.textContent = window.G.shopAdTokenClaimed || 0;
+
+        // Ad token button
+        let adBtn = document.getElementById('shop-ad-token-btn');
+        if(adBtn){
+            let claimed = window.G.shopAdTokenClaimed || 0;
+            adBtn.disabled = claimed >= 10;
+            adBtn.textContent = claimed >= 10 ? '✅ Daily Limit Reached (10/10)' : '📺 Watch Ad → +1 Token';
+        }
+    }
+
+    // Watch ad in shop to earn 1 game token (max 10/day)
+    window.watchAdForToken = async function(){
+        let claimed = window.G.shopAdTokenClaimed || 0;
+        if(claimed >= 10){ showToast('Daily limit reached! Come back tomorrow.'); return; }
+        window._loadAdSDKs();
+        const ok = await runAdAndVerifyTime('shop-ad-token-btn', showAdsgramSpecialAd);
+        if(!ok) return;
+        document.getElementById('ad-loader').style.display = 'flex';
+        const res = await apiCall('/api/ads', { action: 'claim_game_token_by_ad' });
+        document.getElementById('ad-loader').style.display = 'none';
+        if(res.success){
+            showToast('🎮 +1 Token earned! Watch more ads for more tokens.');
+            updateShopUI();
+        } else {
+            showToast('❌ Error: ' + (res.error || 'Failed'));
+        }
     };
 
     window.copyRefer = function(){
@@ -1786,7 +1848,7 @@
         let existing = document.getElementById('no-token-modal');
         if(existing){ existing.style.display='flex'; return; }
         let div = document.createElement('div'); div.className='overlay ptr'; div.id='no-token-modal'; div.style.display='flex';
-        div.innerHTML=`<div class="modal"><span class="big-emoji">🎮</span><div class="mh mh-red">No Tokens!</div><div style="text-align:center;color:#aaa;margin-bottom:10px;">Tokens refill every 1 hour, or watch an ad to play now!</div><button class="btn btn-red" onclick="window.watchAdForGame()">Watch Ad - Play Free</button><button class="btn btn-grey" onclick="window.hideModal('no-token-modal')">Back</button></div>`;
+        div.innerHTML=`<div class="modal"><span class="big-emoji">🎮</span><div class="mh mh-red">No Tokens!</div><div style="text-align:center;color:#aaa;margin-bottom:10px;">Tokens refill every 6 hours, or watch an ad to play now!</div><button class="btn btn-red" onclick="window.watchAdForGame()">Watch Ad - Play Free</button><button class="btn btn-grey" onclick="window.hideModal('no-token-modal')">Back</button></div>`;
         document.body.appendChild(div);
     };
 
