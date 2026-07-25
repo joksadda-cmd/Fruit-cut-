@@ -81,6 +81,54 @@
         .coin-label{font-size:11px;color:#6b4400;font-weight:800;line-height:1;}
         .coin-value{font-size:20px;color:#3d2000;font-weight:900;font-family:'Luckiest Guy',cursive;}
         .lv-box{ background:linear-gradient(180deg,#ffee00,#ffaa00); border:3px solid #ff8800;border-radius:10px;padding:5px 18px; font-family:'Luckiest Guy',cursive;font-size:18px;color:#333; box-shadow:0 4px 0 #cc6600,0 6px 12px rgba(0,0,0,0.3);min-width:80px;text-align:center; }
+        #blocked-overlay{
+            position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;
+            background:linear-gradient(180deg,#003844,#001e26);
+            display:none;flex-direction:column;align-items:center;justify-content:center;
+            padding:24px;text-align:center;
+        }
+        .blocked-card{
+            background:rgba(0,20,25,0.9);
+            border:2px solid rgba(255,255,255,0.12);
+            border-radius:22px;
+            padding:30px 24px;
+            max-width:340px;
+            width:100%;
+        }
+        .blocked-icon{
+            width:80px;height:80px;margin:0 auto 20px;
+            background:linear-gradient(180deg,#ffcc00,#ff8c00);
+            border-radius:20px;display:flex;align-items:center;justify-content:center;
+            font-size:36px;
+            box-shadow:0 6px 0 #99730a;
+        }
+        .blocked-title{
+            font-family:'Luckiest Guy',cursive;font-size:24px;color:#ffcc00;
+            margin-bottom:12px;letter-spacing:1px;
+        }
+        .blocked-desc{
+            color:rgba(255,255,255,0.85);font-size:14px;line-height:1.5;
+            margin-bottom:20px;font-weight:700;
+        }
+        .blocked-owner-card{
+            background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);
+            border-radius:14px;padding:12px 14px;margin-bottom:20px;
+            display:flex;align-items:center;gap:10px;text-align:left;
+        }
+        .blocked-owner-avatar{
+            width:40px;height:40px;border-radius:50%;
+            background:linear-gradient(180deg,#00b4c8,#006070);
+            display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+        }
+        .blocked-owner-name{color:#fff;font-weight:900;font-size:14px;}
+        .blocked-owner-id{color:rgba(255,255,255,0.6);font-size:11px;font-weight:700;}
+        .blocked-retry-btn{
+            background:linear-gradient(180deg,#ffcc00,#ff8c00);
+            border:none;border-radius:14px;padding:14px 0;width:100%;
+            font-family:'Luckiest Guy',cursive;font-size:18px;color:#3d2000;
+            box-shadow:0 5px 0 #99730a;cursor:pointer;
+        }
+        .blocked-retry-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #99730a;}
         .diamond-box{ background:rgba(180,220,255,0.95);border:3px solid #4af;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #0077bb,0 6px 12px rgba(0,0,0,0.3); }
         .diamond-value{font-size:20px;color:#003366;font-weight:900;font-family:'Luckiest Guy',cursive;}
 
@@ -350,6 +398,23 @@
     <div id="loader-text" style="margin-top:4px;"></div>
 </div>
 
+<!-- Blocked account overlay: multi-device conflict or suspended account -->
+<div id="blocked-overlay">
+  <div class="blocked-card">
+    <div class="blocked-icon" id="blocked-icon">🔒</div>
+    <div class="blocked-title" id="blocked-title">Account Blocked</div>
+    <div class="blocked-desc" id="blocked-desc">Loading...</div>
+    <div class="blocked-owner-card" id="blocked-owner-card" style="display:none;">
+      <div class="blocked-owner-avatar">👤</div>
+      <div>
+        <div class="blocked-owner-name" id="blocked-owner-name">-</div>
+        <div class="blocked-owner-id" id="blocked-owner-id">ID -</div>
+      </div>
+    </div>
+    <button class="blocked-retry-btn" onclick="location.reload()">🔄 I've Switched — Try Again</button>
+  </div>
+</div>
+
 <div class="bg-stripes"></div>
 <div class="bg-left-shelf"></div>
 <div class="bg-right-shelf"></div>
@@ -367,8 +432,8 @@
         </div>
         <div class="lv-box">Lv <span id="ui-lv">1</span></div>
         <div class="diamond-box">
-            <span style="font-size:18px">💎</span>
-            <div><div class="coin-label">DIAMONDS</div><div class="diamond-value" id="ui-gems">0</div></div>
+            <span style="font-size:18px">🍎</span>
+            <div><div class="coin-label">FRUIT COIN</div><div class="diamond-value" id="ui-gems">0</div></div>
         </div>
     </div>
 </div>
@@ -451,7 +516,7 @@
 <div class="overlay ptr" id="lottery-modal">
     <div class="modal">
         <div class="mh mh-purple">🎰 777 Lottery</div>
-        <div id="lottery-free-badge" style="text-align:center;margin-bottom:6px;"></div>
+        <div id="lottery-free-badge" style="display:none;"></div>
         <div style="background:rgba(168,85,247,0.15);border:2px solid rgba(168,85,247,0.4);border-radius:12px;padding:8px 14px;margin-bottom:8px;text-align:center;">
             <span style="font-size:13px;color:#cf6fef;font-weight:900;">🎫 Lottery Tokens: </span><span id="lottery-token-count" style="font-size:18px;font-family:'Luckiest Guy',cursive;color:#ffcc00;">0</span>
             <div style="font-size:11px;color:#aaa;margin-top:2px;">Earn Lottery Tokens by referring friends!</div>
@@ -459,10 +524,9 @@
         <div class="lottery-wrap">
             <div class="lottery-slots"><div class="lottery-slot" id="slot-0">❓</div><div class="lottery-slot" id="slot-1">❓</div><div class="lottery-slot" id="slot-2">❓</div></div>
             <div class="lottery-result" id="lottery-result"></div>
-            <div class="lottery-price-row">🎫 Use Lottery Token or 📺 Watch Ad to Spin · Tokens left: <strong style="color:#ffcc00;" id="lottery-spins-left">0</strong></div>
+            <div class="lottery-price-row">🎫 Use a Lottery Token to Spin · Tokens left: <strong style="color:#ffcc00;" id="lottery-spins-left">0</strong></div>
             <div style="display:flex;gap:8px;margin-top:4px;">
                 <button class="lottery-spin-btn" id="lottery-token-spin-btn" onclick="window.spinLotteryWithToken()" style="flex:1;font-size:17px;padding:10px 8px;background:linear-gradient(180deg,#a855f7,#7e22ce);box-shadow:0 5px 0 #5b21b6;">🎫 Use Token & SPIN!</button>
-                <button class="lottery-spin-btn" id="lottery-spin-btn" onclick="window.spinLotteryWithAd()" style="flex:1;font-size:17px;padding:10px 8px;">📺 Watch Ad & SPIN!</button>
             </div>
         </div>
         <div class="lottery-earn-stats">
@@ -483,7 +547,7 @@
         <div class="mh mh-gold">🛍️ Shop</div>
         <div class="shop-tabs">
             <div class="shop-tab active ptr" onclick="window.switchShopTab('tokens')" id="tab-tokens">🎮 Tokens</div>
-            <div class="shop-tab ptr" onclick="window.switchShopTab('exchange')" id="tab-exchange">💎 Exchange</div>
+            <div class="shop-tab ptr" onclick="window.switchShopTab('exchange')" id="tab-exchange">🍎 Convert</div>
         </div>
         <div class="shop-panel active" id="shop-panel-tokens">
             <div class="shop-daily-info">🎮 Per Token: <strong style="color:#ffcc00;">50 🪙 Gold</strong> &nbsp;|&nbsp; Daily Limit: <strong style="color:#fff;" id="shop-token-left">10</strong>/10 remaining</div>
@@ -510,34 +574,39 @@
         </div>
         <div class="shop-panel" id="shop-panel-exchange">
             <div class="gold-exchange-info">
-                <div class="gei-rate">1,000 🪙 Gold = 1 💎</div>
-                <div class="gei-label">Gold → Diamond Exchange Rate</div>
-                <div style="font-size:11px;color:#f90;margin-top:4px;">Min: 1,000 Gold · Max: 100,000 Gold per exchange</div>
+                <div class="gei-rate">20 🪙 Gold = 1 🍎 FC</div>
+                <div class="gei-label">Gold → Fruit Coin Conversion Rate</div>
+                <div style="font-size:11px;color:#f90;margin-top:4px;">Min: 20,000 Gold · Max: 2,000,000 Gold per conversion</div>
             </div>
             <div class="exchange-input-wrap">
-                <label>Quick Select (Gold amount to exchange):</label>
+                <label>Quick Select (Gold amount to convert):</label>
                 <div class="exchange-presets">
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(1000)">1K 🪙</div>
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(5000)">5K 🪙</div>
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(10000)">10K 🪙</div>
-                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(50000)">50K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(20000)">20K 🪙</div>
                     <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(100000)">100K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(500000)">500K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(1000000)">1M 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(2000000)">2M 🪙</div>
                 </div>
-                <div class="exchange-result-preview" id="exchange-preview">Select Gold amount to see Diamond reward</div>
-                <div class="shop-daily-info">My Gold: <strong style="color:#ffcc00;" id="shop-my-gold">0</strong> 🪙 &nbsp;|&nbsp; My Diamonds: <strong style="color:#4af;" id="shop-my-diamond">0</strong> 💎</div>
-                <button class="btn btn-blue" id="exchange-confirm-btn" onclick="window.confirmExchange()" disabled>💎 Exchange Now</button>
+                <div class="exchange-result-preview" id="exchange-preview">Select Gold amount to see Fruit Coin reward</div>
+                <div class="shop-daily-info">My Gold: <strong style="color:#ffcc00;" id="shop-my-gold">0</strong> 🪙 &nbsp;|&nbsp; My Fruit Coin: <strong style="color:#4af;" id="shop-my-diamond">0</strong> 🍎</div>
+                <button class="btn btn-blue" id="exchange-confirm-btn" onclick="window.confirmExchange()" disabled>🍎 Convert Now</button>
             </div>
-            <div class="info-text">Min 100 Diamonds to withdraw · Exchange cannot be undone</div>
+            <div class="info-text">Fruit Coin is withdrawable · Conversion cannot be undone</div>
         </div>
         <button class="btn btn-grey" onclick="window.hideModal('shop-modal')">CLOSE</button>
     </div>
 </div>
 
 <!-- Wallet -->
+<!-- ⚠️ TEMPORARY: this whole modal (methods dropdown, rate boxes) is OLD
+     and will be fully replaced in the dedicated Withdraw phase with:
+     Dogs / Hamster / Notcoin / TON / USDT / Gram — all via TonKeeper,
+     10% fee, per-currency minimums from the settings collection.
+     Only "Diamond" wording was renamed to "Fruit Coin" here for now. -->
 <div class="overlay ptr" id="wallet-modal">
     <div class="modal">
         <div class="mh mh-gold">💳 Withdraw</div>
-        <div class="mrow"><span class="mrow-label">My Diamonds</span><span class="mrow-val">💎 <span id="w-gems">0</span></span></div>
+        <div class="mrow"><span class="mrow-label">My Fruit Coin</span><span class="mrow-val">🍎 <span id="w-gems">0</span></span></div>
         <div id="withdraw-req-box" class="withdraw-req">
             ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> and give <strong>2 Refers</strong><br>
             <span id="withdraw-req-status">Tasks: 0/5 · Refers: 0/2</span>
@@ -566,7 +635,7 @@
             <option value="tonkeeper">Tonkeeper (TON)</option>
         </select>
         <div style="position:relative;">
-            <input type="number" id="w-amount" placeholder="Enter Diamond amount (min 100)" min="100" oninput="window.updateWithdrawPreview()">
+            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount" min="1" oninput="window.updateWithdrawPreview()">
             <!-- Animated preview -->
             <div id="w-convert-preview" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08));border:2px solid rgba(255,180,0,0.4);border-radius:12px;padding:10px 14px;margin-top:4px;text-align:center;animation:previewPop 0.3s ease;">
                 <div style="font-size:11px;color:#aaa;margin-bottom:4px;">You will receive approximately:</div>
@@ -598,13 +667,13 @@
         <div class="refer-stats">
             <div style="display:flex;justify-content:space-around;">
                 <div><div class="refer-count" id="refer-count-display">0</div><div class="refer-count-label">Total Referrals</div></div>
-                <div><div class="refer-diamonds" id="refer-diamonds-display">0</div><div class="refer-diamonds-label">💎 Diamonds Earned</div></div>
+                <div><div class="refer-diamonds" id="refer-diamonds-display">0</div><div class="refer-diamonds-label">🍎 Fruit Coin Earned</div></div>
             </div>
         </div>
         <div style="font-size:12px;color:#aaa;background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin-bottom:10px;text-align:left;">
             <strong style="color:#ffcc00;">Normal Refer:</strong> Instantly get 🎮 1 Game Token + 🎫 1 Lottery Token.<br><br>
-            <strong style="color:#4af;">Valid Refer:</strong> When your friend earns 2,000 Gold from Ads, you get 💎 5 Diamonds + 🎮 2 extra Game Tokens!<br><br>
-            <strong style="color:#7dff00;">Total per complete refer:</strong> 🎮 3 Game Tokens + 🎫 1 Lottery Token + 💎 5 Diamonds
+            <strong style="color:#4af;">Valid Refer:</strong> When your friend plays a few games, you get 🍎 Fruit Coin + 🎮 2 extra Game Tokens! <em style="color:#888;">(exact reward — coming in Phase 4)</em><br><br>
+            <strong style="color:#7dff00;">Total per complete refer:</strong> 🎮 3 Game Tokens + 🎫 1 Lottery Token + 🍎 Fruit Coin
         </div>
         <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
         <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
@@ -689,7 +758,7 @@
     <div class="modal">
         <div class="mh mh-cyan">📋 Tasks</div>
         <div id="task-list"><div style="text-align:center;color:#aaa;padding:20px;">Loading tasks...</div></div>
-        <div class="info-text">Complete tasks to earn Gold & Diamonds!</div>
+        <div class="info-text">Complete tasks to earn Gold & Fruit Coin!</div>
         <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
     </div>
 </div>
@@ -787,7 +856,12 @@
             });
             const result = await response.json();
             if(result.success && result.user) {
-                Object.assign(window.G, result.user);
+                // New backend sends { gold, fruitCoin, ... } — map to our
+                // existing frontend variable names (coins, gems) instead of
+                // blind Object.assign, which would silently create wrong keys.
+                if(result.user.gold      !== undefined) window.G.coins = result.user.gold;
+                if(result.user.fruitCoin !== undefined) window.G.gems  = result.user.fruitCoin;
+                if(result.user.referralCount !== undefined) window.G.referCount = result.user.referralCount;
                 window.updateUI();
             }
             return result;
@@ -836,6 +910,52 @@
         if(btn) btn.disabled = !allMet;
     }
 
+    // ── Device fingerprint (weak-signal based; recomputed every load so
+    // clearing storage alone doesn't bypass multi-account detection) ──
+    function getDeviceId(){
+        try{
+            const raw = [
+                navigator.userAgent, navigator.language, navigator.platform,
+                navigator.hardwareConcurrency || '', screen.width + 'x' + screen.height,
+                screen.colorDepth, new Date().getTimezoneOffset()
+            ].join('|');
+            let hash = 0;
+            for(let i=0;i<raw.length;i++){ hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0; }
+            return 'dev_' + Math.abs(hash).toString(36);
+        } catch(e){ return 'dev_unknown'; }
+    }
+
+    // ── Blocked screen renderer ──────────────────────────────────────
+    function showBlockedScreen(type, ownerInfo){
+        let loader = document.getElementById('fullscreen-loader');
+        if(loader) loader.style.display = 'none';
+        let icon  = document.getElementById('blocked-icon');
+        let title = document.getElementById('blocked-title');
+        let desc  = document.getElementById('blocked-desc');
+        let ownerCard = document.getElementById('blocked-owner-card');
+        if(type === 'blocked_device'){
+            icon.textContent  = '📶';
+            title.textContent = 'IP/Device Already In Use';
+            desc.textContent  = 'This device is already linked to another Fruit Cut account. Please switch account or device and try again.';
+            if(ownerInfo){
+                ownerCard.style.display = 'flex';
+                document.getElementById('blocked-owner-name').textContent = '@' + (ownerInfo.username || 'unknown');
+                document.getElementById('blocked-owner-id').textContent   = 'ID ' + ownerInfo.telegramId;
+            }
+        } else if(type === 'blocked_banned'){
+            icon.textContent  = '🚫';
+            title.textContent = 'Account Suspended';
+            desc.textContent  = 'Your account has been suspended for violating game rules. Contact support if you think this is a mistake.';
+            ownerCard.style.display = 'none';
+        } else {
+            icon.textContent  = '⚠️';
+            title.textContent = 'Access Denied';
+            desc.textContent  = 'Could not verify your account. Please reopen the app from Telegram.';
+            ownerCard.style.display = 'none';
+        }
+        document.getElementById('blocked-overlay').style.display = 'flex';
+    }
+
     async function initApp() {
         let tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) {
@@ -877,25 +997,37 @@
             try {
                 const controller = new AbortController();
                 const timer = setTimeout(() => controller.abort(), 15000); // 15s per attempt
-                const response = await fetch('/api/init', {
+                const response = await fetch('/api/auth', {
                     method:  'POST',
                     headers: {
                         'Content-Type':         'application/json',
                         'x-telegram-init-data': tg?.initData || ''
                     },
-                    body:   JSON.stringify({ telegramId: userId, username: tgUser.username, referredBy }),
+                    body:   JSON.stringify({ deviceId: getDeviceId(), referredBy }),
                     signal: controller.signal
                 });
                 clearTimeout(timer);
                 res = await response.json();
                 if(res && res.success) break; // ✅ success
+                // Definitive server responses — no point retrying the network for these.
+                if(res && (res.status === 'blocked_device' || res.status === 'blocked_banned' || res.status === 'invalid_auth')) break;
             } catch(e){
                 res = { success: false, error: String(e) };
             }
         }
 
+        // ── Blocked account handling (multi-account / suspended) ────────
+        if(res && (res.status === 'blocked_device' || res.status === 'blocked_banned')){
+            showBlockedScreen(res.status, res.ownerInfo);
+            return; // stop initApp — do not show menu
+        }
+
         if (res && res.success) {
-            if(res.user) Object.assign(window.G, res.user);
+            if(res.user){
+                window.G.coins      = res.user.gold          ?? window.G.coins;
+                window.G.gems        = res.user.fruitCoin      ?? window.G.gems;
+                window.G.referCount = res.user.referralCount  ?? window.G.referCount;
+            }
 
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
@@ -1042,31 +1174,31 @@
 
     let pendingExchangeGold = 0;
     window.setExchangeGold = function(gold){
-        if(gold < 1000){ showToast('Minimum 1,000 Gold!'); return; }
-        if(gold > 100000){ showToast('Maximum 100,000 Gold per exchange!'); return; }
+        if(gold < 20000){ showToast('Minimum 20,000 Gold!'); return; }
+        if(gold > 2000000){ showToast('Maximum 2,000,000 Gold per conversion!'); return; }
         pendingExchangeGold = gold;
-        let diamonds = Math.floor(gold / 1000);
+        let fc = Math.floor(gold / 20);
         let preview = document.getElementById('exchange-preview');
         let btn = document.getElementById('exchange-confirm-btn');
-        if(preview) preview.textContent = `${gold.toLocaleString()} Gold → ${diamonds} Diamond`;
+        if(preview) preview.textContent = `${gold.toLocaleString()} Gold → ${fc.toLocaleString()} Fruit Coin`;
         if(btn) btn.disabled = false;
     };
 
     window.confirmExchange = async function(){
         if(!pendingExchangeGold) return;
-        if(pendingExchangeGold < 1000){ showToast('Minimum 1,000 Gold!'); return; }
-        if(pendingExchangeGold > 100000){ showToast('Maximum 100,000 Gold!'); return; }
+        if(pendingExchangeGold < 20000){ showToast('Minimum 20,000 Gold!'); return; }
+        if(pendingExchangeGold > 2000000){ showToast('Maximum 2,000,000 Gold!'); return; }
         if(window.G.coins < pendingExchangeGold){ showToast('Not enough Gold!'); return; }
         // Fix 3: Show ad before exchange
         await showGameplayAd();
         document.getElementById('ad-loader').style.display='flex';
-        const res = await apiCall('/api/shop', { type: 'gold_to_diamond', goldAmount: pendingExchangeGold });
+        const res = await apiCall('/api/convert', { goldAmount: pendingExchangeGold });
         document.getElementById('ad-loader').style.display='none';
         if(res.success) {
-            let diamonds = Math.floor(pendingExchangeGold / 1000);
-            showToast(`+${diamonds} Diamonds received!`);
+            let fc = Math.floor(pendingExchangeGold / 20);
+            showToast(`+${fc.toLocaleString()} Fruit Coin received!`);
             pendingExchangeGold = 0;
-            document.getElementById('exchange-preview').textContent = 'Select Gold amount to see Diamond reward';
+            document.getElementById('exchange-preview').textContent = 'Select Gold amount to see Fruit Coin reward';
             document.getElementById('exchange-confirm-btn').disabled = true;
             updateShopUI();
         } else {
@@ -1136,7 +1268,7 @@
     };
     window.shareToTelegram = function(){
         let link = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
-        let text = `Join me on Fruit Cut & Earn real rewards! Earn Diamonds & Withdraw via bKash or TON!`;
+        let text = `Join me on Fruit Cut & Earn real rewards! Earn Fruit Coin & Withdraw via TON!`;
         if(tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
         else window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
     };
@@ -1358,7 +1490,7 @@
                         <div class="task-info">
                             <span class="task-type-badge ${badgeClass}">${badgeText}</span>
                             <div class="task-name">${t.name}</div>
-                            <div class="task-reward">🪙 ${reward} Gold${t.gems?` + 💎${t.gems}`:''}</div>
+                            <div class="task-reward">🪙 ${reward} Gold${t.gems?` + 🍎${t.gems}`:''}</div>
                         </div>
                         <button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.link||'').replace(/'/g,"\'")}','${src}')">${btnLabel}</button>
                     </div>`;
@@ -1448,7 +1580,7 @@
             let gold = res.coinsReward || 200;
             let gems = res.gemsReward  || 0;
             let msg  = `✅ Task Complete! +${gold} Gold!`;
-            if(gems > 0) msg += ` +${gems} 💎`;
+            if(gems > 0) msg += ` +${gems} 🍎`;
             showToast(msg);
 
             // Mark button done
@@ -1902,10 +2034,10 @@
         { id:3,  label:'300 🪙 Gold',        icon:'🪙',  type:'coin',     val:300,  weight:12 },
         { id:4,  label:'1 Free Spin',        icon:'🎰',  type:'freespin', val:1,    weight:15 },
         { id:5,  label:'700 🪙 Gold',        icon:'🪙',  type:'coin',     val:700,  weight:8  },
-        { id:6,  label:'0.3 💎 Diamond',     icon:'💎',  type:'diamond',  val:0.3,  weight:15 },
+        { id:6,  label:'300 🍎 Fruit Coin',  icon:'🍎',  type:'fc',       val:300,  weight:15 },
         { id:7,  label:'3 🎮 Game Token',    icon:'🎮',  type:'token',    val:3,    weight:12 },
-        { id:8,  label:'0.5 💎 Diamond',     icon:'💎',  type:'diamond',  val:0.5,  weight:10 },
-        { id:9,  label:'2 💎 Diamond',       icon:'💎',  type:'diamond',  val:2,    weight:1  },
+        { id:8,  label:'500 🍎 Fruit Coin',  icon:'🍎',  type:'fc',       val:500,  weight:10 },
+        { id:9,  label:'2000 🍎 Fruit Coin', icon:'🍎',  type:'fc',       val:2000, weight:1  },
         { id:10, label:'1 🎫 Lottery Token', icon:'🎫',  type:'lottoken', val:1,    weight:12 },
     ];
     const SLOT_SYMBOLS = ['🪙','🍋','🎰','7️⃣','⭐','🎮','🍊','🪙','🔔','🍒'];
@@ -1921,8 +2053,8 @@
         if(prize.type==='lottoken') return ['🎫','🎫','🎫'];
         if(prize.type==='token')    return ['🎮','🎮','🎮'];
         if(prize.type==='freespin') return ['🎰','🎰','🎰'];
-        if(prize.type==='diamond' && prize.val>=2) return ['💎','💎','💎'];
-        if(prize.type==='diamond') return ['💎','⭐','💎'];
+        if(prize.type==='fc' && prize.val>=2000) return ['🍎','🍎','🍎'];
+        if(prize.type==='fc') return ['🍎','⭐','🍎'];
         if(prize.val>=700) return ['🪙','🪙','🪙'];
         if(prize.val>=300) return ['🔔','🔔','🔔'];
         if(prize.val>=200) return ['🍒','🍒','🍒'];
@@ -1936,16 +2068,12 @@
         document.getElementById('lottery-total-earned').textContent = window.G.lotteryDiamondsEarned||0;
         document.getElementById('lottery-total-spins').textContent  = window.G.lotteryTotalSpins||0;
         let lotTokens  = window.G.lotteryTokens||0;
-        let dailyLeft  = 10 - (window.G.lotteryDailySpins||0);
         let tokenEl = document.getElementById('lottery-token-count');
         if(tokenEl) tokenEl.textContent = lotTokens;
-        document.getElementById('lottery-free-badge').innerHTML = `<span style="font-size:12px;color:#ffcc00;">Ad Spins left today: <strong style="color:#fff;">${Math.max(0,dailyLeft)}/10</strong></span>`;
         document.getElementById('lottery-spins-left').textContent = Math.max(0, lotTokens);
         ['slot-0','slot-1','slot-2'].forEach(id=>{ let el=document.getElementById(id); if(el){ el.textContent='❓'; el.classList.remove('spinning','win'); } });
         document.getElementById('lottery-result').textContent='';
-        let btn      = document.getElementById('lottery-spin-btn');
         let tokenBtn = document.getElementById('lottery-token-spin-btn');
-        if(btn)      { btn.disabled      = dailyLeft <= 0;   btn.textContent      = dailyLeft <= 0   ? 'Daily Limit Reached' : 'Watch Ad & SPIN!'; }
         if(tokenBtn) { tokenBtn.disabled = lotTokens <= 0;   tokenBtn.textContent = lotTokens <= 0   ? 'No Lottery Tokens'   : `Use Token & SPIN! (${lotTokens})`; }
     };
 
@@ -1954,21 +2082,9 @@
     async function executeSpin(useToken){
         if(lotterySpinning) return;
         lotterySpinning = true;
-        let spinBtnId = useToken ? 'lottery-token-spin-btn' : 'lottery-spin-btn';
-        let btn = document.getElementById(spinBtnId);
+        let btn = document.getElementById('lottery-token-spin-btn');
         if(btn){ btn.disabled = true; btn.textContent = 'Loading...'; }
         stopSound('menu');
-
-        if(!useToken){
-            // Use NEWTUBE pattern — ad skip = no spin
-            const adOk = await runAdAndVerifyTime('lottery-spin-btn', showAdsgramSpecialAd);
-            if(!adOk){
-                lotterySpinning = false;
-                window.renderLotteryModal();
-                playSound('menu');
-                return;
-            }
-        }
 
         playSound('spin');
         let slots = ['slot-0','slot-1','slot-2'];
@@ -2006,12 +2122,6 @@
             playSound('menu');
         }, 2600);
     }
-
-    window.spinLotteryWithAd = async function(){
-        let dailyLeft = 10 - (window.G.lotteryDailySpins||0);
-        if(dailyLeft <= 0){ showToast('Daily ad spin limit reached! Use a Lottery Token.'); return; }
-        await executeSpin(false);
-    };
 
     window.spinLotteryWithToken = async function(){
         let lotTokens = window.G.lotteryTokens||0;
