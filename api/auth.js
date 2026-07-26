@@ -17,6 +17,10 @@
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection } = require('../lib/db');
+const { sendTelegramMessage } = require('../lib/notify');
+const { TRANSACTION_TYPES } = require('../lib/constants');
+
+const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -78,6 +82,8 @@ module.exports = async (req, res) => {
         username,
         gold: 0,
         fruitCoin: 0,
+        gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
+        lotteryTokens: 0,
         highScore: 0,
         totalGamesPlayed: 0,
         deviceId: deviceId || null,
@@ -90,6 +96,55 @@ module.exports = async (req, res) => {
       };
       await usersCol.insertOne(newUser);
       user = newUser;
+
+      // ── Instant referral reward (server-side only, never trust client) ──
+      // Only fires once, right here at registration time, and only if the
+      // referrer is a real, non-banned, different user.
+      if (referredBy && String(referredBy) !== String(telegramId)) {
+        const referrer = await usersCol.findOne({ telegramId: String(referredBy) });
+        if (referrer && !referrer.banned) {
+          const updated = await usersCol.findOneAndUpdate(
+            { telegramId: referrer.telegramId },
+            [
+              {
+                $set: {
+                  gameTokens: { $min: [{ $add: [{ $ifNull: ['$gameTokens', 3] }, 1] }, 10] },
+                  lotteryTokens: { $add: [{ $ifNull: ['$lotteryTokens', 0] }, 1] },
+                  referralCount: { $add: [{ $ifNull: ['$referralCount', 0] }, 1] },
+                  lastActive: new Date(),
+                },
+              },
+            ],
+            { returnDocument: 'after' }
+          );
+
+          const txCol = await getCollection('transactions');
+          await txCol.insertOne({
+            telegramId: referrer.telegramId,
+            type: TRANSACTION_TYPES.REFERRAL_REWARD,
+            amount: 0, // no gold/FC in the instant reward — just tokens (logged in meta)
+            balanceAfter: updated.value ? updated.value.gold : referrer.gold,
+            meta: { gameTokens: 1, lotteryTokens: 1, referredTelegramId: telegramId },
+            createdAt: new Date(),
+          });
+
+          // Notification text matches the existing "Refer Reward Received!" format
+          const joinedWho = username && username !== 'Player' ? `@${username}` : 'Someone';
+          sendTelegramMessage(
+            referrer.telegramId,
+            `🎉 <b>Refer Reward Received!</b>\n\n` +
+              `${joinedWho} joined using your invite link!\n\n` +
+              `🎮 +1 Game Token added!\n` +
+              `🎰 +1 Lottery Token added!\n\n` +
+              `Keep inviting friends to earn more! 🚀`,
+            {
+              reply_markup: {
+                inline_keyboard: [[{ text: '🎮 Open Game & Collect Reward', url: MINI_APP_URL }]],
+              },
+            }
+          ).catch((e) => console.error('referral notify failed:', e));
+        }
+      }
     } else {
       await usersCol.updateOne(
         { telegramId },
@@ -105,6 +160,8 @@ module.exports = async (req, res) => {
         username: user.username,
         gold: user.gold,
         fruitCoin: user.fruitCoin,
+        gameTokens: user.gameTokens ?? 3,
+        lotteryTokens: user.lotteryTokens ?? 0,
         highScore: user.highScore,
         referralCount: user.referralCount,
       },
