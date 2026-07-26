@@ -129,6 +129,25 @@
             box-shadow:0 5px 0 #99730a;cursor:pointer;
         }
         .blocked-retry-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #99730a;}
+        /* ---- JOIN GATE (must join channels before playing) ---- */
+        #join-gate-overlay{
+            position:fixed;top:0;left:0;width:100%;height:100%;z-index:9998;
+            background:linear-gradient(180deg,#003844,#001e26);
+            display:none;flex-direction:column;align-items:center;justify-content:center;
+            padding:24px;text-align:center;
+        }
+        .join-channel-row{
+            display:flex;align-items:center;justify-content:space-between;gap:10px;
+            background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);
+            border-radius:14px;padding:12px 14px;margin-bottom:10px;text-align:left;
+        }
+        .join-channel-label{color:#fff;font-weight:800;font-size:13px;}
+        .join-channel-btn{
+            background:linear-gradient(180deg,#33c6ff,#0088cc);border:none;border-radius:10px;
+            padding:8px 16px;font-family:'Luckiest Guy',cursive;font-size:13px;color:#fff;
+            cursor:pointer;box-shadow:0 3px 0 #005c8a;white-space:nowrap;
+        }
+        .join-channel-btn.joined{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;}
         .diamond-box{ background:rgba(180,220,255,0.95);border:3px solid #4af;border-radius:16px; padding:6px 14px;display:flex;align-items:center;gap:6px; box-shadow:0 4px 0 #0077bb,0 6px 12px rgba(0,0,0,0.3); }
         .diamond-value{font-size:20px;color:#003366;font-weight:900;font-family:'Luckiest Guy',cursive;}
 
@@ -405,6 +424,17 @@
       </div>
     </div>
     <button class="blocked-retry-btn" onclick="location.reload()">🔄 I've Switched — Try Again</button>
+  </div>
+</div>
+
+<!-- Join-gate overlay: must join official channels before playing -->
+<div id="join-gate-overlay">
+  <div class="blocked-card">
+    <div class="blocked-icon" id="join-gate-icon">📢</div>
+    <div class="blocked-title">Join to Continue</div>
+    <div class="blocked-desc">Join our official channels to unlock Fruit Cut — takes 10 seconds!</div>
+    <div id="join-gate-list"></div>
+    <button class="blocked-retry-btn" id="join-gate-verify-btn" onclick="window.verifyJoinGate()">✅ I've Joined — Verify</button>
   </div>
 </div>
 
@@ -940,6 +970,55 @@
         document.getElementById('blocked-overlay').style.display = 'flex';
     }
 
+    // The final "show the actual game" step — runs either right after a
+    // clean auth, or after the join-gate is satisfied.
+    function revealMenu(){
+        let loader = document.getElementById('fullscreen-loader');
+        loader.style.transition = 'opacity 0.5s ease';
+        loader.style.opacity    = '0';
+        setTimeout(()=>{ loader.style.display='none'; loader.style.opacity='1'; }, 500);
+        document.getElementById('menu-screen').style.display = 'flex';
+
+        startTokenTimer();
+        requestAnimationFrame(window.loop);
+        setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 500);
+    }
+
+    function showJoinGate(channels){
+        let loader = document.getElementById('fullscreen-loader');
+        if(loader) loader.style.display = 'none';
+        const list = document.getElementById('join-gate-list');
+        list.innerHTML = '';
+        (channels || []).forEach((ch, i) => {
+            const row = document.createElement('div');
+            row.className = 'join-channel-row';
+            row.innerHTML = `
+                <span class="join-channel-label">${ch.joined ? '✅' : '📢'} ${ch.label}</span>
+                <button class="join-channel-btn ${ch.joined ? 'joined' : ''}" id="join-btn-${i}">${ch.joined ? 'Joined' : 'Join'}</button>
+            `;
+            list.appendChild(row);
+            row.querySelector('button').onclick = function(){
+                if(tg && tg.openTelegramLink) tg.openTelegramLink(ch.url);
+                else window.open(ch.url, '_blank');
+            };
+        });
+        document.getElementById('join-gate-overlay').style.display = 'flex';
+    }
+
+    window.verifyJoinGate = async function(){
+        const btn = document.getElementById('join-gate-verify-btn');
+        btn.disabled = true; btn.textContent = 'Checking...';
+        const res = await apiCall('/api/checkJoin', {});
+        btn.disabled = false; btn.textContent = '✅ I\'ve Joined — Verify';
+        if(res && res.success && res.allJoined){
+            document.getElementById('join-gate-overlay').style.display = 'none';
+            revealMenu();
+        } else {
+            showJoinGate(res && res.channels ? res.channels : []);
+            showToast('⚠️ You still need to join all channels first.');
+        }
+    };
+
     async function initApp() {
         let tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) {
@@ -1035,15 +1114,16 @@
 
             document.getElementById('refer-link').textContent = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
 
-            let loader = document.getElementById('fullscreen-loader');
-            loader.style.transition = 'opacity 0.5s ease';
-            loader.style.opacity    = '0';
-            setTimeout(()=>{ loader.style.display='none'; loader.style.opacity='1'; }, 500);
-            document.getElementById('menu-screen').style.display = 'flex';
+            // ── Join-gate: must be a member of all official channels ────
+            const joinCheck = await apiCall('/api/checkJoin', {});
+            if (joinCheck && joinCheck.success && !joinCheck.allJoined) {
+                showJoinGate(joinCheck.channels);
+                return; // stop here — revealMenu() runs after verifyJoinGate() succeeds
+            }
+            // If checkJoin itself failed (network hiccup etc.), fail OPEN rather
+            // than locking out real users over a transient server error.
 
-            startTokenTimer();
-            requestAnimationFrame(window.loop);
-            setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 500);
+            revealMenu();
 
         } else {
             // All retries failed — show retry button
@@ -1230,7 +1310,7 @@
         let claimed = window.G.shopAdTokenClaimed || 0;
         if(claimed >= 10){ showToast('Daily limit reached! Come back tomorrow.'); return; }
         window._loadAdSDKs();
-        const ok = await runAdAndVerifyTime('shop-ad-token-btn', showAdsgramSpecialAd);
+        const ok = await runAdAndVerifyTime('shop-ad-token-btn', showAdsgramSpecialAd, 'adsgram');
         if(!ok) return;
         document.getElementById('ad-loader').style.display = 'flex';
         const res = await apiCall('/api/ads', { action: 'claim_game_token_by_ad' });
@@ -1304,63 +1384,70 @@
         }
     });
 
-    // NEWTUBE এর runAdAndVerifyTime — ad skip করলে NO reward
-    async function runAdAndVerifyTime(btnId, adFunc) {
+    // Adsgram's SDK requires the user to click the ad creative within its
+    // own ~15s window and only resolves successfully once that happens —
+    // that's enforced by Adsgram itself. A genuine click-through can
+    // legitimately resolve in just a couple of seconds, so we must NOT
+    // impose our own multi-second minimum for it (that was the bug —
+    // real completions were being flagged as "skipped too early").
+    // GigaPub and Monetag have no click requirement — they're purely
+    // time-based, so we enforce a real 5s minimum for those.
+    async function runAdAndVerifyTime(btnId, adFunc, network) {
         if(window._isAdRunning){ showToast('⚠️ An ad is already playing.'); return false; }
         const btn = document.getElementById(btnId);
         if(!btn) return false;
         window._isAdRunning = true;
         btn.dataset.busy = 'true'; btn.disabled = true;
         const originalText = btn.textContent;
-        const minDuration = 6000;
+
+        const isClickBased = (network === 'adsgram' || network === 'adsgramDaily');
+        const minDuration = isClickBased ? 0 : 5000;
         const startTime = Date.now();
-        const timer = setInterval(() => {
-            const left = Math.ceil((minDuration - (Date.now() - startTime)) / 1000);
-            btn.textContent = left > 0 ? `Wait ${left}s...` : 'Checking...';
-        }, 500);
 
-        return new Promise(async (resolve) => {
-            let closedEarly = false;
-            const visHandler = () => {
-                if(!document.hidden && (Date.now() - startTime) < minDuration) closedEarly = true;
-            };
-            document.addEventListener('visibilitychange', visHandler);
-            try {
-                const adStart = Date.now();
-                if(adFunc) await adFunc();
-                if((Date.now() - adStart) > 500 && (Date.now() - adStart) < minDuration) closedEarly = true;
-                const remaining = minDuration - (Date.now() - startTime);
-                if(remaining > 0) await new Promise(r => setTimeout(r, remaining));
-            } catch(e) {
-                // SDK not ready বা user skip — no reward
-                clearInterval(timer);
-                document.removeEventListener('visibilitychange', visHandler);
-                window._isAdRunning = false;
-                btn.dataset.busy = 'false';
-                btn.textContent = originalText;
-                btn.disabled = false;
-                const msg = e && e.message && e.message.includes('not ready')
-                    ? '⚠️ Ad not loaded yet. Please wait a moment and try again.'
-                    : '⚠️ Ad skipped. Watch the full ad to earn reward.';
-                showToast(msg);
-                resolve(false);
-                return;
-            }
+        let timer = null;
+        if(minDuration > 0){
+            timer = setInterval(() => {
+                const left = Math.ceil((minDuration - (Date.now() - startTime)) / 1000);
+                btn.textContent = left > 0 ? `Wait ${left}s...` : 'Checking...';
+            }, 500);
+        } else {
+            btn.textContent = 'Watching...';
+        }
 
-            clearInterval(timer);
-            document.removeEventListener('visibilitychange', visHandler);
+        const cleanup = () => {
+            if(timer) clearInterval(timer);
             window._isAdRunning = false;
             btn.dataset.busy = 'false';
             btn.textContent = originalText;
             btn.disabled = false;
+        };
 
-            if(closedEarly){
+        try {
+            if(adFunc) await adFunc();
+        } catch(e) {
+            cleanup();
+            const msg = e && e.message && e.message.includes('not ready')
+                ? '⚠️ Ad not loaded yet. Please wait a moment and try again.'
+                : (isClickBased
+                    ? '⚠️ Ad skipped — you need to click the ad to earn reward.'
+                    : '⚠️ Ad skipped. Watch the full ad to earn reward.');
+            showToast(msg);
+            return false;
+        }
+
+        // Time-based networks: the SDK's promise can resolve on a simple
+        // close, so we still check real elapsed time ourselves.
+        if(minDuration > 0){
+            const elapsed = Date.now() - startTime;
+            if(elapsed < minDuration){
+                cleanup();
                 showToast('⚠️ Ad skipped too early. No reward!');
-                resolve(false);
-            } else {
-                resolve(true);
+                return false;
             }
-        });
+        }
+
+        cleanup();
+        return true;
     }
 
     // Main ad reward handler — matches api/ads.js's two-step flow:
@@ -1388,7 +1475,7 @@
         const sessionId = sessionRes.sessionId;
 
         // STEP 2 — actually show the ad
-        const ok = await runAdAndVerifyTime(btnId, adFunc);
+        const ok = await runAdAndVerifyTime(btnId, adFunc, actionName);
         if(!ok) return; // Ad skipped — no reward, session just expires unused
 
         const goldBefore = window.G.coins;
@@ -1710,6 +1797,7 @@
                 try {
                     let ts = w.requestedAt || w.createdAt;
                     if(ts && ts._seconds) dateStr = new Date(ts._seconds*1000).toLocaleString('en-BD',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+                    else if(ts) dateStr = new Date(ts).toLocaleString('en-BD',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
                 } catch(e){}
 
                 const card = document.createElement('div');
