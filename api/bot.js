@@ -16,7 +16,7 @@
 
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 
-const ADMIN_ID = String(process.env.ADMIN_ID || '');
+const ADMIN_ID = String(process.env.ADMIN_TELEGRAM_ID || process.env.ADMIN_ID || '');
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const BOT_USERNAME = 'Fruit_cut_bot';       // update if your bot's @username differs
 const MINI_APP_SHORTNAME = 'PlayTo_Earn';   // update if your Mini App short name differs
