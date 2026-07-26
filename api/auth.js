@@ -1,173 +1,54 @@
-// api/auth.js  (replaces the old Firebase /api/init route — keep same
-// fetch URL '/api/init' in your frontend, OR rename to '/api/auth', your
-// choice — just make sure frontend and this file's route match)
-//
-// Reads initData from the 'x-telegram-init-data' HEADER — matches your
-// existing frontend pattern (apiCall() and initApp() already send this).
-//
-// Body: { deviceId: string, referredBy: string|null }
-//   (telegramId/username are NEVER trusted from the client — they come
-//    only from the server-verified initData)
-//
-// Response shapes:
-//   { success: true, user: {...}, status: 'ok' }
-//   { success: false, status: 'blocked_device', ownerInfo: { username, telegramId } }
-//   { success: false, status: 'blocked_banned' }
-//   { success: false, status: 'invalid_auth' }
+// lib/telegramAuth.js
+// Verifies Telegram WebApp initData using HMAC-SHA256 per Telegram's spec.
+// https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 
-const { verifyTelegramInitData } = require('../lib/telegramAuth');
-const { getCollection } = require('../lib/db');
-const { sendTelegramMessage } = require('../lib/notify');
-const { TRANSACTION_TYPES } = require('../lib/constants');
+const crypto = require('crypto');
 
-const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
+function verifyTelegramInitData(initData, botToken) {
+  if (!initData || !botToken) return { valid: false, reason: 'missing_data' };
 
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, status: 'error', message: 'Method not allowed' });
+  const params = new URLSearchParams(initData);
+  const hash = params.get('hash');
+  if (!hash) return { valid: false, reason: 'no_hash' };
+  params.delete('hash');
+
+  const dataCheckArr = [];
+  for (const [key, value] of params.entries()) {
+    dataCheckArr.push(`${key}=${value}`);
+  }
+  dataCheckArr.sort();
+  const dataCheckString = dataCheckArr.join('\n');
+
+  const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+  const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+  if (computedHash !== hash) {
+    return { valid: false, reason: 'hash_mismatch' };
   }
 
+  // Reject stale initData (older than 24h) — prevents replay of an old
+  // captured initData string.
+  const authDate = parseInt(params.get('auth_date'), 10);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (!authDate || nowSeconds - authDate > 86400) {
+    return { valid: false, reason: 'expired' };
+  }
+
+  let user = null;
   try {
-    const initData = req.headers['x-telegram-init-data'] || '';
-    const { deviceId, referredBy } = req.body || {};
-    const botToken = process.env.BOT_TOKEN;
-
-    const verify = verifyTelegramInitData(initData, botToken);
-    if (!verify.valid) {
-      return res.status(401).json({ success: false, status: 'invalid_auth', reason: verify.reason });
-    }
-
-    const telegramId = verify.user.id;
-    const username = verify.user.username || verify.user.first_name || 'Player';
-
-    const usersCol = await getCollection('users');
-    const devicesCol = await getCollection('devices');
-
-    let user = await usersCol.findOne({ telegramId });
-
-    // ── Ban check ────────────────────────────────────────────────
-    if (user && user.banned) {
-      return res.status(200).json({ success: false, status: 'blocked_banned' });
-    }
-
-    // ── Device conflict check ───────────────────────────────────
-    // First telegramId ever seen on a deviceId "owns" that device.
-    // A different telegramId showing up on the same deviceId gets
-    // blocked and shown who currently owns it (matches Rashu's reference
-    // screenshot from Mining Buddies).
-    if (deviceId) {
-      const deviceOwner = await devicesCol.findOne({ deviceId });
-
-      if (deviceOwner && deviceOwner.telegramId !== telegramId) {
-        const owner = await usersCol.findOne({ telegramId: deviceOwner.telegramId });
-        return res.status(200).json({
-          success: false,
-          status: 'blocked_device',
-          ownerInfo: {
-            username: owner ? owner.username : 'Unknown',
-            telegramId: deviceOwner.telegramId,
-          },
-        });
-      }
-
-      if (!deviceOwner) {
-        await devicesCol.insertOne({ deviceId, telegramId, firstSeenAt: new Date() });
-      }
-    }
-
-    // ── Silent auto-register / update (no signup form) ─────────
-    if (!user) {
-      const newUser = {
-        telegramId,
-        username,
-        gold: 0,
-        fruitCoin: 0,
-        gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
-        lotteryTokens: 0,
-        highScore: 0,
-        totalGamesPlayed: 0,
-        deviceId: deviceId || null,
-        referredBy: referredBy || null,
-        referralCount: 0,
-        tonWallet: null,
-        banned: false,
-        joinedAt: new Date(),
-        lastActive: new Date(),
-      };
-      await usersCol.insertOne(newUser);
-      user = newUser;
-
-      // ── Instant referral reward (server-side only, never trust client) ──
-      // Only fires once, right here at registration time, and only if the
-      // referrer is a real, non-banned, different user.
-      if (referredBy && String(referredBy) !== String(telegramId)) {
-        const referrer = await usersCol.findOne({ telegramId: String(referredBy) });
-        if (referrer && !referrer.banned) {
-          const updated = await usersCol.findOneAndUpdate(
-            { telegramId: referrer.telegramId },
-            [
-              {
-                $set: {
-                  gameTokens: { $min: [{ $add: [{ $ifNull: ['$gameTokens', 3] }, 1] }, 10] },
-                  lotteryTokens: { $add: [{ $ifNull: ['$lotteryTokens', 0] }, 1] },
-                  referralCount: { $add: [{ $ifNull: ['$referralCount', 0] }, 1] },
-                  lastActive: new Date(),
-                },
-              },
-            ],
-            { returnDocument: 'after' }
-          );
-
-          const txCol = await getCollection('transactions');
-          await txCol.insertOne({
-            telegramId: referrer.telegramId,
-            type: TRANSACTION_TYPES.REFERRAL_REWARD,
-            amount: 0, // no gold/FC in the instant reward — just tokens (logged in meta)
-            balanceAfter: updated.value ? updated.value.gold : referrer.gold,
-            meta: { gameTokens: 1, lotteryTokens: 1, referredTelegramId: telegramId },
-            createdAt: new Date(),
-          });
-
-          // Notification text matches the existing "Refer Reward Received!" format
-          const joinedWho = username && username !== 'Player' ? `@${username}` : 'Someone';
-          sendTelegramMessage(
-            referrer.telegramId,
-            `🎉 <b>Refer Reward Received!</b>\n\n` +
-              `${joinedWho} joined using your invite link!\n\n` +
-              `🎮 +1 Game Token added!\n` +
-              `🎰 +1 Lottery Token added!\n\n` +
-              `Keep inviting friends to earn more! 🚀`,
-            {
-              reply_markup: {
-                inline_keyboard: [[{ text: '🎮 Open Game & Collect Reward', url: MINI_APP_URL }]],
-              },
-            }
-          ).catch((e) => console.error('referral notify failed:', e));
-        }
-      }
-    } else {
-      await usersCol.updateOne(
-        { telegramId },
-        { $set: { lastActive: new Date(), username } }
-      );
-    }
-
-    return res.status(200).json({
-      success: true,
-      status: 'ok',
-      user: {
-        telegramId: user.telegramId,
-        username: user.username,
-        gold: user.gold,
-        fruitCoin: user.fruitCoin,
-        gameTokens: user.gameTokens ?? 3,
-        lotteryTokens: user.lotteryTokens ?? 0,
-        highScore: user.highScore,
-        referralCount: user.referralCount,
-      },
-    });
-  } catch (err) {
-    console.error('auth error:', err);
-    return res.status(500).json({ success: false, status: 'error', message: 'Server error' });
+    user = JSON.parse(params.get('user'));
+  } catch (e) {
+    return { valid: false, reason: 'bad_user_json' };
   }
-};
+
+  if (!user || !user.id) return { valid: false, reason: 'no_user_id' };
+
+  // Normalize to String here — the ONE place this value is extracted —
+  // so every file that consumes verify.user.id gets a consistent type,
+  // instead of each api/*.js file re-deciding String vs Number.
+  user.id = String(user.id);
+
+  return { valid: true, user };
+}
+
+module.exports = { verifyTelegramInitData };
