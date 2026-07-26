@@ -70,8 +70,9 @@ module.exports = async (req, res) => {
         return res.status(200).json({ success: false, message: result.reason || 'credit_failed' });
       }
 
-      // Matches apiCall()'s auto-merge: it does Object.assign(window.G, result.user)
-      return res.status(200).json({ success: true, user: { coins: result.newGold } });
+      // apiCall() on the frontend reads result.user.gold (same field name
+      // used by api/auth.js) to auto-update the on-screen balance.
+      return res.status(200).json({ success: true, user: { gold: result.newGold } });
     }
 
     return res.status(400).json({ success: false, message: 'unknown action' });
