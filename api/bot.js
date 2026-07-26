@@ -14,10 +14,13 @@
 // "Open Game" button, that's fine — a bot can have both a webhook (for
 // admin commands here) and be linked to a Mini App at the same time.
 
-const { getCollection } = require('../lib/db');
+const { getCollection, findUserByTelegramId } = require('../lib/db');
 
 const ADMIN_ID = String(process.env.ADMIN_ID || '');
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_USERNAME = 'Fruit_cut_bot';       // update if your bot's @username differs
+const MINI_APP_SHORTNAME = 'PlayTo_Earn';   // update if your Mini App short name differs
+const MINI_APP_URL = `https://t.me/${BOT_USERNAME}/${MINI_APP_SHORTNAME}`;
 
 // Per-admin multi-step input state (in-memory). Fine for a single admin;
 // if you ever add a second admin, move this to Mongo (a tiny "admin conversational state" doc).
@@ -127,8 +130,30 @@ module.exports = async function handler(req, res) {
     const chatId = msg.chat.id;
     const text = (msg.text || '').trim();
 
-    if (fromId !== ADMIN_ID) return res.status(200).json({ ok: true }); // silent ignore
+    if (fromId !== ADMIN_ID) {
+      // ── Regular user: friendly welcome + their personal referral link ──
+      if (text === '/start') {
+        const referralLink = `${MINI_APP_URL}?startapp=${fromId}`;
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('🍉 Slice fruits, earn crypto! Join me on Fruit Cut:')}`;
+        await send(
+          chatId,
+          `🍉 <b>Welcome to Fruit Cut!</b>\n\n` +
+            `Slice fruits, earn Gold, and cash out real rewards!\n\n` +
+            `Invite friends to earn bonus Game Tokens + Lottery Tokens instantly. 🚀`,
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: '🎮 Open Mini App', url: MINI_APP_URL }],
+                [{ text: '👥 Invite Friends', url: shareUrl }],
+              ],
+            },
+          }
+        );
+      }
+      return res.status(200).json({ ok: true }); // nothing else for non-admins
+    }
 
+    // ── Admin ────────────────────────────────────────────────────
     try {
       if (text === '/start' || text === '/admin') {
         await send(chatId, '🛠 <b>Fruit Cut — Admin Panel</b>', { reply_markup: adminKb });
@@ -140,7 +165,7 @@ module.exports = async function handler(req, res) {
       if (s && s.step === 'awaiting_user_lookup') {
         delete state[fromId];
         const query = text.replace('@', '');
-        const user = await users.findOne({ $or: [{ telegramId: query }, { username: query }] });
+        const user = (await findUserByTelegramId(users, query)) || (await users.findOne({ username: query }));
         if (!user) {
           await send(chatId, '❌ User not found.', { reply_markup: backKb });
         } else {
