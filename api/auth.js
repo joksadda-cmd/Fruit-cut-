@@ -58,8 +58,11 @@ module.exports = async (req, res) => {
     if (deviceId) {
       const deviceOwner = await devicesCol.findOne({ deviceId });
 
-      if (deviceOwner && deviceOwner.telegramId !== telegramId) {
-        const owner = await usersCol.findOne({ telegramId: deviceOwner.telegramId });
+      // String(...) both sides — deviceOwner.telegramId may have been
+      // written by older code as a Number; strict !== was wrongly
+      // blocking the device's TRUE owner because "123" !== 123.
+      if (deviceOwner && String(deviceOwner.telegramId) !== telegramId) {
+        const owner = await findUserByTelegramId(usersCol, deviceOwner.telegramId);
         return res.status(200).json({
           success: false,
           status: 'blocked_device',
