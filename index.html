@@ -296,13 +296,6 @@
         #token-toast{ position:fixed;bottom:120px;left:50%;transform:translateX(-50%); background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px; padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999; display:none;animation:fadeUp 0.3s ease;white-space:nowrap; }
         @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
         
-        /* Lootbox */
-        .lootbox-wrap{ background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3); border-radius:16px;padding:16px;margin-bottom:12px;text-align:center; }
-        .lootbox-bar-bg{ width:100%;height:20px;background:rgba(0,0,0,0.4);border-radius:10px; overflow:hidden;margin:8px 0;border:2px solid rgba(255,200,0,0.3); }
-        .lootbox-bar-fill{ height:100%;background:linear-gradient(90deg,#ffe040,#ff8c00); border-radius:10px;transition:width 0.5s; }
-        .lootbox-pts{font-size:22px;font-family:'Luckiest Guy',cursive;color:#ffcc00;}
-        .lootbox-claim-btn{ background:linear-gradient(180deg,#ffe040,#ff8c00); border:none;border-radius:12px;padding:10px 24px; font-family:'Luckiest Guy',cursive;font-size:18px;color:#fff; cursor:pointer;box-shadow:0 4px 0 #cc5500;margin-top:6px;width:100%; }
-        .lootbox-claim-btn:disabled{ background:linear-gradient(180deg,#555,#333);box-shadow:0 4px 0 #111;cursor:not-allowed; }
         
         .ads-section{ background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1); border-radius:14px;padding:12px;margin-bottom:10px; }
         .ads-row{ display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
@@ -702,20 +695,11 @@
     </div>
 </div>
 
-<!-- Ads & Lootbox (UPDATED) -->
+<!-- Ads (UPDATED) -->
 <div class="overlay ptr" id="ads-modal">
     <div class="modal">
         <div class="mh mh-red">📺 Earn with Ads</div>
         
-        <!-- Lootbox: Claim Gold Directly Without Ads -->
-        <div class="lootbox-wrap">
-            <div style="font-size:16px;font-weight:900;color:#ffcc00;margin-bottom:4px;">🎁 Lootbox</div>
-            <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Min 500 pts to claim! Max 3000 pts per cycle · Reward: 🪙 Gold only</div>
-            <div class="lootbox-bar-bg"><div class="lootbox-bar-fill" id="lootbox-fill" style="width:0%"></div></div>
-            <div><span class="lootbox-pts" id="lootbox-pts">0</span><span style="color:#aaa;font-size:14px;"> / 3000 pts</span></div>
-            <button class="lootbox-claim-btn" id="lootbox-claim-btn" onclick="window.claimLootbox()" disabled>🎁 CLAIM REWARD</button>
-        </div>
-
         <!-- Adsgram Special (Fixed 250 Gold) -->
         <div class="ads-section" style="border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.06);">
             <div class="ads-row">
@@ -828,7 +812,7 @@
         coins: 0, gems: 0, stage: 1, tokens: 3, referCode: '', referCount: 0,
         sound: true, vib: true, tokenRefill: 0, adsDayStamp: '',
         adsgramCount: 0, adsgramDailyCount: 0, gigapubCount: 0, monetagCount: 0,
-        lootboxPoints: 0, completedTasks: [], gamesPlayed: 0,
+        completedTasks: [], gamesPlayed: 0,
         lotteryFreeUsed: false, lotteryTotalSpins: 0, lotteryDailySpins: 0,
         lotteryDiamondsEarned: 0, referDiamonds: 0,
         shopTokenBought: 0, shopDiamondExchanged: 0,
@@ -1289,26 +1273,7 @@
         document.getElementById('gigapub-btn').disabled       = gpLeft  <= 0;
         document.getElementById('monetag-btn').disabled       = mtLeft  <= 0;
 
-        let pts = window.G.lootboxPoints || 0;
-        let pct = Math.min(100, (pts/3000)*100);
-        document.getElementById('lootbox-fill').style.width = pct + '%';
-        document.getElementById('lootbox-pts').textContent = pts;
-        let claimBtn = document.getElementById('lootbox-claim-btn');
-        claimBtn.disabled = pts < 500;
-        let goldPreview = Math.floor(pts / 2);
-        claimBtn.textContent = pts >= 500 ? `Claim Reward (+${goldPreview} Gold)` : `Claim Reward (Need 500 pts)`;
     }
-
-    window.claimLootbox = async function(){
-        if(window.G.lootboxPoints < 500){ showToast('Need at least 500 points to claim!'); return; }
-        let goldReward = Math.floor(window.G.lootboxPoints / 2);
-        
-        document.getElementById('ad-loader').style.display='flex';
-        const res = await apiCall('/api/ads', { action: 'claim_lootbox', coinsToAdd: goldReward });
-        document.getElementById('ad-loader').style.display='none';
-        
-        if(res.success){ updateAdsUI(); showToast(`Lootbox claimed! +${goldReward} Gold!`); }
-    };
 
     // ── AD FUNCTIONS ─────────────────────────────────────────────────
     // SDK async load হয় — ready না থাকলে reject করো (reward দেওয়া হবে না)
@@ -1398,7 +1363,13 @@
         });
     }
 
-    // Main ad reward handler
+    // Main ad reward handler — matches api/ads.js's two-step flow:
+    //   1) request_session  (server checks daily cap, issues a one-time sessionId)
+    //   2) play the ad
+    //   3) claim with that sessionId (server checks ownership + min watch time)
+    // A console/script call that skips step 1&2 and jumps to step 3 fails,
+    // since claiming needs a valid, un-expired, un-used sessionId tied to
+    // this Telegram user, plus the server-side minimum elapsed time.
     async function processAdReward(actionName, maxLimit, currentCount, btnId, getRewardAmount, successMsg) {
         if(currentCount >= maxLimit){ showToast('Daily limit reached!'); return; }
 
@@ -1408,12 +1379,29 @@
         else if(actionName === 'gigapub') adFunc = showGigaPubAd;
         else if(actionName === 'monetag') adFunc = showMonetagAd;
 
-        const ok = await runAdAndVerifyTime(btnId, adFunc);
-        if(!ok) return; // Ad skipped — no reward
+        // STEP 1 — ask server for a session BEFORE the ad plays (server-side daily cap check)
+        const sessionRes = await apiCall('/api/ads', { action: 'request_session', network: actionName });
+        if(!sessionRes.success){
+            showToast(sessionRes.message === 'daily_limit_reached' ? 'Daily limit reached!' : 'Could not start ad. Try again.');
+            return;
+        }
+        const sessionId = sessionRes.sessionId;
 
-        let reward = getRewardAmount();
-        const res = await apiCall('/api/ads', { action: actionName });
-        if(res.success){ updateAdsUI(); showToast(successMsg.replace('{R}', reward)); }
+        // STEP 2 — actually show the ad
+        const ok = await runAdAndVerifyTime(btnId, adFunc);
+        if(!ok) return; // Ad skipped — no reward, session just expires unused
+
+        const goldBefore = window.G.coins;
+
+        // STEP 3 — claim using the session id
+        const res = await apiCall('/api/ads', { action: actionName, sessionId });
+        if(res.success){
+            const reward = (typeof window.G.coins === 'number') ? (window.G.coins - goldBefore) : getRewardAmount();
+            updateAdsUI();
+            showToast(successMsg.replace('{R}', reward > 0 ? reward : getRewardAmount()));
+        } else {
+            showToast('❌ ' + (res.message === 'too_fast' ? 'Ad closed too quickly.' : (res.message || 'Reward failed, try again.')));
+        }
     }
 
     window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      'adsgram-btn',       () => 250, `+{R} Gold! (Adsgram Special)`);
