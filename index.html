@@ -9,55 +9,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Monetag: in head directly for correct Promise API -->
+    <!-- ── Ad network SDKs — all loaded statically/eagerly, same as the -->
+    <!-- rest of the fleet. Loading only when the Ads panel opens meant  -->
+    <!-- a user who tapped "Watch" quickly (very common — and doubly so  -->
+    <!-- on a slow connection, exactly where this bites hardest) could   -->
+    <!-- hit "SDK not ready yet" before the script even finished. Static -->
+    <!-- loading trades a slightly heavier initial page load for SDKs    -->
+    <!-- that are reliably warm by the time anyone reaches the Ads panel.-->
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <script src="https://ad.gigapub.tech/script?id=6350"></script>
     <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script>
-        // ── Ad SDK stubs — prevent errors before lazy load ────────────
-        window._gigaReady   = false;
-        window._adsgramReady= false;
-        window._adSdksLoaded= false;
         window._isAdRunning = false;
-
-        // Stubs so calls before load don't crash
-
-        // Lazy load ALL ad SDKs only when user opens Ads section
-        window._loadAdSDKs = function(){
-            if(window._adSdksLoaded) return;
-            window._adSdksLoaded = true;
-
-            // Adsgram
-            var s1 = document.createElement('script');
-            s1.src = 'https://sad.adsgram.ai/js/sad.min.js';
-            s1.onload = function(){ window._adsgramReady = true; };
-            document.head.appendChild(s1);
-
-            // GigaPub
-            var s3 = document.createElement('script');
-            s3.src = 'https://ad.gigapub.tech/script?id=6350';
-            s3.onload = function(){ window._gigaReady = true; };
-            document.head.appendChild(s3);
-        };
-
-        // GigaPub API wrapper
-        window._gigaAPI = function(){
-            return new Promise(function(resolve){
-                var start = Date.now();
-                function finish(){ setTimeout(resolve, Math.max(0, 6000-(Date.now()-start))); }
-                if(window._gigaReady && typeof window.showGiga === 'function'){
-                    try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }
-                    catch(e){ finish(); }
-                } else {
-                    var w=0, c=setInterval(function(){
-                        w+=100;
-                        if(window._gigaReady && typeof window.showGiga === 'function'){
-                            clearInterval(c);
-                            try{ var p=window.showGiga(); p&&p.then?p.then(finish).catch(finish):finish(); }
-                            catch(e){ finish(); }
-                        } else if(w >= 5000){ clearInterval(c); resolve(); }
-                    }, 100);
-                }
-            });
-        };
     </script>
     <style>
         *{ margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent; }
@@ -1201,10 +1164,8 @@
         if(id==='ads-modal'){
             updateAdsUI();
             stopSound('menu');
-            // Lazy load ad SDKs only now — not on startup
-            window._loadAdSDKs();
         }
-        if(id==='lottery-modal'){ window.renderLotteryModal(); window._loadAdSDKs(); }
+        if(id==='lottery-modal'){ window.renderLotteryModal(); }
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
         if(id==='shop-modal'){ updateShopUI(); }
@@ -1309,7 +1270,6 @@
     window.watchAdForToken = async function(){
         let claimed = window.G.shopAdTokenClaimed || 0;
         if(claimed >= 10){ showToast('Daily limit reached! Come back tomorrow.'); return; }
-        window._loadAdSDKs();
         const ok = await runAdAndVerifyTime('shop-ad-token-btn', showAdsgramSpecialAd, 'adsgram');
         if(!ok) return;
         document.getElementById('ad-loader').style.display = 'flex';
@@ -1357,32 +1317,76 @@
 
     // ── AD FUNCTIONS ─────────────────────────────────────────────────
     // SDK async load হয় — ready না থাকলে reject করো (reward দেওয়া হবে না)
-    const showAdsgramSpecialAd = () => new Promise((res, rej) => {
-        if(window.Adsgram){ window.Adsgram.init({blockId:"28066"}).show().then(res).catch(rej); }
-        else { rej(new Error('Adsgram SDK not ready yet. Try again.')); }
-    });
-    const showAdsgramDailyAd = () => new Promise((res, rej) => {
-        if(window.Adsgram){ window.Adsgram.init({blockId:"int-28067"}).show().then(res).catch(rej); }
-        else { rej(new Error('Adsgram SDK not ready yet. Try again.')); }
-    });
-    const showMonetagAd = () => new Promise((resolve, reject) => {
-        // Correct Monetag implementation — show ad, reward on .then()
-        try {
-            show_10893505()
-                .then(function(){ resolve(); })
-                .catch(function(){ reject(new Error('Ad closed or failed')); });
-        } catch(e){
-            reject(new Error('Monetag not available'));
-        }
-    });
-    const showGigaPubAd = () => new Promise((res, rej) => {
-        if(typeof window.showGiga === 'function'){
-            const t = setTimeout(() => res(), 15000);
-            window.showGiga("main").then(() => { clearTimeout(t); res(); }).catch(() => { clearTimeout(t); res(); });
-        } else {
-            rej(new Error('GigaPub SDK not ready yet. Try again.'));
-        }
-    });
+    // ── Generic "wait for an SDK global to exist" poller ────────────────
+    // The 3 scripts in <head> load eagerly now, but network conditions
+    // vary (some of the screenshots that led here showed connections as
+    // slow as 0.8 KB/s) — a user can still tap "Watch" a moment before a
+    // given SDK has finished attaching itself to window. Instead of
+    // instantly rejecting with "not ready yet", poll briefly first; only
+    // reject as sdk_not_loaded if it genuinely never shows up in time.
+    function waitForAdSdk(checkFn, timeoutMs = 6000) {
+        if (checkFn()) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            const startedAt = Date.now();
+            (function poll(){
+                if (checkFn()) { resolve(); return; }
+                if (Date.now() - startedAt > timeoutMs) { reject(new Error('sdk_not_loaded')); return; }
+                setTimeout(poll, 150);
+            })();
+        });
+    }
+
+    const showAdsgramSpecialAd = () => waitForAdSdk(() => !!window.Adsgram).then(() =>
+        new Promise((res, rej) => { window.Adsgram.init({blockId:"28066"}).show().then(res).catch(rej); })
+    );
+    const showAdsgramDailyAd = () => waitForAdSdk(() => !!window.Adsgram).then(() =>
+        new Promise((res, rej) => { window.Adsgram.init({blockId:"int-28067"}).show().then(res).catch(rej); })
+    );
+    // Monetag's SDK attaches show_10893505 to window once its own script
+    // finishes initializing — wait for that instead of calling it blind.
+    const showMonetagAd = () => waitForAdSdk(() => typeof show_10893505 === 'function').then(() =>
+        new Promise((res, rej) => {
+            // Safety-net only — in case Monetag's own promise ever gets
+            // stuck (neither resolves nor rejects). Does not affect a
+            // normal ad, which finishes well inside this window.
+            const t = setTimeout(() => rej(new Error('timeout')), 90000);
+            show_10893505().then(() => { clearTimeout(t); res(); }).catch((e) => { clearTimeout(t); rej(e || new Error('ad_failed')); });
+        })
+    );
+    // GigaPub — no artificial force-resolve. The old 15s timer used to
+    // report "success" back to the UI no matter what GigaPub's own promise
+    // did, which made failures invisible. Since the actual gold reward for
+    // GigaPub comes from THEIR server-to-server postback (not this promise
+    // at all — see processAdReward below), there's no reason to lie about
+    // the outcome here: an honest failure just means "ad didn't show,
+    // count wasn't bumped, try again" — the daily-limit UI stays correct.
+    const showGigaPubAd = () => waitForAdSdk(() => typeof window.showGiga === 'function').then(() =>
+        new Promise((res, rej) => { window.showGiga("main").then(res).catch(rej); })
+    );
+
+    // ── One place for every ad-flow error code → user-facing message ────
+    // Covers backend reasons (lib/adSession.js claimAdSession, lib/adReward.js
+    // creditGoldForAd, api/ads.js) AND client-side SDK wrapper rejections
+    // (waitForAdSdk / showXxxAd above), so no call site has to guess text.
+    const AD_ERROR_MESSAGES = {
+        // client-side (SDK wrappers)
+        sdk_not_loaded:        '⚠️ Ad not loaded yet. Please wait a moment and try again.',
+        timeout:                '⚠️ Ad timed out. Please try again.',
+        // server-side (lib/adSession.js claimAdSession)
+        not_found:              '⚠️ Ad session not found. Please tap Watch again.',
+        mismatch:               '⚠️ Ad session error. Please tap Watch again.',
+        network_mismatch:       '⚠️ Ad session error. Please tap Watch again.',
+        already_used:           '⚠️ This ad was already claimed.',
+        expired:                '⚠️ Ad session expired. Please tap Watch again.',
+        too_fast:               '⚠️ Ad closed too quickly.',
+        race_lost:              '⚠️ Please try again.',
+        // server-side (lib/adReward.js creditGoldForAd)
+        user_not_found:         '⚠️ Account sync issue — please reopen the app and try again.',
+        invalid_params:         '⚠️ Something went wrong. Please try again.',
+        daily_limit_reached:    'Daily limit reached!',
+        credit_failed:          '⚠️ Reward failed — please tap Watch again.',
+    };
+    function adErrorText(code){ return AD_ERROR_MESSAGES[code] || '⚠️ Reward failed, try again.'; }
 
     // Adsgram's SDK requires the user to click the ad creative within its
     // own ~15s window and only resolves successfully once that happens —
@@ -1426,8 +1430,12 @@
             if(adFunc) await adFunc();
         } catch(e) {
             cleanup();
-            const msg = e && e.message && e.message.includes('not ready')
-                ? '⚠️ Ad not loaded yet. Please wait a moment and try again.'
+            const code = e && e.message;
+            // sdk_not_loaded / timeout are genuine client-side failures — use
+            // the shared error text. Anything else (SDK's own promise reject,
+            // e.g. the user closed the ad early) is a real "skipped" outcome.
+            const msg = (code === 'sdk_not_loaded' || code === 'timeout')
+                ? adErrorText(code)
                 : (isClickBased
                     ? '⚠️ Ad skipped — you need to click the ad to earn reward.'
                     : '⚠️ Ad skipped. Watch the full ad to earn reward.');
@@ -1485,7 +1493,7 @@
         // STEP 1 — ask server for a session BEFORE the ad plays (server-side daily cap check)
         const sessionRes = await apiCall('/api/ads', { action: 'request_session', network: actionName });
         if(!sessionRes.success){
-            showToast(sessionRes.message === 'daily_limit_reached' ? 'Daily limit reached!' : 'Could not start ad. Try again.');
+            showToast(sessionRes.message === 'daily_limit_reached' ? adErrorText('daily_limit_reached') : '⚠️ Could not start ad. Try again.');
             return;
         }
         const sessionId = sessionRes.sessionId;
@@ -1496,15 +1504,28 @@
 
         const goldBefore = window.G.coins;
 
-        // STEP 3 — claim using the session id
-        const res = await apiCall('/api/ads', { action: actionName, sessionId });
+        // STEP 3 — claim using the session id. If the server marks a
+        // failure `retryable: true` (see api/ads.js + lib/adSession.js's
+        // revertAdSession), the session was reopened server-side — the
+        // user genuinely watched the ad, so silently retry the exact same
+        // claim once before giving up, instead of making them re-watch it.
+        async function attemptClaim(){
+            return apiCall('/api/ads', { action: actionName, sessionId });
+        }
+
+        let res = await attemptClaim();
+        if(!res.success && res.retryable){
+            await new Promise(r => setTimeout(r, 800));
+            res = await attemptClaim();
+        }
+
         if(res.success){
             const reward = (typeof window.G.coins === 'number') ? (window.G.coins - goldBefore) : getRewardAmount();
             window.G[actionName + 'Count'] = (window.G[actionName + 'Count'] || 0) + 1;
             updateAdsUI();
             showToast(successMsg.replace('{R}', reward > 0 ? reward : getRewardAmount()));
         } else {
-            showToast('❌ ' + (res.message === 'too_fast' ? 'Ad closed too quickly.' : (res.message || 'Reward failed, try again.')));
+            showToast(adErrorText(res.message));
         }
     }
 
