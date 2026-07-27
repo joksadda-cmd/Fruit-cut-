@@ -1466,6 +1466,22 @@
         else if(actionName === 'gigapub') adFunc = showGigaPubAd;
         else if(actionName === 'monetag') adFunc = showMonetagAd;
 
+        // GigaPub now has a genuine server-to-server (S2S) reward postback
+        // set up directly with GigaPub — THEIR server calls our
+        // /api/postback once they confirm the ad was really shown,
+        // completely independent of anything this client says. So we
+        // don't call our own session/claim endpoint for gigapub at all —
+        // just play the ad, and let the postback (+ next balance sync)
+        // handle the actual gold credit a few seconds later.
+        if(actionName === 'gigapub'){
+            const ok = await runAdAndVerifyTime(btnId, adFunc, actionName);
+            if(!ok) return;
+            window.G.gigapubCount = (window.G.gigapubCount || 0) + 1;
+            updateAdsUI();
+            showToast('✅ Ad watched! Reward will arrive in a few seconds.');
+            return;
+        }
+
         // STEP 1 — ask server for a session BEFORE the ad plays (server-side daily cap check)
         const sessionRes = await apiCall('/api/ads', { action: 'request_session', network: actionName });
         if(!sessionRes.success){
@@ -1484,6 +1500,7 @@
         const res = await apiCall('/api/ads', { action: actionName, sessionId });
         if(res.success){
             const reward = (typeof window.G.coins === 'number') ? (window.G.coins - goldBefore) : getRewardAmount();
+            window.G[actionName + 'Count'] = (window.G[actionName + 'Count'] || 0) + 1;
             updateAdsUI();
             showToast(successMsg.replace('{R}', reward > 0 ? reward : getRewardAmount()));
         } else {
