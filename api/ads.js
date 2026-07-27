@@ -59,6 +59,7 @@ module.exports = async (req, res) => {
 
       const claim = await claimAdSession(telegramId, sessionId, action);
       if (!claim.ok) {
+        console.warn(`[ads] claim failed: telegramId=${telegramId} network=${action} sessionId=${sessionId} reason=${claim.reason}`);
         return res.status(200).json({ success: false, message: claim.reason });
       }
 
@@ -67,6 +68,7 @@ module.exports = async (req, res) => {
       const result = await creditGoldForAd(telegramId, amount, action, `session_${sessionId}`);
 
       if (!result.success) {
+        console.warn(`[ads] credit failed: telegramId=${telegramId} network=${action} sessionId=${sessionId} reason=${result.reason}`);
         return res.status(200).json({ success: false, message: result.reason || 'credit_failed' });
       }
 
