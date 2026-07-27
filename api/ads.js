@@ -13,7 +13,7 @@
 // the verified Telegram initData header.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
-const { createAdSession, claimAdSession, countClaimedToday } = require('../lib/adSession');
+const { createAdSession, claimAdSession, countClaimedToday, revertAdSession } = require('../lib/adSession');
 const { creditGoldForAd } = require('../lib/adReward');
 const { getSettings } = require('../lib/settings');
 
@@ -69,7 +69,22 @@ module.exports = async (req, res) => {
 
       if (!result.success) {
         console.warn(`[ads] credit failed: telegramId=${telegramId} network=${action} sessionId=${sessionId} reason=${result.reason}`);
-        return res.status(200).json({ success: false, message: result.reason || 'credit_failed' });
+
+        // A duplicate/idempotency hit means gold was already credited by an
+        // earlier request for this exact session — never reopen that one,
+        // it's not a real failure. Everything else (e.g. user_not_found, a
+        // transient DB error) means no reward was actually given, so give
+        // the session a second chance instead of silently burning the
+        // user's daily slot for an ad they genuinely watched.
+        if (!result.duplicate) {
+          await revertAdSession(sessionId, telegramId);
+        }
+
+        return res.status(200).json({
+          success: false,
+          message: result.duplicate ? 'already_used' : (result.reason || 'credit_failed'),
+          retryable: !result.duplicate,
+        });
       }
 
       // apiCall() on the frontend reads result.user.gold (same field name
