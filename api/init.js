@@ -6,10 +6,12 @@
 // app first loads. This used to be a FULL COPY of that same registration
 // logic, running again on every sync tick — two independent code paths
 // writing to the same users/devices collections is exactly the kind of
-// thing that causes race conditions. Now this is read-only.
+// thing that causes race conditions. Now this is read-only (except for
+// the token-regen tick, which is safe to run repeatedly).
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
+const { computeRegen, MAX_TOKENS } = require('../lib/tokens');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -39,6 +41,15 @@ module.exports = async (req, res) => {
       return res.status(200).json({ success: false, status: 'blocked_banned' });
     }
 
+    const regen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt);
+    if (regen.changed) {
+      await usersCol.updateOne(
+        { _id: user._id },
+        { $set: { gameTokens: regen.gameTokens, lastTokenRegenAt: regen.lastTokenRegenAt } }
+      );
+      user.gameTokens = regen.gameTokens;
+    }
+
     return res.status(200).json({
       success: true,
       status: 'ok',
@@ -46,6 +57,8 @@ module.exports = async (req, res) => {
         coins: user.gold,               // frontend's window.G.coins field
         fruitCoin: user.fruitCoin,
         tokens: user.gameTokens ?? 3,   // frontend's window.G.tokens field
+        maxTokens: MAX_TOKENS,
+        nextTokenAt: regen.nextTokenAt,
         highScore: user.highScore,
         referralCount: user.referralCount,
       },
