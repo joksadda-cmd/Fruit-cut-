@@ -19,7 +19,7 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { computeRegen, MAX_TOKENS } = require('../lib/tokens');
+const { computeRegen, applyRegen, MAX_TOKENS } = require('../lib/tokens');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
@@ -157,15 +157,14 @@ module.exports = async (req, res) => {
         }
       }
     } else {
-      const regen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt);
-      const updateFields = { lastActive: new Date(), username };
-      if (regen.changed) {
-        updateFields.gameTokens = regen.gameTokens;
-        updateFields.lastTokenRegenAt = regen.lastTokenRegenAt;
-        user.gameTokens = regen.gameTokens;
-        user.lastTokenRegenAt = regen.lastTokenRegenAt;
-      }
-      await usersCol.updateOne({ _id: user._id }, { $set: updateFields });
+      // Atomic (compare-and-swap) regen — see lib/tokens.js for why this
+      // replaced the old read → compute → blind-$set pattern that could
+      // double-apply a tick jump when this endpoint and api/init.js's
+      // periodic sync raced each other.
+      const regen = await applyRegen(usersCol, user);
+      user.gameTokens = regen.gameTokens;
+      user.lastTokenRegenAt = regen.lastTokenRegenAt;
+      await usersCol.updateOne({ _id: user._id }, { $set: { lastActive: new Date(), username } });
     }
 
     const finalRegen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt || new Date());
