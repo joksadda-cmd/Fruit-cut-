@@ -14,6 +14,7 @@
 
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
+const { maybeTriggerValidReferral } = require('../lib/referral');
 
 // Shared secret agreed with GigaPub support — anyone hitting this URL
 // without the right token is ignored. If you ever need to rotate it,
@@ -68,10 +69,13 @@ module.exports = async (req, res) => {
 
     const rewardGold = (settings.adRewardGold && settings.adRewardGold.gigapub) || 120;
 
-    await usersCol.updateOne(
+    const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id },
-      { $inc: { gold: rewardGold }, $set: { lastActive: new Date() } }
+      { $inc: { gold: rewardGold, totalAdsWatched: 1 }, $set: { lastActive: new Date() } },
+      { returnDocument: 'after' }
     );
+    if (updatedUser) maybeTriggerValidReferral(updatedUser);
+
     await eventsCol.insertOne({ telegramId, network, event, receivedAt: new Date() });
 
     const txCol = await getCollection('transactions');
@@ -79,6 +83,7 @@ module.exports = async (req, res) => {
       telegramId,
       type: 'ad_reward',
       amount: rewardGold,
+      balanceAfter: updatedUser ? updatedUser.gold : undefined,
       meta: { network: 'gigapub', event, source: 's2s_postback' },
       createdAt: new Date(),
     });
