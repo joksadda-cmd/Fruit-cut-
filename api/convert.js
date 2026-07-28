@@ -9,7 +9,7 @@
 // amount sent from the client.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
-const { getCollection } = require('../lib/db');
+const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 
@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
     const rate = settings.goldToFc || { goldAmount: 1000000, fcAmount: 50000 };
 
     const usersCol = await getCollection('users');
-    const user = await usersCol.findOne({ telegramId });
+    const user = await findUserByTelegramId(usersCol, telegramId);
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     if (user.banned) return res.status(403).json({ success: false, message: 'Account suspended' });
@@ -56,13 +56,15 @@ module.exports = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Amount too small to convert' });
     }
 
-    const updateResult = await usersCol.findOneAndUpdate(
-      { telegramId, gold: { $gte: gold } }, // re-check balance atomically to avoid race conditions
+    // NOTE: MongoDB driver v6+ returns the matched document directly from
+    // findOneAndUpdate (not wrapped in { value: doc } like older versions).
+    const updatedUser = await usersCol.findOneAndUpdate(
+      { _id: user._id, gold: { $gte: gold } }, // re-check balance atomically to avoid race conditions
       { $inc: { gold: -gold, fruitCoin: fcGained }, $set: { lastActive: new Date() } },
       { returnDocument: 'after' }
     );
 
-    if (!updateResult.value) {
+    if (!updatedUser) {
       return res.status(400).json({ success: false, message: 'Not enough Gold (balance changed)' });
     }
 
@@ -71,7 +73,7 @@ module.exports = async (req, res) => {
       telegramId,
       type: TRANSACTION_TYPES.GOLD_TO_FC_CONVERT,
       amount: fcGained,
-      balanceAfter: updateResult.value.fruitCoin,
+      balanceAfter: updatedUser.fruitCoin,
       meta: { goldSpent: gold },
       createdAt: new Date(),
     });
@@ -79,9 +81,9 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       user: {
-        telegramId: updateResult.value.telegramId,
-        gold: updateResult.value.gold,
-        fruitCoin: updateResult.value.fruitCoin,
+        telegramId: updatedUser.telegramId,
+        gold: updatedUser.gold,
+        fruitCoin: updatedUser.fruitCoin,
       },
     });
   } catch (err) {
