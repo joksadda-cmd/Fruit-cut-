@@ -19,6 +19,7 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
 const { TRANSACTION_TYPES } = require('../lib/constants');
+const { computeRegen, MAX_TOKENS } = require('../lib/tokens');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
@@ -86,7 +87,9 @@ module.exports = async (req, res) => {
         gold: 0,
         fruitCoin: 0,
         gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
+        lastTokenRegenAt: new Date(),
         lotteryTokens: 0,
+        completedTasks: [],
         highScore: 0,
         totalGamesPlayed: 0,
         deviceId: deviceId || null,
@@ -111,7 +114,10 @@ module.exports = async (req, res) => {
             [
               {
                 $set: {
-                  gameTokens: { $min: [{ $add: [{ $ifNull: ['$gameTokens', 3] }, 1] }, 10] },
+                  // Referral bonus is the ONE way tokens can exceed the
+                  // normal 10 cap (per spec) — natural 4h regen elsewhere
+                  // caps at 10, this doesn't.
+                  gameTokens: { $add: [{ $ifNull: ['$gameTokens', 3] }, 1] },
                   lotteryTokens: { $add: [{ $ifNull: ['$lotteryTokens', 0] }, 1] },
                   referralCount: { $add: [{ $ifNull: ['$referralCount', 0] }, 1] },
                   lastActive: new Date(),
@@ -149,11 +155,18 @@ module.exports = async (req, res) => {
         }
       }
     } else {
-      await usersCol.updateOne(
-        { _id: user._id },
-        { $set: { lastActive: new Date(), username } }
-      );
+      const regen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt);
+      const updateFields = { lastActive: new Date(), username };
+      if (regen.changed) {
+        updateFields.gameTokens = regen.gameTokens;
+        updateFields.lastTokenRegenAt = regen.lastTokenRegenAt;
+        user.gameTokens = regen.gameTokens;
+        user.lastTokenRegenAt = regen.lastTokenRegenAt;
+      }
+      await usersCol.updateOne({ _id: user._id }, { $set: updateFields });
     }
+
+    const finalRegen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt || new Date());
 
     return res.status(200).json({
       success: true,
@@ -164,7 +177,10 @@ module.exports = async (req, res) => {
         gold: user.gold,
         fruitCoin: user.fruitCoin,
         gameTokens: user.gameTokens ?? 3,
+        maxTokens: MAX_TOKENS,
+        nextTokenAt: finalRegen.nextTokenAt,
         lotteryTokens: user.lotteryTokens ?? 0,
+        completedTasks: user.completedTasks ?? [],
         highScore: user.highScore,
         referralCount: user.referralCount,
       },
