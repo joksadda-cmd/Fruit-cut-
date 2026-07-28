@@ -11,7 +11,7 @@
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
-const { computeRegen, MAX_TOKENS } = require('../lib/tokens');
+const { applyRegen, MAX_TOKENS } = require('../lib/tokens');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -41,14 +41,12 @@ module.exports = async (req, res) => {
       return res.status(200).json({ success: false, status: 'blocked_banned' });
     }
 
-    const regen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt);
-    if (regen.changed) {
-      await usersCol.updateOne(
-        { _id: user._id },
-        { $set: { gameTokens: regen.gameTokens, lastTokenRegenAt: regen.lastTokenRegenAt } }
-      );
-      user.gameTokens = regen.gameTokens;
-    }
+    // Atomic (compare-and-swap) regen — see lib/tokens.js. This endpoint
+    // polls frequently, so it's the most likely place to race api/auth.js
+    // on a fresh app open; applyRegen makes that race harmless instead of
+    // letting both sides double-apply a tick jump.
+    const regen = await applyRegen(usersCol, user);
+    user.gameTokens = regen.gameTokens;
 
     return res.status(200).json({
       success: true,
