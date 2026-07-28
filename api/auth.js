@@ -126,7 +126,7 @@ module.exports = async (req, res) => {
             telegramId: referrer.telegramId,
             type: TRANSACTION_TYPES.REFERRAL_REWARD,
             amount: 0, // no gold/FC in the instant reward — just tokens (logged in meta)
-            balanceAfter: updated.value ? updated.value.gold : referrer.gold,
+            balanceAfter: updated ? updated.gold : referrer.gold,
             meta: { gameTokens: 1, lotteryTokens: 1, referredTelegramId: telegramId },
             createdAt: new Date(),
           });
