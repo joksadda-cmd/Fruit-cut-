@@ -163,18 +163,17 @@ module.exports = async function handler(req, res) {
         const withdrawalsCol = await getCollection('withdrawals');
 
         // Atomic: only one admin tap can flip 'pending' -> approved/rejected
-        const updateResult = await withdrawalsCol.findOneAndUpdate(
+        // (Driver v6+ returns the document directly, not wrapped in { value })
+        const w = await withdrawalsCol.findOneAndUpdate(
           { _id: new ObjectId(idStr), status: 'pending' },
           { $set: { status: approve ? 'approved' : 'rejected', processedAt: new Date() } },
           { returnDocument: 'after' }
         );
 
-        if (!updateResult.value) {
+        if (!w) {
           await edit(chatId, msgId, '⚠️ Already processed by you or another admin.', { reply_markup: backKb });
           return res.status(200).json({ ok: true });
         }
-
-        const w = updateResult.value;
 
         if (approve) {
           // Post to the public payment channel with a masked address
