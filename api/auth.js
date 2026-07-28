@@ -90,6 +90,8 @@ module.exports = async (req, res) => {
         lastTokenRegenAt: new Date(),
         lotteryTokens: 0,
         completedTasks: [],
+        totalAdsWatched: 0,
+        validReferralGiven: false,
         highScore: 0,
         totalGamesPlayed: 0,
         deviceId: deviceId || null,
