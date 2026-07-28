@@ -60,13 +60,14 @@ module.exports = async (req, res) => {
     }
 
     // Atomic deduct: only matches/succeeds if the real DB balance is
-    // actually >= amt at the moment of update.
+    // actually >= amt at the moment of update. (Driver v6+ returns the
+    // document directly from findOneAndUpdate, not wrapped in { value }.)
     const deducted = await usersCol.findOneAndUpdate(
       { _id: user._id, fruitCoin: { $gte: amt } },
       { $inc: { fruitCoin: -amt }, $set: { lastActive: new Date() } },
       { returnDocument: 'after' }
     );
-    if (!deducted.value) {
+    if (!deducted) {
       return res.status(400).json({ success: false, error: 'Not enough Fruit Coin' });
     }
 
@@ -92,7 +93,7 @@ module.exports = async (req, res) => {
       telegramId: user.telegramId,
       type: 'withdrawal',
       amount: -amt,
-      balanceAfter: deducted.value.fruitCoin,
+      balanceAfter: deducted.fruitCoin,
       meta: { withdrawalId: insertResult.insertedId, method, address: trimmedAddress },
       createdAt: new Date(),
     });
