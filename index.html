@@ -9,19 +9,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- ══════════════════════════════════════════════════════════
-         AD NETWORK SDKs — loaded statically at page load (not lazily).
-         Lazy-loading was tried before and caused real problems: ad
-         servers had no time to warm up / prefetch inventory before
-         being called, leading to frequent "no fill" errors. Loading
-         once, up front, and staying loaded for the whole session is
-         far more reliable — this matches Adsgram's own recommended
-         setup and is confirmed working (see partner.adsgram.ai
-         dashboard — ad blocks Active, real impressions recorded).
-         ══════════════════════════════════════════════════════════ -->
+    <!-- ── Ad network SDKs — all loaded statically/eagerly, same as the -->
+    <!-- rest of the fleet. Loading only when the Ads panel opens meant  -->
+    <!-- a user who tapped "Watch" quickly (very common — and doubly so  -->
+    <!-- on a slow connection, exactly where this bites hardest) could   -->
+    <!-- hit "SDK not ready yet" before the script even finished. Static -->
+    <!-- loading trades a slightly heavier initial page load for SDKs    -->
+    <!-- that are reliably warm by the time anyone reaches the Ads panel.-->
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script src="https://ad.gigapub.tech/script?id=6350"></script>
+    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
     <script>
         window._isAdRunning = false;
     </script>
@@ -587,41 +584,28 @@
 </div>
 
 <!-- Wallet -->
-<!-- ⚠️ TEMPORARY: this whole modal (methods dropdown, rate boxes) is OLD
-     and will be fully replaced in the dedicated Withdraw phase with:
-     Dogs / Hamster / Notcoin / TON / USDT / Gram — all via TonKeeper,
-     10% fee, per-currency minimums from the settings collection.
-     Only "Diamond" wording was renamed to "Fruit Coin" here for now. -->
 <div class="overlay ptr" id="wallet-modal">
     <div class="modal">
         <div class="mh mh-gold">💳 Withdraw</div>
-        <div class="mrow"><span class="mrow-label">My Fruit Coin</span><span class="mrow-val">🍎 <span id="w-gems">0</span></span></div>
+        <div class="mrow">
+            <span class="mrow-label">My Fruit Coin</span>
+            <span class="mrow-val">🍎 <span id="w-gems">0</span> <span style="color:#4af;font-size:13px;">(≈ $<span id="w-gems-usdt">0.00</span>)</span></span>
+        </div>
         <div id="withdraw-req-box" class="withdraw-req">
             ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> and give <strong>2 Refers</strong><br>
             <span id="withdraw-req-status">Tasks: 0/5 · Refers: 0/2</span>
         </div>
-        <!-- Animated rate display -->
+        <!-- Rate display — USDT only -->
         <div id="w-rate-display" style="background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1));border:2px solid rgba(100,160,255,0.3);border-radius:14px;padding:12px 14px;margin-bottom:10px;text-align:center;">
             <div style="font-size:11px;color:#aaa;font-weight:800;margin-bottom:6px;">💱 CURRENT EXCHANGE RATE</div>
-            <div style="display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap;">
-                <div style="background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25);border-radius:10px;padding:6px 10px;">
-                    <div style="font-family:'Luckiest Guy',cursive;font-size:16px;color:#4caf50;">💎100 = 12 BDT</div>
-                    <div style="font-size:10px;color:#888;">bKash</div>
-                </div>
-                <div style="background:rgba(0,150,255,0.1);border:1px solid rgba(0,150,255,0.25);border-radius:10px;padding:6px 10px;">
-                    <div style="font-family:'Luckiest Guy',cursive;font-size:16px;color:#4af;">💎100 = $0.1</div>
-                    <div style="font-size:10px;color:#888;">USDT/Binance</div>
-                </div>
-                <div style="background:rgba(100,0,255,0.1);border:1px solid rgba(100,0,255,0.25);border-radius:10px;padding:6px 10px;">
-                    <div style="font-family:'Luckiest Guy',cursive;font-size:16px;color:#cf6fef;">💎100 = 0.075 TON</div>
-                    <div style="font-size:10px;color:#888;">TON Wallet</div>
-                </div>
+            <div style="background:rgba(0,150,255,0.1);border:1px solid rgba(0,150,255,0.25);border-radius:10px;padding:6px 10px;display:inline-block;">
+                <div style="font-family:'Luckiest Guy',cursive;font-size:18px;color:#4af;">💎 100 = $0.1 USDT</div>
+                <div style="font-size:10px;color:#888;">All withdrawals paid in USDT</div>
             </div>
         </div>
         <select id="w-method" onchange="window.updateWithdrawPreview()">
-            <option value="bkash">bKash</option>
-            <option value="binance">Binance USDT</option>
-            <option value="tonkeeper">Tonkeeper (TON)</option>
+            <option value="binance">Binance UID (USDT)</option>
+            <option value="tonkeeper">TonKeeper Address (USDT)</option>
         </select>
         <div style="position:relative;">
             <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount" min="1" oninput="window.updateWithdrawPreview()">
@@ -632,7 +616,7 @@
                 <div id="w-convert-label" style="font-size:11px;color:#aaa;margin-top:2px;"></div>
             </div>
         </div>
-        <input type="text" id="w-address" placeholder="Phone / Wallet Address / UID">
+        <input type="text" id="w-address" placeholder="Binance UID / TonKeeper Address">
         <button class="btn btn-gold" id="btn-withdraw" onclick="window.doWithdraw()">💸 WITHDRAW NOW</button>
         <div class="info-text">Processing: 24-48 hours after review</div>
 
@@ -661,8 +645,8 @@
         </div>
         <div style="font-size:12px;color:#aaa;background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin-bottom:10px;text-align:left;">
             <strong style="color:#ffcc00;">Normal Refer:</strong> Instantly get 🎮 1 Game Token + 🎫 1 Lottery Token.<br><br>
-            <strong style="color:#4af;">Valid Refer:</strong> When your friend plays a few games, you get 🍎 Fruit Coin + 🎮 2 extra Game Tokens! <em style="color:#888;">(exact reward — coming in Phase 4)</em><br><br>
-            <strong style="color:#7dff00;">Total per complete refer:</strong> 🎮 3 Game Tokens + 🎫 1 Lottery Token + 🍎 Fruit Coin
+            <strong style="color:#4af;">Valid Refer:</strong> When your friend completes 5 tasks + watches 20 ads, you get 🍎 100 Fruit Coin + 🎮 3 extra Game Tokens + 🎫 1 extra Lottery Token!<br><br>
+            <strong style="color:#7dff00;">Total per complete refer:</strong> 🍎 100 Fruit Coin + 🎮 4 Game Tokens + 🎫 2 Lottery Tokens
         </div>
         <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
         <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
@@ -696,10 +680,10 @@
     <div class="modal">
         <div class="mh mh-red">📺 Earn with Ads</div>
         
-        <!-- Adsgram Special (Fixed 250 Gold) -->
+        <!-- Adsgram Special (Fixed 300 Gold) -->
         <div class="ads-section" style="border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.06);">
             <div class="ads-row">
-                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+250 🪙 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
+                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+300 🪙 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn special" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
@@ -707,7 +691,7 @@
         <!-- Adsgram Daily -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+120 🪙 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
+                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+200 🪙 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-daily-btn" onclick="window.watchAdsgramDailyAd()">▶ Watch</button>
             </div>
         </div>
@@ -715,7 +699,7 @@
         <!-- GigaPub -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+120 🪙 Gold)<br><span id="gigapub-left">20/20 remaining</span></div>
+                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+200 🪙 Gold)<br><span id="gigapub-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn" id="gigapub-btn" onclick="window.watchGigaPubAd()">▶ Watch</button>
             </div>
         </div>
@@ -723,7 +707,7 @@
         <!-- Monetag -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+120 🪙 Gold)<br><span id="monetag-left">20/20 remaining</span></div>
+                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+200 🪙 Gold)<br><span id="monetag-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
             </div>
         </div>
@@ -857,6 +841,8 @@
         document.getElementById('ui-lv').textContent = window.G.stage;
         document.getElementById('ui-tokens').textContent = window.G.tokens;
         document.getElementById('w-gems').textContent = window.G.gems;
+        let wGemsUsdt = document.getElementById('w-gems-usdt');
+        if(wGemsUsdt) wGemsUsdt.textContent = ((window.G.gems || 0) * 0.001).toFixed(2);
         document.getElementById('snd-toggle').textContent = window.G.sound ? '🔊' : '🔇';
         document.getElementById('vib-toggle').textContent = window.G.vib ? '📳' : '🔕';
         document.getElementById('refer-count-display').textContent = window.G.referCount || 0;
@@ -1056,6 +1042,10 @@
                 window.G.coins      = res.user.gold          ?? window.G.coins;
                 window.G.gems        = res.user.fruitCoin      ?? window.G.gems;
                 window.G.referCount = res.user.referralCount  ?? window.G.referCount;
+                window.G.tokens      = res.user.gameTokens    ?? window.G.tokens;
+                window.G.maxTokens   = res.user.maxTokens      ?? window.G.maxTokens;
+                window.G.nextTokenAt = res.user.nextTokenAt    ?? window.G.nextTokenAt;
+                window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
             }
 
             let prefs = localStorage.getItem('fc_prefs');
@@ -1116,23 +1106,25 @@
     }
 
     function startTokenTimer(){
-        // Update token countdown every second using server's tokenRefill timestamp
+        // Update token countdown every second using the server's real
+        // nextTokenAt timestamp (was previously always 0 client-side,
+        // which is why this used to permanently show "+1 soon...").
         setInterval(()=>{
             let el = document.getElementById('token-timer');
             if(!el) return;
-            if(window.G.tokens >= 10){
+            if(window.G.tokens >= (window.G.maxTokens || 10)){
                 el.textContent = 'MAX';
                 return;
             }
-            let refillTime = window.G.tokenRefill || 0;
-            let elapsed = Date.now() - refillTime;
-            let left = (6 * 60 * 60 * 1000) - elapsed; // 6 hours
-            if(left <= 0){
+            let nextAt = window.G.nextTokenAt ? new Date(window.G.nextTokenAt).getTime() : 0;
+            let left = nextAt - Date.now();
+            if(!nextAt || left <= 0){
                 el.textContent = '(+1 soon...)';
             } else {
-                let m = Math.floor(left / 60000);
+                let h = Math.floor(left / 3600000);
+                let m = Math.floor((left % 3600000) / 60000);
                 let s = Math.floor((left % 60000) / 1000);
-                el.textContent = `(+1 in ${m}:${s.toString().padStart(2,'0')})`;
+                el.textContent = h > 0 ? `(+1 in ${h}h ${m}m)` : `(+1 in ${m}:${s.toString().padStart(2,'0')})`;
             }
         }, 1000);
 
@@ -1303,13 +1295,13 @@
     function updateAdsUI(){
         let agLeft  = 5  - (window.G.adsgramCount||0);
         let agDLeft = 5  - (window.G.adsgramDailyCount||0);
-        let gpLeft  = 20 - (window.G.gigapubCount||0);
-        let mtLeft  = 20 - (window.G.monetagCount||0);
+        let gpLeft  = 10 - (window.G.gigapubCount||0);
+        let mtLeft  = 10 - (window.G.monetagCount||0);
 
         document.getElementById('adsgram-left').textContent      = `${Math.max(0,agLeft)}/5 remaining`;
         document.getElementById('adsgram-daily-left').textContent = `${Math.max(0,agDLeft)}/5 remaining`;
-        document.getElementById('gigapub-left').textContent      = `${Math.max(0,gpLeft)}/20 remaining`;
-        document.getElementById('monetag-left').textContent      = `${Math.max(0,mtLeft)}/20 remaining`;
+        document.getElementById('gigapub-left').textContent      = `${Math.max(0,gpLeft)}/10 remaining`;
+        document.getElementById('monetag-left').textContent      = `${Math.max(0,mtLeft)}/10 remaining`;
 
         document.getElementById('adsgram-btn').disabled       = agLeft  <= 0;
         document.getElementById('adsgram-daily-btn').disabled = agDLeft <= 0;
@@ -1320,41 +1312,76 @@
 
     // ── AD FUNCTIONS ─────────────────────────────────────────────────
     // SDK async load হয় — ready না থাকলে reject করো (reward দেওয়া হবে না)
-    // Generic "wait for a global to become available" helper — since all
-    // 3 SDKs now load statically from <head>, they're USUALLY ready
-    // immediately, but on a slow connection the script tag might still be
-    // downloading when the user taps Watch. Poll briefly instead of
-    // failing instantly.
-    function waitForGlobal(checkFn, timeoutMs = 5000) {
+    // ── Generic "wait for an SDK global to exist" poller ────────────────
+    // The 3 scripts in <head> load eagerly now, but network conditions
+    // vary (some of the screenshots that led here showed connections as
+    // slow as 0.8 KB/s) — a user can still tap "Watch" a moment before a
+    // given SDK has finished attaching itself to window. Instead of
+    // instantly rejecting with "not ready yet", poll briefly first; only
+    // reject as sdk_not_loaded if it genuinely never shows up in time.
+    function waitForAdSdk(checkFn, timeoutMs = 6000) {
+        if (checkFn()) return Promise.resolve();
         return new Promise((resolve, reject) => {
-            if (checkFn()) { resolve(); return; }
-            const start = Date.now();
-            const timer = setInterval(() => {
-                if (checkFn()) { clearInterval(timer); resolve(); }
-                else if (Date.now() - start > timeoutMs) { clearInterval(timer); reject(new Error('sdk_not_ready')); }
-            }, 150);
+            const startedAt = Date.now();
+            (function poll(){
+                if (checkFn()) { resolve(); return; }
+                if (Date.now() - startedAt > timeoutMs) { reject(new Error('sdk_not_loaded')); return; }
+                setTimeout(poll, 150);
+            })();
         });
     }
 
-    const showAdsgramSpecialAd = () => waitForGlobal(() => !!window.Adsgram)
-        .then(() => window.Adsgram.init({ blockId: "28066" }).show())
-        .catch((e) => { throw (e && e.message === 'sdk_not_ready') ? new Error('Adsgram SDK not ready yet. Try again.') : e; });
+    const showAdsgramSpecialAd = () => waitForAdSdk(() => !!window.Adsgram).then(() =>
+        new Promise((res, rej) => { window.Adsgram.init({blockId:"28066"}).show().then(res).catch(rej); })
+    );
+    const showAdsgramDailyAd = () => waitForAdSdk(() => !!window.Adsgram).then(() =>
+        new Promise((res, rej) => { window.Adsgram.init({blockId:"int-28067"}).show().then(res).catch(rej); })
+    );
+    // Monetag's SDK attaches show_10893505 to window once its own script
+    // finishes initializing — wait for that instead of calling it blind.
+    const showMonetagAd = () => waitForAdSdk(() => typeof show_10893505 === 'function').then(() =>
+        new Promise((res, rej) => {
+            // Safety-net only — in case Monetag's own promise ever gets
+            // stuck (neither resolves nor rejects). Does not affect a
+            // normal ad, which finishes well inside this window.
+            const t = setTimeout(() => rej(new Error('timeout')), 90000);
+            show_10893505().then(() => { clearTimeout(t); res(); }).catch((e) => { clearTimeout(t); rej(e || new Error('ad_failed')); });
+        })
+    );
+    // GigaPub — no artificial force-resolve. The old 15s timer used to
+    // report "success" back to the UI no matter what GigaPub's own promise
+    // did, which made failures invisible. Since the actual gold reward for
+    // GigaPub comes from THEIR server-to-server postback (not this promise
+    // at all — see processAdReward below), there's no reason to lie about
+    // the outcome here: an honest failure just means "ad didn't show,
+    // count wasn't bumped, try again" — the daily-limit UI stays correct.
+    const showGigaPubAd = () => waitForAdSdk(() => typeof window.showGiga === 'function').then(() =>
+        new Promise((res, rej) => { window.showGiga("main").then(res).catch(rej); })
+    );
 
-    const showAdsgramDailyAd = () => waitForGlobal(() => !!window.Adsgram)
-        .then(() => window.Adsgram.init({ blockId: "int-28067" }).show())
-        .catch((e) => { throw (e && e.message === 'sdk_not_ready') ? new Error('Adsgram SDK not ready yet. Try again.') : e; });
-
-    const showMonetagAd = () => waitForGlobal(() => typeof show_10893505 === 'function')
-        .then(() => show_10893505())
-        .catch((e) => { throw (e && e.message === 'sdk_not_ready') ? new Error('Monetag SDK not ready yet. Try again.') : new Error('Ad closed or failed'); });
-
-    // GigaPub: the actual reward is credited server-to-server by GigaPub
-    // itself (see api/postback.js) — this promise is only used here for
-    // UI feedback (counter + toast), so it just reflects whether the ad
-    // genuinely displayed, no artificial always-resolve timeout masking it.
-    const showGigaPubAd = () => waitForGlobal(() => typeof window.showGiga === 'function')
-        .then(() => window.showGiga("main"))
-        .catch((e) => { throw (e && e.message === 'sdk_not_ready') ? new Error('GigaPub SDK not ready yet. Try again.') : e; });
+    // ── One place for every ad-flow error code → user-facing message ────
+    // Covers backend reasons (lib/adSession.js claimAdSession, lib/adReward.js
+    // creditGoldForAd, api/ads.js) AND client-side SDK wrapper rejections
+    // (waitForAdSdk / showXxxAd above), so no call site has to guess text.
+    const AD_ERROR_MESSAGES = {
+        // client-side (SDK wrappers)
+        sdk_not_loaded:        '⚠️ Ad not loaded yet. Please wait a moment and try again.',
+        timeout:                '⚠️ Ad timed out. Please try again.',
+        // server-side (lib/adSession.js claimAdSession)
+        not_found:              '⚠️ Ad session not found. Please tap Watch again.',
+        mismatch:               '⚠️ Ad session error. Please tap Watch again.',
+        network_mismatch:       '⚠️ Ad session error. Please tap Watch again.',
+        already_used:           '⚠️ This ad was already claimed.',
+        expired:                '⚠️ Ad session expired. Please tap Watch again.',
+        too_fast:               '⚠️ Ad closed too quickly.',
+        race_lost:              '⚠️ Please try again.',
+        // server-side (lib/adReward.js creditGoldForAd)
+        user_not_found:         '⚠️ Account sync issue — please reopen the app and try again.',
+        invalid_params:         '⚠️ Something went wrong. Please try again.',
+        daily_limit_reached:    'Daily limit reached!',
+        credit_failed:          '⚠️ Reward failed — please tap Watch again.',
+    };
+    function adErrorText(code){ return AD_ERROR_MESSAGES[code] || '⚠️ Reward failed, try again.'; }
 
     // Adsgram's SDK requires the user to click the ad creative within its
     // own ~15s window and only resolves successfully once that happens —
@@ -1398,8 +1425,12 @@
             if(adFunc) await adFunc();
         } catch(e) {
             cleanup();
-            const msg = e && e.message && e.message.includes('not ready')
-                ? '⚠️ Ad not loaded yet. Please wait a moment and try again.'
+            const code = e && e.message;
+            // sdk_not_loaded / timeout are genuine client-side failures — use
+            // the shared error text. Anything else (SDK's own promise reject,
+            // e.g. the user closed the ad early) is a real "skipped" outcome.
+            const msg = (code === 'sdk_not_loaded' || code === 'timeout')
+                ? adErrorText(code)
                 : (isClickBased
                     ? '⚠️ Ad skipped — you need to click the ad to earn reward.'
                     : '⚠️ Ad skipped. Watch the full ad to earn reward.');
@@ -1457,7 +1488,7 @@
         // STEP 1 — ask server for a session BEFORE the ad plays (server-side daily cap check)
         const sessionRes = await apiCall('/api/ads', { action: 'request_session', network: actionName });
         if(!sessionRes.success){
-            showToast(sessionRes.message === 'daily_limit_reached' ? 'Daily limit reached!' : 'Could not start ad. Try again.');
+            showToast(sessionRes.message === 'daily_limit_reached' ? adErrorText('daily_limit_reached') : '⚠️ Could not start ad. Try again.');
             return;
         }
         const sessionId = sessionRes.sessionId;
@@ -1468,22 +1499,35 @@
 
         const goldBefore = window.G.coins;
 
-        // STEP 3 — claim using the session id
-        const res = await apiCall('/api/ads', { action: actionName, sessionId });
+        // STEP 3 — claim using the session id. If the server marks a
+        // failure `retryable: true` (see api/ads.js + lib/adSession.js's
+        // revertAdSession), the session was reopened server-side — the
+        // user genuinely watched the ad, so silently retry the exact same
+        // claim once before giving up, instead of making them re-watch it.
+        async function attemptClaim(){
+            return apiCall('/api/ads', { action: actionName, sessionId });
+        }
+
+        let res = await attemptClaim();
+        if(!res.success && res.retryable){
+            await new Promise(r => setTimeout(r, 800));
+            res = await attemptClaim();
+        }
+
         if(res.success){
             const reward = (typeof window.G.coins === 'number') ? (window.G.coins - goldBefore) : getRewardAmount();
             window.G[actionName + 'Count'] = (window.G[actionName + 'Count'] || 0) + 1;
             updateAdsUI();
             showToast(successMsg.replace('{R}', reward > 0 ? reward : getRewardAmount()));
         } else {
-            showToast('❌ ' + (res.message === 'too_fast' ? 'Ad closed too quickly.' : (res.message || 'Reward failed, try again.')));
+            showToast(adErrorText(res.message));
         }
     }
 
-    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      'adsgram-btn',       () => 250, `+{R} Gold! (Adsgram Special)`);
-    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, 'adsgram-daily-btn', () => 120, `+{R} Gold! (Adsgram Daily)`);
-    window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      'gigapub-btn',       () => 120, `+{R} Gold! (GigaPub)`);
-    window.watchMonetagAd      = () => processAdReward('monetag',      20, window.G.monetagCount,      'monetag-btn',       () => 120, `+{R} Gold! (Monetag)`);
+    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      'adsgram-btn',       () => 300, `+{R} Gold! (Adsgram Special)`);
+    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, 'adsgram-daily-btn', () => 200, `+{R} Gold! (Adsgram Daily)`);
+    window.watchGigaPubAd      = () => processAdReward('gigapub',      10, window.G.gigapubCount,      'gigapub-btn',       () => 200, `+{R} Gold! (GigaPub)`);
+    window.watchMonetagAd      = () => processAdReward('monetag',      10, window.G.monetagCount,      'monetag-btn',       () => 200, `+{R} Gold! (Monetag)`);
 
     window.renderTasks = async function(){
         let c = document.getElementById('task-list');
@@ -1680,24 +1724,23 @@
 
     // Withdraw conversion rates
     const WITHDRAW_RATES = {
-        bkash:     { rate: 0.12,    unit: 'BDT',  symbol: '৳',   perDiamond: '1 💎 = 0.12 BDT' },
-        binance:   { rate: 0.001,   unit: 'USDT', symbol: '$',    perDiamond: '1 💎 = $0.001'   },
-        tonkeeper: { rate: 0.00075, unit: 'TON',  symbol: 'TON ', perDiamond: '1 💎 = 0.00075 TON' }
+        binance:   { rate: 0.001, unit: 'USDT', symbol: '$', perDiamond: '1 💎 = $0.001' },
+        tonkeeper: { rate: 0.001, unit: 'USDT', symbol: '$', perDiamond: '1 💎 = $0.001' }
     };
 
     window.updateWithdrawPreview = function(){
-        let method = document.getElementById('w-method')?.value || 'bkash';
+        let method = document.getElementById('w-method')?.value || 'binance';
         let amount = parseInt(document.getElementById('w-amount')?.value) || 0;
         let preview = document.getElementById('w-convert-preview');
         let valEl = document.getElementById('w-convert-value');
         let labelEl = document.getElementById('w-convert-label');
         if(!preview) return;
         if(amount >= 1){
-            let r = WITHDRAW_RATES[method] || WITHDRAW_RATES.bkash;
-            let converted = (amount * r.rate).toFixed(method === 'bkash' ? 2 : 4);
+            let r = WITHDRAW_RATES[method] || WITHDRAW_RATES.binance;
+            let converted = (amount * r.rate).toFixed(4);
             preview.style.display = 'block';
             valEl.textContent = `${r.symbol}${converted} ${r.unit}`;
-            labelEl.textContent = `${amount} Diamonds → ${r.perDiamond}`;
+            labelEl.textContent = `${amount} Fruit Coin → ${r.perDiamond}`;
             // Restart animation
             preview.style.animation = 'none'; preview.offsetHeight;
             preview.style.animation = 'previewPop 0.3s ease';
@@ -1717,8 +1760,8 @@
         let addr   = document.getElementById('w-address').value.trim();
         let amount = parseInt(document.getElementById('w-amount').value)||0;
         if(!addr)          return showToast('Enter address!');
-        if(amount < 100)   return showToast('Min 100 Diamonds!');
-        if(window.G.gems < amount) return showToast('Not enough Diamonds!');
+        if(amount < 100)   return showToast('Min 100 Fruit Coin!');
+        if(window.G.gems < amount) return showToast('Not enough Fruit Coin!');
         let btn = document.getElementById('btn-withdraw');
         btn.disabled = true; btn.textContent = "Processing...";
         const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
@@ -1737,9 +1780,8 @@
 
     // ── Withdraw History ──────────────────────────────────────────────
     const WD_RATES = {
-        bkash:     { sym:'৳',  unit:'BDT',  rate:0.12,  label:'bKash' },
-        binance:   { sym:'$',  unit:'USDT', rate:0.001, label:'Binance USDT' },
-        tonkeeper: { sym:'',   unit:'TON',  rate:0.00075, label:'TON Wallet' },
+        binance:   { sym:'$', unit:'USDT', rate:0.001, label:'Binance UID' },
+        tonkeeper: { sym:'$', unit:'USDT', rate:0.001, label:'TonKeeper (USDT)' },
     };
 
     window.toggleWdHistory = function(){
@@ -1774,8 +1816,8 @@
 
             list.innerHTML = '';
             res.history.forEach(w => {
-                const r     = WD_RATES[w.method] || WD_RATES.bkash;
-                const conv  = (w.amount * r.rate).toFixed(w.method==='bkash'?2:4);
+                const r     = WD_RATES[w.method] || WD_RATES.binance;
+                const conv  = (w.amount * r.rate).toFixed(4);
                 const isApproved = w.status === 'approved';
                 const isRejected = w.status === 'rejected';
                 const statusColor = isApproved ? '#4caf50' : isRejected ? '#ff3355' : '#ff9800';
@@ -1793,7 +1835,7 @@
                 card.style.cssText = `background:rgba(0,0,0,0.35);border-radius:12px;padding:11px 13px;border:1px solid ${statusColor}44;flex-shrink:0;`;
                 card.innerHTML = `
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-                        <span style="font-size:13px;font-weight:900;color:#fff;">💎 ${w.amount} Diamonds</span>
+                        <span style="font-size:13px;font-weight:900;color:#fff;">🍎 ${w.amount} Fruit Coin</span>
                         <span style="font-size:11px;font-weight:900;color:${statusColor};">${statusIcon} ${statusText}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;font-size:12px;color:#aaa;margin-bottom:4px;">
