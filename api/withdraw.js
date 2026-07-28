@@ -3,26 +3,21 @@
 // (atomically, so a devtools-edited amount can never overdraw the real
 // balance) and a 'pending' request is created for the admin to review.
 //
-// Rates here match WITHDRAW_RATES in index.html exactly — if you change
-// one, change both.
+// USDT only — both methods pay out in USDT, just to a different wallet
+// (Binance UID vs a TonKeeper address paid in USDT-on-TON). Rates here
+// match WITHDRAW_RATES in index.html exactly — if you change one, change both.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 
 const RATES = {
-  bkash: { rate: 0.12, unit: 'BDT', decimals: 2 },
   binance: { rate: 0.001, unit: 'USDT', decimals: 4 },
-  tonkeeper: { rate: 0.00075, unit: 'TON', decimals: 4 },
+  tonkeeper: { rate: 0.001, unit: 'USDT', decimals: 4 },
 };
 
 const MIN_FRUIT_COIN = 100;
-
-// NOTE: the frontend also requires "5 tasks completed" before unlocking
-// withdraw, but there is currently no tasks/completedTasks system in the
-// backend at all (nothing tracks that server-side yet), so it can't be
-// verified here — only client-side for now. Referral count IS tracked
-// server-side, so that part IS enforced below.
 const MIN_REFERRALS = 2;
+const MIN_TASKS = 5;
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -57,6 +52,9 @@ module.exports = async (req, res) => {
 
     if ((user.referralCount || 0) < MIN_REFERRALS) {
       return res.status(400).json({ success: false, error: `Need at least ${MIN_REFERRALS} referrals first` });
+    }
+    if ((user.completedTasks || []).length < MIN_TASKS) {
+      return res.status(400).json({ success: false, error: `Need to complete ${MIN_TASKS} tasks first` });
     }
 
     // Atomic deduct: only matches/succeeds if the real DB balance is
