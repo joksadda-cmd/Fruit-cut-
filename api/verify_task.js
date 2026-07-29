@@ -1,14 +1,22 @@
 // api/verify_task.js
-// POST /api/verify_task
-// Body: { taskId }  (telegramId/skipVerify from the client are IGNORED —
-// never trust the client on whether a task needs verification; that
-// comes from the task's own `type` field stored server-side)
+// GET  /api/verify_task           -> list active tasks (for the Task section)
+// POST /api/verify_task  { taskId } -> claim/verify a task
+//
+// NOTE: task LISTING lives in this same file (not a separate api/tasks.js)
+// on purpose — Vercel's Hobby plan caps a project at 12 Serverless
+// Functions, and this project is already at exactly 12. Same domain
+// (tasks), one file, routed by HTTP method.
+//
+// This also fixes a real bug: the frontend was calling
+// `https://fruit-cut-eight.vercel.app/api/tasks` (GET) for the task list,
+// but no api/tasks.js ever existed in this repo — so the Task section was
+// always empty/broken. It now calls /api/verify_task (GET) instead.
 //
 // - type 'api'    -> must actually be a member of task.chatId (checked via
 //                    Telegram's getChatMember, same mechanism as the
 //                    join-gate) before the reward is credited.
-// - type 'nonapi' -> trust-based (Instagram/YouTube/etc. follows can't be
-//                    verified via API) — credited on claim.
+// - type 'nonapi' -> trust-based (website visits, other bots, socials that
+//                    can't be verified via API) — credited on claim.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
@@ -31,7 +39,41 @@ async function isMemberOf(chatId, telegramId) {
   }
 }
 
+// ── GET: list active tasks, grouped by category ──────────────────────
+async function handleList(req, res) {
+  const tasksCol = await getCollection('tasks');
+  const tasks = await tasksCol
+    .find({ active: true })
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  // Only public-safe fields — chatId is used server-side for verification
+  // only and isn't needed by the client.
+  const out = tasks.map((t) => ({
+    id: String(t._id),
+    title: t.title,
+    description: t.description || '',
+    category: t.category || 'social', // daily | social | exclusive | partner
+    type: t.type,                     // 'api' | 'nonapi'
+    icon: t.icon || (t.type === 'api' ? '📢' : '⚡'),
+    url: t.url || '',
+    reward: t.reward || 0,
+    rewardFc: t.rewardFc || 0,
+  }));
+
+  return res.status(200).json({ success: true, tasks: out });
+}
+
 module.exports = async (req, res) => {
+  if (req.method === 'GET') {
+    try {
+      return await handleList(req, res);
+    } catch (err) {
+      console.error('verify_task list error:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
