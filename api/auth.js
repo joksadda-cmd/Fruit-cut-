@@ -89,6 +89,7 @@ module.exports = async (req, res) => {
         gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
         lastTokenRegenAt: new Date(),
         lotteryTokens: 0,
+        lastFreeLotteryAt: null,
         completedTasks: [],
         totalAdsWatched: 0,
         validReferralGiven: false,
@@ -181,6 +182,7 @@ module.exports = async (req, res) => {
         maxTokens: MAX_TOKENS,
         nextTokenAt: finalRegen.nextTokenAt,
         lotteryTokens: user.lotteryTokens ?? 0,
+        lastFreeLotteryAt: user.lastFreeLotteryAt ?? null,
         completedTasks: user.completedTasks ?? [],
         highScore: user.highScore,
         referralCount: user.referralCount,
