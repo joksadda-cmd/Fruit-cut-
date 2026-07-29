@@ -301,6 +301,14 @@
         .task-btn{ background:linear-gradient(180deg,#00bcd4,#006064); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0; }
         .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
         .task-section-header{font-size:13px;font-weight:900;color:#7de;margin:10px 0 6px;padding:4px 10px;background:rgba(0,150,200,0.15);border-radius:8px;}
+        .task-progress-wrap{background:rgba(255,255,255,0.06);border-radius:12px;padding:10px 14px;margin-bottom:10px;}
+        .task-progress-label{display:flex;justify-content:space-between;font-size:12px;font-weight:900;color:#ccc;margin-bottom:6px;}
+        .task-progress-bar{height:8px;background:rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;}
+        .task-progress-fill{height:100%;background:linear-gradient(90deg,#ff8c00,#ffcc00);border-radius:6px;transition:width 0.4s;}
+        .task-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;}
+        .task-tab{flex:1;text-align:center;padding:8px 4px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:11px;font-weight:900;color:#aaa;cursor:pointer;white-space:nowrap;}
+        .task-tab.active{background:linear-gradient(180deg,#ff8c00,#e65100);color:#fff;border-color:transparent;}
+        .task-available-badge{font-size:9px;font-weight:900;padding:2px 7px;border-radius:8px;background:rgba(76,175,80,0.25);color:#81c784;margin-left:6px;}
         .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
         
         .unique-code-box{background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;text-align:center;}
@@ -510,9 +518,10 @@
         <div class="lottery-wrap">
             <div class="lottery-slots"><div class="lottery-slot" id="slot-0">❓</div><div class="lottery-slot" id="slot-1">❓</div><div class="lottery-slot" id="slot-2">❓</div></div>
             <div class="lottery-result" id="lottery-result"></div>
-            <div class="lottery-price-row">🎫 Use a Lottery Token to Spin · Tokens left: <strong style="color:#ffcc00;" id="lottery-spins-left">0</strong></div>
+            <div class="lottery-price-row">🎁 1 free spin every day · 🎫 or use a Lottery Token · Tokens left: <strong style="color:#ffcc00;" id="lottery-spins-left">0</strong></div>
             <div style="display:flex;gap:8px;margin-top:4px;">
-                <button class="lottery-spin-btn" id="lottery-token-spin-btn" onclick="window.spinLotteryWithToken()" style="flex:1;font-size:17px;padding:10px 8px;background:linear-gradient(180deg,#a855f7,#7e22ce);box-shadow:0 5px 0 #5b21b6;">🎫 Use Token & SPIN!</button>
+                <button class="lottery-spin-btn" id="lottery-free-spin-btn" onclick="window.spinLotteryFree()" style="flex:1;font-size:15px;padding:10px 6px;background:linear-gradient(180deg,#22c55e,#15803d);box-shadow:0 5px 0 #14532d;">🎁 Use Free Spin!</button>
+                <button class="lottery-spin-btn" id="lottery-token-spin-btn" onclick="window.spinLotteryWithToken()" style="flex:1;font-size:15px;padding:10px 6px;background:linear-gradient(180deg,#a855f7,#7e22ce);box-shadow:0 5px 0 #5b21b6;">🎫 Use Token & SPIN!</button>
             </div>
         </div>
         <div class="lottery-earn-stats">
@@ -524,6 +533,16 @@
         <div style="font-size:12px;color:#aaa;font-weight:800;margin-bottom:6px;">🏆 Prize Table (10 Rewards)</div>
         <div class="lottery-prizes-grid" id="lottery-prizes-grid"></div>
         <button class="btn btn-grey" onclick="window.hideModal('lottery-modal')">CLOSE</button>
+    </div>
+</div>
+
+<div class="overlay ptr" id="gift-modal">
+    <div class="modal" style="text-align:center;">
+        <div style="font-size:56px;margin-bottom:6px;">🎁</div>
+        <div class="mh mh-gold">A Gift For You!</div>
+        <div id="gift-reason-text" style="color:#aaa;font-size:13px;margin:8px 0 4px;"></div>
+        <div id="gift-amount-text" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;margin-bottom:14px;"></div>
+        <button class="btn btn-gold" onclick="window.claimGift()">🎁 CLAIM GIFT</button>
     </div>
 </div>
 
@@ -543,7 +562,7 @@
                 <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)"><span class="tsc-badge">HOT</span><span class="tsc-icon">🎮🎮🎮</span><div class="tsc-amount">×5 Token</div><div class="tsc-price">250 🪙 Gold</div></div>
                 <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)"><span class="tsc-badge">MAX</span><span class="tsc-icon">🎮🎮🎮🎮</span><div class="tsc-amount">×10 Token</div><div class="tsc-price">500 🪙 Gold</div></div>
             </div>
-            <div class="info-text">Use Tokens to play games · Max 10 tokens · Auto +1 refill every 6 hours</div>
+            <div class="info-text">Use Tokens to play games · Max 10 tokens · Auto +1 refill every 4 hours</div>
 
             <!-- ── Earn Token via Ads ── -->
             <div style="margin-top:12px;background:linear-gradient(135deg,rgba(255,120,0,0.15),rgba(200,60,0,0.10));border:2px solid rgba(255,160,0,0.4);border-radius:16px;padding:14px;">
@@ -721,6 +740,16 @@
 <div class="overlay ptr" id="task-modal">
     <div class="modal">
         <div class="mh mh-cyan">📋 Tasks</div>
+        <div class="task-progress-wrap">
+            <div class="task-progress-label"><span>Task Progress</span><span id="task-progress-count">0/0</span></div>
+            <div class="task-progress-bar"><div class="task-progress-fill" id="task-progress-fill" style="width:0%;"></div></div>
+        </div>
+        <div class="task-tabs" id="task-tabs">
+            <div class="task-tab active" data-cat="daily" onclick="window.switchTaskTab('daily')">🔥 Daily</div>
+            <div class="task-tab" data-cat="social" onclick="window.switchTaskTab('social')">💬 Social</div>
+            <div class="task-tab" data-cat="exclusive" onclick="window.switchTaskTab('exclusive')">💎 Exclusive</div>
+            <div class="task-tab" data-cat="partner" onclick="window.switchTaskTab('partner')">🤝 Partner</div>
+        </div>
         <div id="task-list"><div style="text-align:center;color:#aaa;padding:20px;">Loading tasks...</div></div>
         <div class="info-text">Complete tasks to earn Gold & Fruit Coin!</div>
         <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
@@ -798,7 +827,7 @@
         shopTokenBought: 0, shopDiamondExchanged: 0,
         shopAdTokenClaimed: 0,
         referredBy: null, validReferRewardGiven: false,
-        username: '', lotteryTokens: 0
+        username: '', lotteryTokens: 0, lastFreeLotteryAt: null
     };
 
     function showToast(msg) {
@@ -1046,7 +1075,10 @@
                 window.G.maxTokens   = res.user.maxTokens      ?? window.G.maxTokens;
                 window.G.nextTokenAt = res.user.nextTokenAt    ?? window.G.nextTokenAt;
                 window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
+                window.G.lotteryTokens = res.user.lotteryTokens ?? window.G.lotteryTokens;
+                window.G.lastFreeLotteryAt = res.user.lastFreeLotteryAt ?? window.G.lastFreeLotteryAt;
             }
+            if(res.pendingGift) window.showGiftModal(res.pendingGift);
 
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
@@ -1148,6 +1180,7 @@
                             showToast(`🎮 Token refilled! Now: ${window.G.tokens}/10`);
                         }
                         window.updateUI();
+                        if(data.pendingGift) window.showGiftModal(data.pendingGift);
                     }
                 } catch(e){}
             }
@@ -1180,7 +1213,7 @@
         if(id==='ads-modal' && gameState === 'menu'){ playSound('menu'); }
     };
 
-    window.showTokenInfo = function(){ showToast('Tokens: 1 token = 1 game. Max 10. Refills +1 every 6 hours!'); };
+    window.showTokenInfo = function(){ showToast('Tokens: 1 token = 1 game. Max 10. Refills +1 every 4 hours!'); };
 
     window.buyTokenShop = async function(qty){
         let cost = qty * 50;
@@ -1529,29 +1562,50 @@
     window.watchGigaPubAd      = () => processAdReward('gigapub',      10, window.G.gigapubCount,      'gigapub-btn',       () => 200, `+{R} Gold! (GigaPub)`);
     window.watchMonetagAd      = () => processAdReward('monetag',      10, window.G.monetagCount,      'monetag-btn',       () => 200, `+{R} Gold! (Monetag)`);
 
-    window.renderTasks = async function(){
+    let allTasks = [];      // cache from server for the current modal session
+    let activeTaskTab = 'daily';
+
+    window.switchTaskTab = function(cat){
+        activeTaskTab = cat;
+        document.querySelectorAll('.task-tab').forEach(el=>{
+            el.classList.toggle('active', el.getAttribute('data-cat') === cat);
+        });
+        renderTaskList();
+    };
+
+    function buildTaskCard(t){
+        // Completed tasks vanish entirely (matches previous behavior).
+        let done = (window.G.completedTasks||[]).includes(String(t.id));
+        if(done) return '';
+
+        let isApi     = t.type === 'api';
+        let cardClass = isApi ? 'channel-task' : 'simple-task';
+        let badgeClass= isApi ? 'badge-channel' : 'badge-simple';
+        let badgeText = isApi ? '✅ Auto-Verified' : '⚡ Quick Task';
+        let btnLabel  = isApi ? 'Join' : 'Go';
+        let rewardStr = `🪙 ${t.reward} Gold` + (t.rewardFc ? ` + 🍎 ${t.rewardFc}` : '');
+        return `
+            <div class="task-card ${cardClass}" id="task-card-${t.id}">
+                <div class="task-icon">${t.icon||'📋'}</div>
+                <div class="task-info">
+                    <span class="task-type-badge ${badgeClass}">${badgeText}</span><span class="task-available-badge">Available</span>
+                    <div class="task-name">${t.title}</div>
+                    ${t.description ? `<div style="font-size:11px;color:#999;margin-top:2px;">${t.description}</div>` : ''}
+                    <div class="task-reward">${rewardStr}</div>
+                </div>
+                <button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.url||'').replace(/'/g,"\\'")}','${t.type}')">${btnLabel}</button>
+            </div>`;
+    }
+
+    function renderTaskList(){
         let c = document.getElementById('task-list');
-        c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
-        try {
-            // Load both verified (tasks collection) and quick (quick_tasks collection) in parallel
-            const [verRes, qtRes] = await Promise.all([
-                fetch('https://fruit-cut-eight.vercel.app/api/tasks',             { method:'GET', signal:AbortSignal.timeout(8000) }),
-                fetch('https://fruit-cut-eight.vercel.app/api/tasks?type=quick',  { method:'GET', signal:AbortSignal.timeout(8000) }).catch(()=>null)
-            ]);
+        let inCat = allTasks.filter(t => (t.category||'social') === activeTaskTab);
+        let cards = inCat.map(buildTaskCard).filter(Boolean).join('');
 
-            let verifiedTasks = [];
-            let quickTasks    = [];
-
-            try { verifiedTasks = await verRes.json(); if(!Array.isArray(verifiedTasks)) verifiedTasks=[]; } catch(e){}
-            try { if(qtRes){ quickTasks = await qtRes.json(); if(!Array.isArray(quickTasks)) quickTasks=[]; } } catch(e){}
-
-            verifiedTasks.forEach(t => { t._src = 'channel'; });
-            quickTasks.forEach(t    => { t._src = 'quick';   });
-
-            c.innerHTML = '';
-
-            // ── Permanent Official Links (always shown at top) ────────
-            c.innerHTML += `
+        let pinned = '';
+        if(activeTaskTab === 'social'){
+            // Permanent official links, pinned at the top of Social.
+            pinned = `
                 <div class="task-section-header" style="background:linear-gradient(90deg,rgba(0,150,136,0.3),transparent);border-left:3px solid #00bcd4;">
                     📌 Official Community — Join & Stay Updated
                 </div>
@@ -1578,45 +1632,34 @@
                         onclick="tg?.openLink ? tg.openLink('https://t.me/earn_fruit_game') : window.open('https://t.me/earn_fruit_game','_blank')">
                         Join
                     </button>
-                </div>
-            `;
+                </div>`;
+        }
 
-            function buildCard(t, src){
-                // completed task গুলো render করবে না — পুরোপুরি vanish
-                let done = (window.G.completedTasks||[]).includes(String(t.id));
-                if(done) return '';
+        c.innerHTML = pinned + cards;
+        if(!cards && activeTaskTab !== 'social'){
+            c.innerHTML += `<div style="text-align:center;color:#aaa;padding:16px 0;">More ${activeTaskTab} tasks coming soon! Stay tuned 🎯</div>`;
+        }
 
-                let isChannel  = src === 'channel';
-                let cardClass  = isChannel ? 'channel-task' : 'simple-task';
-                let badgeClass = isChannel ? 'badge-channel' : 'badge-simple';
-                let badgeText  = isChannel ? '📡 Channel Task' : '⚡ Quick Task';
-                let btnLabel   = isChannel ? 'Join' : 'Go';
-                let reward     = t.coins || 200;
-                return `
-                    <div class="task-card ${cardClass}" id="task-card-${t.id}">
-                        <div class="task-icon">${t.icon||'📋'}</div>
-                        <div class="task-info">
-                            <span class="task-type-badge ${badgeClass}">${badgeText}</span>
-                            <div class="task-name">${t.name}</div>
-                            <div class="task-reward">🪙 ${reward} Gold${t.gems?` + 🍎${t.gems}`:''}</div>
-                        </div>
-                        <button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.link||'').replace(/'/g,"\'")}','${src}')">${btnLabel}</button>
-                    </div>`;
-            }
+        // Progress bar: completed vs total tasks across ALL categories.
+        let totalCount = allTasks.length;
+        let doneCount  = allTasks.filter(t => (window.G.completedTasks||[]).includes(String(t.id))).length;
+        document.getElementById('task-progress-count').textContent = `${doneCount}/${totalCount}`;
+        document.getElementById('task-progress-fill').style.width = totalCount ? `${Math.round(100*doneCount/totalCount)}%` : '0%';
+    }
 
-            if(verifiedTasks.length){
-                c.innerHTML += `<div class="task-section-header">📡 Channel Tasks — Verified Automatically</div>`;
-                verifiedTasks.forEach(t => c.innerHTML += buildCard(t, 'channel'));
-            }
-            if(quickTasks.length){
-                c.innerHTML += `<div class="task-section-header">⚡ Quick Tasks — Complete & Claim</div>`;
-                quickTasks.forEach(t => c.innerHTML += buildCard(t, 'quick'));
-            }
-            if(!verifiedTasks.length && !quickTasks.length){
-                c.innerHTML += `<div style="text-align:center;color:#aaa;padding:16px 0;">More tasks coming soon! Stay tuned 🎯</div>`;
-            }
-
+    window.renderTasks = async function(){
+        let c = document.getElementById('task-list');
+        c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
+        try {
+            // Task listing lives in /api/verify_task (GET) — not a separate
+            // /api/tasks endpoint, since Vercel's Hobby plan caps this
+            // project at exactly 12 Serverless Functions.
+            const response = await fetch('/api/verify_task', { method: 'GET', signal: AbortSignal.timeout(8000) });
+            const data = await response.json();
+            allTasks = (data && data.success && Array.isArray(data.tasks)) ? data.tasks : [];
+            renderTaskList();
         } catch(e) {
+            allTasks = [];
             c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No tasks available right now.</div>';
         }
     };
@@ -1644,7 +1687,7 @@
                 btn.style.background = 'linear-gradient(180deg,#4caf50,#2e7d32)';
                 btn.style.boxShadow  = '0 3px 0 #1b5e20';
                 btn.disabled = false;
-                btn.onclick  = function(){ window.claimTask(id, taskType || 'quick'); };
+                btn.onclick  = function(){ window.claimTask(id, taskType); };
             }
         }, 1000);
     };
@@ -1666,8 +1709,7 @@
                 },
                 body: JSON.stringify({
                     telegramId: currentUser?.id,
-                    taskId:     id,
-                    skipVerify: (taskType !== 'channel')
+                    taskId:     id
                 })
             });
             res = await response.json();
@@ -2087,19 +2129,45 @@
         let existing = document.getElementById('no-token-modal');
         if(existing){ existing.style.display='flex'; return; }
         let div = document.createElement('div'); div.className='overlay ptr'; div.id='no-token-modal'; div.style.display='flex';
-        div.innerHTML=`<div class="modal"><span class="big-emoji">🎮</span><div class="mh mh-red">No Tokens!</div><div style="text-align:center;color:#aaa;margin-bottom:10px;">Tokens refill every 6 hours, or watch an ad to play now!</div><button class="btn btn-red" onclick="window.watchAdForGame()">Watch Ad - Play Free</button><button class="btn btn-grey" onclick="window.hideModal('no-token-modal')">Back</button></div>`;
+        div.innerHTML=`<div class="modal"><span class="big-emoji">🎮</span><div class="mh mh-red">No Tokens!</div><div style="text-align:center;color:#aaa;margin-bottom:10px;">Tokens refill every 4 hours, or watch an ad to play now!</div><button class="btn btn-red" onclick="window.watchAdForGame()">Watch Ad - Play Free</button><button class="btn btn-grey" onclick="window.hideModal('no-token-modal')">Back</button></div>`;
         document.body.appendChild(div);
     };
 
+    // ── Dynamic/random rewarded ad (for game-flow ad slots) ─────────────
+    // Previously these 4 call sites (watchAdForGame, watchAdForGameRetry,
+    // claimReward's 2X, skipStageWithAd) ALL hardcoded the same single
+    // Adsgram blockId AND silently treated any SDK failure as success
+    // (`catch(e){ await sleep(2000) }` then proceeded anyway) — meaning a
+    // failed/blocked ad still gave the reward. This picks randomly between
+    // the 3 already-loaded networks and — like the honest GigaPub pattern
+    // above — a genuine failure stays a failure; nothing here fakes success.
+    async function playRandomRewardedAd(){
+        const options = [
+            { network: 'adsgramDaily', fn: showAdsgramDailyAd, minDuration: 0 },
+            { network: 'monetag',      fn: showMonetagAd,      minDuration: 5000 },
+            { network: 'gigapub',      fn: showGigaPubAd,      minDuration: 5000 },
+        ];
+        const pick = options[Math.floor(Math.random() * options.length)];
+        const startTime = Date.now();
+        await pick.fn(); // throws straight through on failure — caller must handle
+        const elapsed = Date.now() - startTime;
+        if (pick.minDuration > 0 && elapsed < pick.minDuration) {
+            await new Promise(r => setTimeout(r, pick.minDuration - elapsed));
+        }
+        return true;
+    }
+
     window.watchAdForGame = async function(){
         document.getElementById('ad-loader').style.display='flex';
-        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        try { await playRandomRewardedAd(); }
+        catch(e){ document.getElementById('ad-loader').style.display='none'; showToast(adErrorText(e && e.message)); return; }
         document.getElementById('ad-loader').style.display='none'; window.hideModal('no-token-modal'); window.tryStartGame(true);
     };
 
     window.watchAdForGameRetry = async function(){
         window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
-        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2000)); }
+        try { await playRandomRewardedAd(); }
+        catch(e){ document.getElementById('ad-loader').style.display='none'; showToast(adErrorText(e && e.message)); return; }
         document.getElementById('ad-loader').style.display='none'; window.tryStartGame(true);
     };
 
@@ -2107,14 +2175,24 @@
         window.hideModal('complete-modal');
         document.getElementById('ad-loader').style.display='flex';
 
+        let adConfirmed = false;
         if(watchAd){
-            try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
+            try { await playRandomRewardedAd(); adConfirmed = true; }
+            catch(e){
+                document.getElementById('ad-loader').style.display='none';
+                showToast('⚠️ Ad failed — reward not doubled. Try again or tap Next Level.');
+                return;
+            }
         }
 
-        const res = await apiCall('/api/game_claim', { reward: pendingReward, isAdWatched: watchAd });
+        // NOTE: the actual gold amount is computed server-side in
+        // api/game_claim.js (not trusted from pendingReward here) —
+        // this only tells the server WHETHER a real ad was watched.
+        const res = await apiCall('/api/game_claim', { isAdWatched: adConfirmed });
         document.getElementById('ad-loader').style.display='none';
 
         if(res.success){
+            if(res.reward) showToast(`+${res.reward} 🪙 Gold`);
             window.tryStartGame(true);
         } else {
             showToast('❌ Error Saving Data! ' + (res.error || ''));
@@ -2126,52 +2204,57 @@
 
     window.skipStageWithAd = async function(){
         window.hideModal('over-modal'); document.getElementById('ad-loader').style.display='flex';
-        try { let AdC = Adsgram.init({ blockId: "int-28067" }); await AdC.show(); } catch(e){ await new Promise(r=>setTimeout(r,2500)); }
-        const res = await apiCall('/api/game_claim', { reward: 0, isAdWatched: false });
+        try { await playRandomRewardedAd(); }
+        catch(e){ document.getElementById('ad-loader').style.display='none'; showToast(adErrorText(e && e.message)); return; }
+        const res = await apiCall('/api/game_claim', { skip: true, isAdWatched: true });
         document.getElementById('ad-loader').style.display='none';
         if(res.success) { window.tryStartGame(true); showToast('Stage skipped!'); }
+        else { showToast('❌ ' + (res.error || 'Error saving data')); }
     };
 
     /* =========================================================
-       🎁 LOTTERY REWARD SYSTEM UPDATED
+       🎁 LOTTERY REWARD SYSTEM — server-authoritative
+       Prize table below is DISPLAY-ONLY (icon/label per id) so the slot
+       animation knows what to show. The actual prize is decided by
+       api/lottery.js -> lib/lottery.js — winning % is intentionally not
+       present anywhere in this file.
     ========================================================= */
     const LOTTERY_PRIZES = [
-        { id:1,  label:'100 🪙 Gold',        icon:'🪙',  type:'coin',     val:100,  weight:10 },
-        { id:2,  label:'200 🪙 Gold',        icon:'🪙',  type:'coin',     val:200,  weight:15 },
-        { id:3,  label:'300 🪙 Gold',        icon:'🪙',  type:'coin',     val:300,  weight:12 },
-        { id:4,  label:'1 Free Spin',        icon:'🎰',  type:'freespin', val:1,    weight:15 },
-        { id:5,  label:'700 🪙 Gold',        icon:'🪙',  type:'coin',     val:700,  weight:8  },
-        { id:6,  label:'300 🍎 Fruit Coin',  icon:'🍎',  type:'fc',       val:300,  weight:15 },
-        { id:7,  label:'3 🎮 Game Token',    icon:'🎮',  type:'token',    val:3,    weight:12 },
-        { id:8,  label:'500 🍎 Fruit Coin',  icon:'🍎',  type:'fc',       val:500,  weight:10 },
-        { id:9,  label:'2000 🍎 Fruit Coin', icon:'🍎',  type:'fc',       val:2000, weight:1  },
-        { id:10, label:'1 🎫 Lottery Token', icon:'🎫',  type:'lottoken', val:1,    weight:12 },
+        { id:1,  label:'2000 🪙 Gold',        icon:'🪙',  type:'coin',     val:2000 },
+        { id:2,  label:'500 🪙 Gold',         icon:'🪙',  type:'coin',     val:500  },
+        { id:3,  label:'1000 🪙 Gold',        icon:'🪙',  type:'coin',     val:1000 },
+        { id:4,  label:'20 🍎 Fruit Coin',    icon:'🍎',  type:'fc',       val:20   },
+        { id:5,  label:'100 🍎 Fruit Coin',   icon:'🍎',  type:'fc',       val:100  },
+        { id:6,  label:'2 🎫 Lottery Token',  icon:'🎫',  type:'lottoken', val:2    },
+        { id:7,  label:'50 🍎 Fruit Coin',    icon:'🍎',  type:'fc',       val:50   },
+        { id:8,  label:'2 🎮 Game Token',     icon:'🎮',  type:'token',    val:2    },
+        { id:9,  label:'3 🎮 Game Token',     icon:'🎮',  type:'token',    val:3    },
+        { id:10, label:'1000 🍎 Fruit Coin',  icon:'🍎',  type:'fc',       val:1000 },
     ];
     const SLOT_SYMBOLS = ['🪙','🍋','🎰','7️⃣','⭐','🎮','🍊','🪙','🔔','🍒'];
-
-    function weightedRandom(){
-        let total = LOTTERY_PRIZES.reduce((a,p)=>a+p.weight,0);
-        let r = Math.random()*total, acc=0;
-        for(let p of LOTTERY_PRIZES){ acc+=p.weight; if(r<acc) return p; }
-        return LOTTERY_PRIZES[LOTTERY_PRIZES.length-1];
-    }
 
     function getSlotResult(prize){
         if(prize.type==='lottoken') return ['🎫','🎫','🎫'];
         if(prize.type==='token')    return ['🎮','🎮','🎮'];
-        if(prize.type==='freespin') return ['🎰','🎰','🎰'];
-        if(prize.type==='fc' && prize.val>=2000) return ['🍎','🍎','🍎'];
+        if(prize.type==='fc' && prize.val>=1000) return ['🍎','🍎','🍎'];
         if(prize.type==='fc') return ['🍎','⭐','🍎'];
-        if(prize.val>=700) return ['🪙','🪙','🪙'];
-        if(prize.val>=300) return ['🔔','🔔','🔔'];
-        if(prize.val>=200) return ['🍒','🍒','🍒'];
-        if(prize.val>=100) return ['🍋','🍋','🍋'];
+        if(prize.val>=2000) return ['🪙','🪙','🪙'];
+        if(prize.val>=1000) return ['🔔','🔔','🔔'];
+        if(prize.val>=500) return ['🍒','🍒','🍒'];
         return ['🎰','🍊','7️⃣'];
     }
 
+    // Next UTC-midnight reset, for the free-spin countdown label.
+    function nextUtcMidnight(){
+        let d = new Date();
+        let next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()+1, 0,0,0));
+        return next;
+    }
+
     window.renderLotteryModal = function(){
+        // Odds intentionally not rendered — icon + label only.
         let grid = document.getElementById('lottery-prizes-grid');
-        if(grid) grid.innerHTML = LOTTERY_PRIZES.map(p=>`<div class="lottery-prize-item"><div class="lottery-prize-name">${p.icon} ${p.label}</div><div class="lottery-prize-chance">${p.weight}%</div></div>`).join('');
+        if(grid) grid.innerHTML = LOTTERY_PRIZES.map(p=>`<div class="lottery-prize-item"><div class="lottery-prize-name">${p.icon} ${p.label}</div></div>`).join('');
         document.getElementById('lottery-total-earned').textContent = window.G.lotteryDiamondsEarned||0;
         document.getElementById('lottery-total-spins').textContent  = window.G.lotteryTotalSpins||0;
         let lotTokens  = window.G.lotteryTokens||0;
@@ -2182,16 +2265,55 @@
         document.getElementById('lottery-result').textContent='';
         let tokenBtn = document.getElementById('lottery-token-spin-btn');
         if(tokenBtn) { tokenBtn.disabled = lotTokens <= 0;   tokenBtn.textContent = lotTokens <= 0   ? 'No Lottery Tokens'   : `Use Token & SPIN! (${lotTokens})`; }
+
+        let freeBtn = document.getElementById('lottery-free-spin-btn');
+        if(freeBtn){
+            let usedToday = false;
+            if(window.G.lastFreeLotteryAt){
+                let last = new Date(window.G.lastFreeLotteryAt);
+                let todayKey = new Date().toISOString().slice(0,10);
+                usedToday = last.toISOString().slice(0,10) === todayKey;
+            }
+            freeBtn.disabled = usedToday;
+            if(usedToday){
+                let hrs = Math.max(1, Math.ceil((nextUtcMidnight() - Date.now())/3600000));
+                freeBtn.textContent = `🎁 Free Spin used (back in ~${hrs}h)`;
+            } else {
+                freeBtn.textContent = '🎁 Use Free Spin!';
+            }
+        }
     };
 
     let lotterySpinning = false;
 
+    // useToken=true -> spend a Lottery Token. useToken=false -> today's free spin.
     async function executeSpin(useToken){
         if(lotterySpinning) return;
         lotterySpinning = true;
-        let btn = document.getElementById('lottery-token-spin-btn');
-        if(btn){ btn.disabled = true; btn.textContent = 'Loading...'; }
+        let tokenBtn = document.getElementById('lottery-token-spin-btn');
+        let freeBtn  = document.getElementById('lottery-free-spin-btn');
+        if(tokenBtn) tokenBtn.disabled = true;
+        if(freeBtn)  freeBtn.disabled  = true;
         stopSound('menu');
+
+        // Ask the server FIRST — it claims the spin (token/free) and picks
+        // the prize. The slot animation below just visualizes whatever
+        // the server already decided; nothing here can influence the win.
+        const res = await apiCall('/api/lottery', { useToken });
+
+        if(!res.success){
+            lotterySpinning = false;
+            if(tokenBtn) tokenBtn.disabled = (window.G.lotteryTokens||0) <= 0;
+            if(freeBtn)  freeBtn.disabled  = false;
+            const msg = res.error === 'no_lottery_tokens' ? 'No Lottery Tokens! Earn them by referring friends.'
+                      : res.error === 'free_spin_already_used' ? 'Free spin already used today — come back after UTC midnight!'
+                      : 'Server Error, try again.';
+            showToast(msg);
+            window.renderLotteryModal();
+            return;
+        }
+
+        const prize = LOTTERY_PRIZES.find(p => p.id === res.prize.id) || res.prize;
 
         playSound('spin');
         let slots = ['slot-0','slot-1','slot-2'];
@@ -2202,28 +2324,31 @@
             slots.forEach(id=>{ document.getElementById(id).textContent = SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)]; });
         }, 100);
 
-        let prize = weightedRandom();
         let finalSymbols = getSlotResult(prize);
 
         setTimeout(()=>{ clearInterval(symbolInterval); document.getElementById('slot-0').classList.remove('spinning'); document.getElementById('slot-0').textContent=finalSymbols[0]; }, 1200);
         setTimeout(()=>{ document.getElementById('slot-1').classList.remove('spinning'); document.getElementById('slot-1').textContent=finalSymbols[1]; }, 1800);
-        setTimeout(async ()=>{
+        setTimeout(()=>{
             document.getElementById('slot-2').classList.remove('spinning'); document.getElementById('slot-2').textContent=finalSymbols[2];
             if(finalSymbols[0]===finalSymbols[1] && finalSymbols[1]===finalSymbols[2]){
                 slots.forEach(id=>{ document.getElementById(id).classList.add('win'); });
             }
-            const res = await apiCall('/api/lottery', { prizeType: prize.type, prizeVal: prize.val, usedToken: useToken });
-            if(res.success){
-                if(prize.type === 'freespin'){
-                    window.G.lotteryTokens = (window.G.lotteryTokens||0) + 1;
-                }
-                let rewardMsg = `You won: ${prize.icon} ${prize.label}!`;
-                document.getElementById('lottery-result').textContent = rewardMsg;
-                showToast(rewardMsg);
-                if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            } else {
-                document.getElementById('lottery-result').textContent = "Server Error";
+            if(res.user){
+                if(res.user.gold          !== undefined) window.G.coins         = res.user.gold;
+                if(res.user.fruitCoin     !== undefined) window.G.gems          = res.user.fruitCoin;
+                if(res.user.gameTokens    !== undefined) window.G.tokens        = res.user.gameTokens;
+                if(res.user.lotteryTokens !== undefined) window.G.lotteryTokens = res.user.lotteryTokens;
             }
+            if(!useToken) window.G.lastFreeLotteryAt = new Date().toISOString();
+            window.G.lotteryTotalSpins = (window.G.lotteryTotalSpins||0) + 1;
+            if(prize.type === 'coin') window.G.lotteryDiamondsEarned = (window.G.lotteryDiamondsEarned||0) + prize.val;
+
+            let rewardMsg = `You won: ${prize.icon} ${prize.label}!`;
+            document.getElementById('lottery-result').textContent = rewardMsg;
+            showToast(rewardMsg);
+            if(tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            window.updateUI();
             window.renderLotteryModal();
             lotterySpinning = false;
             playSound('menu');
@@ -2231,10 +2356,35 @@
     }
 
     window.spinLotteryWithToken = async function(){
-        let lotTokens = window.G.lotteryTokens||0;
-        if(lotTokens <= 0){ showToast('No Lottery Tokens! Earn them by referring friends.'); return; }
-        window.G.lotteryTokens = lotTokens - 1;
+        if((window.G.lotteryTokens||0) <= 0){ showToast('No Lottery Tokens! Earn them by referring friends.'); return; }
         await executeSpin(true);
+    };
+
+    window.spinLotteryFree = async function(){
+        await executeSpin(false);
+    };
+
+    // ── 🎁 Gift box (admin "Send Gift") ──────────────────────────────
+    let currentGift = null;
+    window.showGiftModal = function(gift){
+        if(!gift || currentGift) return; // don't stack multiple popups
+        currentGift = gift;
+        document.getElementById('gift-reason-text').textContent = gift.reason || '';
+        document.getElementById('gift-amount-text').textContent = `🍎 ${Number(gift.amount).toLocaleString()} Fruit Coin`;
+        window.showModal('gift-modal');
+    };
+    window.claimGift = async function(){
+        if(!currentGift) return;
+        const gift = currentGift;
+        const res = await apiCall('/api/game_claim', { action: 'claim_gift', giftId: gift.id });
+        if(res.success){
+            showToast(`🎁 +${Number(res.amount).toLocaleString()} 🍎 Fruit Coin claimed!`);
+            window.updateUI();
+        } else {
+            showToast(res.error === 'already_claimed_or_not_found' ? '⚠️ This gift was already claimed.' : '❌ Error claiming gift, try again.');
+        }
+        currentGift = null;
+        window.hideModal('gift-modal');
     };
 
     (function(){
