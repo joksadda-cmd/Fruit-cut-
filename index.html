@@ -301,14 +301,6 @@
         .task-btn{ background:linear-gradient(180deg,#00bcd4,#006064); border:none;border-radius:10px;padding:7px 14px; font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;color:#fff; cursor:pointer;box-shadow:0 3px 0 #003a3a;white-space:nowrap;flex-shrink:0; }
         .task-btn.done{background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;cursor:default;}
         .task-section-header{font-size:13px;font-weight:900;color:#7de;margin:10px 0 6px;padding:4px 10px;background:rgba(0,150,200,0.15);border-radius:8px;}
-        .task-progress-wrap{background:rgba(255,255,255,0.06);border-radius:12px;padding:10px 14px;margin-bottom:10px;}
-        .task-progress-label{display:flex;justify-content:space-between;font-size:12px;font-weight:900;color:#ccc;margin-bottom:6px;}
-        .task-progress-bar{height:8px;background:rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;}
-        .task-progress-fill{height:100%;background:linear-gradient(90deg,#ff8c00,#ffcc00);border-radius:6px;transition:width 0.4s;}
-        .task-tabs{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;}
-        .task-tab{flex:1;text-align:center;padding:8px 4px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:11px;font-weight:900;color:#aaa;cursor:pointer;white-space:nowrap;}
-        .task-tab.active{background:linear-gradient(180deg,#ff8c00,#e65100);color:#fff;border-color:transparent;}
-        .task-available-badge{font-size:9px;font-weight:900;padding:2px 7px;border-radius:8px;background:rgba(76,175,80,0.25);color:#81c784;margin-left:6px;}
         .tg-info{font-size:12px;color:#7de;text-align:center;margin-bottom:8px;padding:6px;background:rgba(0,100,200,0.2);border-radius:8px;}
         
         .unique-code-box{background:rgba(255,200,0,0.1);border:2px solid rgba(255,200,0,0.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;text-align:center;}
@@ -536,16 +528,6 @@
     </div>
 </div>
 
-<div class="overlay ptr" id="gift-modal">
-    <div class="modal" style="text-align:center;">
-        <div style="font-size:56px;margin-bottom:6px;">🎁</div>
-        <div class="mh mh-gold">A Gift For You!</div>
-        <div id="gift-reason-text" style="color:#aaa;font-size:13px;margin:8px 0 4px;"></div>
-        <div id="gift-amount-text" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;margin-bottom:14px;"></div>
-        <button class="btn btn-gold" onclick="window.claimGift()">🎁 CLAIM GIFT</button>
-    </div>
-</div>
-
 <!-- Shop - Gold→Diamond exchange -->
 <div class="overlay ptr" id="shop-modal">
     <div class="modal">
@@ -740,16 +722,6 @@
 <div class="overlay ptr" id="task-modal">
     <div class="modal">
         <div class="mh mh-cyan">📋 Tasks</div>
-        <div class="task-progress-wrap">
-            <div class="task-progress-label"><span>Task Progress</span><span id="task-progress-count">0/0</span></div>
-            <div class="task-progress-bar"><div class="task-progress-fill" id="task-progress-fill" style="width:0%;"></div></div>
-        </div>
-        <div class="task-tabs" id="task-tabs">
-            <div class="task-tab active" data-cat="daily" onclick="window.switchTaskTab('daily')">🔥 Daily</div>
-            <div class="task-tab" data-cat="social" onclick="window.switchTaskTab('social')">💬 Social</div>
-            <div class="task-tab" data-cat="exclusive" onclick="window.switchTaskTab('exclusive')">💎 Exclusive</div>
-            <div class="task-tab" data-cat="partner" onclick="window.switchTaskTab('partner')">🤝 Partner</div>
-        </div>
         <div id="task-list"><div style="text-align:center;color:#aaa;padding:20px;">Loading tasks...</div></div>
         <div class="info-text">Complete tasks to earn Gold & Fruit Coin!</div>
         <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
@@ -1078,7 +1050,6 @@
                 window.G.lotteryTokens = res.user.lotteryTokens ?? window.G.lotteryTokens;
                 window.G.lastFreeLotteryAt = res.user.lastFreeLotteryAt ?? window.G.lastFreeLotteryAt;
             }
-            if(res.pendingGift) window.showGiftModal(res.pendingGift);
 
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
@@ -1180,7 +1151,6 @@
                             showToast(`🎮 Token refilled! Now: ${window.G.tokens}/10`);
                         }
                         window.updateUI();
-                        if(data.pendingGift) window.showGiftModal(data.pendingGift);
                     }
                 } catch(e){}
             }
@@ -1562,50 +1532,29 @@
     window.watchGigaPubAd      = () => processAdReward('gigapub',      10, window.G.gigapubCount,      'gigapub-btn',       () => 200, `+{R} Gold! (GigaPub)`);
     window.watchMonetagAd      = () => processAdReward('monetag',      10, window.G.monetagCount,      'monetag-btn',       () => 200, `+{R} Gold! (Monetag)`);
 
-    let allTasks = [];      // cache from server for the current modal session
-    let activeTaskTab = 'daily';
-
-    window.switchTaskTab = function(cat){
-        activeTaskTab = cat;
-        document.querySelectorAll('.task-tab').forEach(el=>{
-            el.classList.toggle('active', el.getAttribute('data-cat') === cat);
-        });
-        renderTaskList();
-    };
-
-    function buildTaskCard(t){
-        // Completed tasks vanish entirely (matches previous behavior).
-        let done = (window.G.completedTasks||[]).includes(String(t.id));
-        if(done) return '';
-
-        let isApi     = t.type === 'api';
-        let cardClass = isApi ? 'channel-task' : 'simple-task';
-        let badgeClass= isApi ? 'badge-channel' : 'badge-simple';
-        let badgeText = isApi ? '✅ Auto-Verified' : '⚡ Quick Task';
-        let btnLabel  = isApi ? 'Join' : 'Go';
-        let rewardStr = `🪙 ${t.reward} Gold` + (t.rewardFc ? ` + 🍎 ${t.rewardFc}` : '');
-        return `
-            <div class="task-card ${cardClass}" id="task-card-${t.id}">
-                <div class="task-icon">${t.icon||'📋'}</div>
-                <div class="task-info">
-                    <span class="task-type-badge ${badgeClass}">${badgeText}</span><span class="task-available-badge">Available</span>
-                    <div class="task-name">${t.title}</div>
-                    ${t.description ? `<div style="font-size:11px;color:#999;margin-top:2px;">${t.description}</div>` : ''}
-                    <div class="task-reward">${rewardStr}</div>
-                </div>
-                <button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.url||'').replace(/'/g,"\\'")}','${t.type}')">${btnLabel}</button>
-            </div>`;
-    }
-
-    function renderTaskList(){
+    window.renderTasks = async function(){
         let c = document.getElementById('task-list');
-        let inCat = allTasks.filter(t => (t.category||'social') === activeTaskTab);
-        let cards = inCat.map(buildTaskCard).filter(Boolean).join('');
+        c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
+        try {
+            // Load both verified (tasks collection) and quick (quick_tasks collection) in parallel
+            const [verRes, qtRes] = await Promise.all([
+                fetch('https://fruit-cut-eight.vercel.app/api/tasks',             { method:'GET', signal:AbortSignal.timeout(8000) }),
+                fetch('https://fruit-cut-eight.vercel.app/api/tasks?type=quick',  { method:'GET', signal:AbortSignal.timeout(8000) }).catch(()=>null)
+            ]);
 
-        let pinned = '';
-        if(activeTaskTab === 'social'){
-            // Permanent official links, pinned at the top of Social.
-            pinned = `
+            let verifiedTasks = [];
+            let quickTasks    = [];
+
+            try { verifiedTasks = await verRes.json(); if(!Array.isArray(verifiedTasks)) verifiedTasks=[]; } catch(e){}
+            try { if(qtRes){ quickTasks = await qtRes.json(); if(!Array.isArray(quickTasks)) quickTasks=[]; } } catch(e){}
+
+            verifiedTasks.forEach(t => { t._src = 'channel'; });
+            quickTasks.forEach(t    => { t._src = 'quick';   });
+
+            c.innerHTML = '';
+
+            // ── Permanent Official Links (always shown at top) ────────
+            c.innerHTML += `
                 <div class="task-section-header" style="background:linear-gradient(90deg,rgba(0,150,136,0.3),transparent);border-left:3px solid #00bcd4;">
                     📌 Official Community — Join & Stay Updated
                 </div>
@@ -1632,34 +1581,45 @@
                         onclick="tg?.openLink ? tg.openLink('https://t.me/earn_fruit_game') : window.open('https://t.me/earn_fruit_game','_blank')">
                         Join
                     </button>
-                </div>`;
-        }
+                </div>
+            `;
 
-        c.innerHTML = pinned + cards;
-        if(!cards && activeTaskTab !== 'social'){
-            c.innerHTML += `<div style="text-align:center;color:#aaa;padding:16px 0;">More ${activeTaskTab} tasks coming soon! Stay tuned 🎯</div>`;
-        }
+            function buildCard(t, src){
+                // completed task গুলো render করবে না — পুরোপুরি vanish
+                let done = (window.G.completedTasks||[]).includes(String(t.id));
+                if(done) return '';
 
-        // Progress bar: completed vs total tasks across ALL categories.
-        let totalCount = allTasks.length;
-        let doneCount  = allTasks.filter(t => (window.G.completedTasks||[]).includes(String(t.id))).length;
-        document.getElementById('task-progress-count').textContent = `${doneCount}/${totalCount}`;
-        document.getElementById('task-progress-fill').style.width = totalCount ? `${Math.round(100*doneCount/totalCount)}%` : '0%';
-    }
+                let isChannel  = src === 'channel';
+                let cardClass  = isChannel ? 'channel-task' : 'simple-task';
+                let badgeClass = isChannel ? 'badge-channel' : 'badge-simple';
+                let badgeText  = isChannel ? '📡 Channel Task' : '⚡ Quick Task';
+                let btnLabel   = isChannel ? 'Join' : 'Go';
+                let reward     = t.coins || 200;
+                return `
+                    <div class="task-card ${cardClass}" id="task-card-${t.id}">
+                        <div class="task-icon">${t.icon||'📋'}</div>
+                        <div class="task-info">
+                            <span class="task-type-badge ${badgeClass}">${badgeText}</span>
+                            <div class="task-name">${t.name}</div>
+                            <div class="task-reward">🪙 ${reward} Gold${t.gems?` + 🍎${t.gems}`:''}</div>
+                        </div>
+                        <button class="task-btn" id="task-btn-${t.id}" onclick="window.doTask('${t.id}','${(t.link||'').replace(/'/g,"\'")}','${src}')">${btnLabel}</button>
+                    </div>`;
+            }
 
-    window.renderTasks = async function(){
-        let c = document.getElementById('task-list');
-        c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
-        try {
-            // Task listing lives in /api/verify_task (GET) — not a separate
-            // /api/tasks endpoint, since Vercel's Hobby plan caps this
-            // project at exactly 12 Serverless Functions.
-            const response = await fetch('/api/verify_task', { method: 'GET', signal: AbortSignal.timeout(8000) });
-            const data = await response.json();
-            allTasks = (data && data.success && Array.isArray(data.tasks)) ? data.tasks : [];
-            renderTaskList();
+            if(verifiedTasks.length){
+                c.innerHTML += `<div class="task-section-header">📡 Channel Tasks — Verified Automatically</div>`;
+                verifiedTasks.forEach(t => c.innerHTML += buildCard(t, 'channel'));
+            }
+            if(quickTasks.length){
+                c.innerHTML += `<div class="task-section-header">⚡ Quick Tasks — Complete & Claim</div>`;
+                quickTasks.forEach(t => c.innerHTML += buildCard(t, 'quick'));
+            }
+            if(!verifiedTasks.length && !quickTasks.length){
+                c.innerHTML += `<div style="text-align:center;color:#aaa;padding:16px 0;">More tasks coming soon! Stay tuned 🎯</div>`;
+            }
+
         } catch(e) {
-            allTasks = [];
             c.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No tasks available right now.</div>';
         }
     };
@@ -1687,7 +1647,7 @@
                 btn.style.background = 'linear-gradient(180deg,#4caf50,#2e7d32)';
                 btn.style.boxShadow  = '0 3px 0 #1b5e20';
                 btn.disabled = false;
-                btn.onclick  = function(){ window.claimTask(id, taskType); };
+                btn.onclick  = function(){ window.claimTask(id, taskType || 'quick'); };
             }
         }, 1000);
     };
@@ -1709,7 +1669,8 @@
                 },
                 body: JSON.stringify({
                     telegramId: currentUser?.id,
-                    taskId:     id
+                    taskId:     id,
+                    skipVerify: (taskType !== 'channel')
                 })
             });
             res = await response.json();
@@ -2362,29 +2323,6 @@
 
     window.spinLotteryFree = async function(){
         await executeSpin(false);
-    };
-
-    // ── 🎁 Gift box (admin "Send Gift") ──────────────────────────────
-    let currentGift = null;
-    window.showGiftModal = function(gift){
-        if(!gift || currentGift) return; // don't stack multiple popups
-        currentGift = gift;
-        document.getElementById('gift-reason-text').textContent = gift.reason || '';
-        document.getElementById('gift-amount-text').textContent = `🍎 ${Number(gift.amount).toLocaleString()} Fruit Coin`;
-        window.showModal('gift-modal');
-    };
-    window.claimGift = async function(){
-        if(!currentGift) return;
-        const gift = currentGift;
-        const res = await apiCall('/api/game_claim', { action: 'claim_gift', giftId: gift.id });
-        if(res.success){
-            showToast(`🎁 +${Number(res.amount).toLocaleString()} 🍎 Fruit Coin claimed!`);
-            window.updateUI();
-        } else {
-            showToast(res.error === 'already_claimed_or_not_found' ? '⚠️ This gift was already claimed.' : '❌ Error claiming gift, try again.');
-        }
-        currentGift = null;
-        window.hideModal('gift-modal');
     };
 
     (function(){
