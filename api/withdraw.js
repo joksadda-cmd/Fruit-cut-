@@ -6,18 +6,28 @@
 // USDT only — both methods pay out in USDT, just to a different wallet
 // (Binance UID vs a TonKeeper address paid in USDT-on-TON). Rates here
 // match WITHDRAW_RATES in index.html exactly — if you change one, change both.
+//
+// Requirements (per Rashu's spec): 5 tasks completed AND joined the
+// official channel + community — no more referral requirement.
+//
+// Once per (UTC) day, and a 5% fee is taken out of every withdrawal.
+// Both the daily-limit check AND the balance deduction happen in the
+// SAME atomic findOneAndUpdate call below, so a double-tap/double-submit
+// can never produce two withdrawals — the second request's filter simply
+// won't match once the first has already set today's lastWithdrawAt.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
+const { checkChannelMembership } = require('../lib/joinGate');
 
 const RATES = {
   binance: { rate: 0.001, unit: 'USDT', decimals: 4 },
   tonkeeper: { rate: 0.001, unit: 'USDT', decimals: 4 },
 };
 
-const MIN_FRUIT_COIN = 100;
-const MIN_REFERRALS = 2;
+const MIN_FRUIT_COIN = 10000;
 const MIN_TASKS = 5;
+const FEE_RATE = 0.05; // 5%
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -42,7 +52,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid address' });
     }
     if (!Number.isFinite(amt) || amt < MIN_FRUIT_COIN) {
-      return res.status(400).json({ success: false, error: `Minimum withdrawal is ${MIN_FRUIT_COIN} Fruit Coin` });
+      return res.status(400).json({ success: false, error: `Minimum withdrawal is ${MIN_FRUIT_COIN.toLocaleString()} Fruit Coin` });
     }
 
     const usersCol = await getCollection('users');
@@ -50,28 +60,54 @@ module.exports = async (req, res) => {
     if (!user) return res.status(404).json({ success: false, error: 'user_not_found' });
     if (user.banned) return res.status(403).json({ success: false, error: 'Account suspended' });
 
-    if ((user.referralCount || 0) < MIN_REFERRALS) {
-      return res.status(400).json({ success: false, error: `Need at least ${MIN_REFERRALS} referrals first` });
-    }
     if ((user.completedTasks || []).length < MIN_TASKS) {
       return res.status(400).json({ success: false, error: `Need to complete ${MIN_TASKS} tasks first` });
     }
 
-    // Atomic deduct: only matches/succeeds if the real DB balance is
-    // actually >= amt at the moment of update. (Driver v6+ returns the
-    // document directly from findOneAndUpdate, not wrapped in { value }.)
+    const channels = await checkChannelMembership(telegramId);
+    const required = channels.filter((c) => c.key === 'channel' || c.key === 'community');
+    const notJoined = required.filter((c) => !c.joined);
+    if (notJoined.length) {
+      return res.status(400).json({
+        success: false,
+        error: `Please join our ${notJoined.map((c) => c.label).join(' & ')} first`,
+      });
+    }
+
+    // 5% fee — the FULL requested amount leaves the user's Fruit Coin
+    // balance, but only 95% of it is what actually gets converted/paid.
+    const feeFruitCoin = Math.round(amt * FEE_RATE);
+    const netFruitCoin = amt - feeFruitCoin;
+
+    const r = RATES[method];
+    const convertedAmount = Number((netFruitCoin * r.rate).toFixed(r.decimals));
+    const trimmedAddress = address.trim();
+
+    // ONE atomic operation does all three things that must not race each
+    // other: (a) re-check real balance, (b) re-check "not already
+    // withdrawn today", (c) deduct + stamp today's withdrawal — so a
+    // double-click can only ever succeed once.
+    const startOfTodayUTC = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z');
+    const now = new Date();
     const deducted = await usersCol.findOneAndUpdate(
-      { _id: user._id, fruitCoin: { $gte: amt } },
-      { $inc: { fruitCoin: -amt }, $set: { lastActive: new Date() } },
+      {
+        _id: user._id,
+        fruitCoin: { $gte: amt },
+        $or: [{ lastWithdrawAt: { $exists: false } }, { lastWithdrawAt: null }, { lastWithdrawAt: { $lt: startOfTodayUTC } }],
+      },
+      { $inc: { fruitCoin: -amt }, $set: { lastActive: now, lastWithdrawAt: now } },
       { returnDocument: 'after' }
     );
     if (!deducted) {
-      return res.status(400).json({ success: false, error: 'Not enough Fruit Coin' });
+      // Figure out which of the two conditions actually failed, for a
+      // clearer error message (re-read is fine here — cheap and this is
+      // just for the message, not for anything security-relevant).
+      const fresh = await usersCol.findOne({ _id: user._id });
+      if (fresh && fresh.fruitCoin < amt) {
+        return res.status(400).json({ success: false, error: 'Not enough Fruit Coin' });
+      }
+      return res.status(400).json({ success: false, error: 'You can only withdraw once per day. Try again tomorrow.' });
     }
-
-    const r = RATES[method];
-    const convertedAmount = Number((amt * r.rate).toFixed(r.decimals));
-    const trimmedAddress = address.trim();
 
     const withdrawalsCol = await getCollection('withdrawals');
     const insertResult = await withdrawalsCol.insertOne({
@@ -79,11 +115,13 @@ module.exports = async (req, res) => {
       username: user.username,
       method,
       address: trimmedAddress,
-      amount: amt, // Fruit Coin amount deducted
+      amount: amt,           // Fruit Coin deducted from balance (gross)
+      feeFruitCoin,           // 5% fee taken out
+      netFruitCoin,           // what was actually converted
       convertedAmount,
       unit: r.unit,
       status: 'pending',
-      createdAt: new Date(),
+      createdAt: now,
     });
 
     const txCol = await getCollection('transactions');
@@ -92,11 +130,11 @@ module.exports = async (req, res) => {
       type: 'withdrawal',
       amount: -amt,
       balanceAfter: deducted.fruitCoin,
-      meta: { withdrawalId: insertResult.insertedId, method, address: trimmedAddress },
-      createdAt: new Date(),
+      meta: { withdrawalId: insertResult.insertedId, method, address: trimmedAddress, feeFruitCoin, netFruitCoin },
+      createdAt: now,
     });
 
-    return res.status(200).json({ success: true, withdrawalId: insertResult.insertedId });
+    return res.status(200).json({ success: true, withdrawalId: insertResult.insertedId, feeFruitCoin, netFruitCoin, convertedAmount, unit: r.unit });
   } catch (err) {
     console.error('withdraw error:', err);
     return res.status(500).json({ success: false, error: 'Server error' });
