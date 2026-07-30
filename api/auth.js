@@ -88,6 +88,7 @@ module.exports = async (req, res) => {
         fruitCoin: 0,
         gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
         lastTokenRegenAt: new Date(),
+        stage: 1,
         lotteryTokens: 0,
         lastFreeLotteryAt: null,
         completedTasks: [],
@@ -170,6 +171,12 @@ module.exports = async (req, res) => {
 
     const finalRegen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt || new Date());
 
+    const giftsCol = await getCollection('gifts');
+    const pendingGift = await giftsCol.findOne(
+      { telegramId: user.telegramId, status: 'pending' },
+      { sort: { createdAt: 1 } }
+    );
+
     return res.status(200).json({
       success: true,
       status: 'ok',
@@ -183,10 +190,14 @@ module.exports = async (req, res) => {
         nextTokenAt: finalRegen.nextTokenAt,
         lotteryTokens: user.lotteryTokens ?? 0,
         lastFreeLotteryAt: user.lastFreeLotteryAt ?? null,
+        stage: user.stage ?? 1,
         completedTasks: user.completedTasks ?? [],
         highScore: user.highScore,
         referralCount: user.referralCount,
       },
+      pendingGift: pendingGift
+        ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
+        : null,
     });
   } catch (err) {
     console.error('auth error:', err);
