@@ -41,7 +41,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { applyRegen } = require('../lib/tokens');
+const { applyRegen, REGEN_INTERVAL_MS } = require('../lib/tokens');
 const { ObjectId } = require('mongodb');
 
 const REWARD_MIN = 40;
@@ -60,16 +60,28 @@ async function handleStartGame(req, res, user) {
 
   // Atomic decrement — filter re-checks gameTokens > 0 so a double-tap
   // or a forced duplicate request can never take a player below 0.
+  //
+  // lastTokenRegenAt is reset to right now on every spend, on purpose:
+  // the countdown to the NEXT token should always read a fresh ~6h
+  // immediately after you use one, not "however much was left on the
+  // old shared clock" (which is what made it show e.g. 1h42m instead of
+  // 5h59m — the countdown wasn't tied to spending at all before this).
+  const now = new Date();
   const updated = await usersCol.findOneAndUpdate(
     { _id: user._id, gameTokens: { $gt: 0 } },
-    { $inc: { gameTokens: -1 }, $set: { lastActive: new Date() } },
+    { $inc: { gameTokens: -1 }, $set: { lastActive: now, lastTokenRegenAt: now } },
     { returnDocument: 'after' }
   );
   if (!updated) {
     return res.status(200).json({ success: false, error: 'no_tokens', tokens: 0 });
   }
 
-  return res.status(200).json({ success: true, tokens: updated.gameTokens, stage: updated.stage ?? 1 });
+  return res.status(200).json({
+    success: true,
+    tokens: updated.gameTokens,
+    stage: updated.stage ?? 1,
+    nextTokenAt: new Date(now.getTime() + REGEN_INTERVAL_MS),
+  });
 }
 
 async function handleClaimGift(req, res, user) {
