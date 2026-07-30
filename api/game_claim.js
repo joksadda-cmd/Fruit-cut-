@@ -1,12 +1,19 @@
 // api/game_claim.js
 // POST /api/game_claim
 //
-// Two actions live in this one file on purpose — Vercel's Hobby plan
-// caps a project at 12 Serverless Functions, and this project is
-// already at exactly 12 without this endpoint even existing yet, so a
-// separate api/gift_claim.js would have pushed it to 13 and broken
-// deployment. Both actions are "credit a reward to this user," so they
-// share a file instead.
+// Three actions live in this one file on purpose — Vercel's Hobby plan
+// caps a project at 12 Serverless Functions, so closely-related "credit/
+// spend something for this user" actions share a file instead of each
+// getting their own.
+//
+// action: 'start_game' -> spends 1 Game Token to start a level. Body:
+//   { action: 'start_game' }
+//   THIS FIXES THE "tokens reset to 10 on app reopen" BUG: token
+//   deduction used to be entirely client-side (`window.G.tokens--`, with
+//   a comment claiming "game_claim handles server deduction" — it never
+//   did). The database value was never touched, so reopening the app
+//   just showed the untouched DB value, which looked like a reset.
+//   Deduction is now atomic here and is the only source of truth.
 //
 // action omitted/'level' (default) -> level-complete claim (Next Level /
 //   2X Reward / Skip Stage buttons). Body: { isAdWatched, skip }
@@ -19,6 +26,12 @@
 //   always computed here, server-side, in the same 40–120 range the
 //   frontend uses for display, so a devtools/termux user editing the
 //   request body can never claim more gold than a real playthrough allows.
+//   ALSO FIXES: stage was tracked only in a client JS variable that was
+//   never incremented anywhere in the whole codebase and never saved —
+//   every player was permanently "stuck" on stage 1 no matter how many
+//   levels they finished. Stage now lives on the user document and
+//   advances by 1 on every level-complete/skip, forever, and survives
+//   app restarts since it's read back from the server on load.
 //
 // action: 'claim_gift' -> claims an admin-sent gift (from the bot's
 //   "Send Gift" flow). Body: { action: 'claim_gift', giftId }
@@ -28,10 +41,36 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
+const { applyRegen } = require('../lib/tokens');
 const { ObjectId } = require('mongodb');
 
 const REWARD_MIN = 40;
 const REWARD_MAX = 120; // inclusive, matches index.html's `40 + rand(0..80)`
+
+async function handleStartGame(req, res, user) {
+  const usersCol = await getCollection('users');
+
+  // Credit any tokens the player earned while away BEFORE checking
+  // availability, so someone who's been offline a while isn't wrongly
+  // blocked right as a token should have refilled.
+  const regen = await applyRegen(usersCol, user);
+  if (regen.gameTokens <= 0) {
+    return res.status(200).json({ success: false, error: 'no_tokens', tokens: regen.gameTokens });
+  }
+
+  // Atomic decrement — filter re-checks gameTokens > 0 so a double-tap
+  // or a forced duplicate request can never take a player below 0.
+  const updated = await usersCol.findOneAndUpdate(
+    { _id: user._id, gameTokens: { $gt: 0 } },
+    { $inc: { gameTokens: -1 }, $set: { lastActive: new Date() } },
+    { returnDocument: 'after' }
+  );
+  if (!updated) {
+    return res.status(200).json({ success: false, error: 'no_tokens', tokens: 0 });
+  }
+
+  return res.status(200).json({ success: true, tokens: updated.gameTokens, stage: updated.stage ?? 1 });
+}
 
 async function handleClaimGift(req, res, user) {
   const { giftId } = req.body || {};
@@ -86,9 +125,12 @@ async function handleLevelClaim(req, res, user) {
     if (isAdWatched === true) reward *= 2;
   }
 
+  // Stage advances by 1 every time, forever — this is now the ONLY place
+  // stage changes, and it's persisted, so "new stage every day you play"
+  // just falls out naturally from playing more levels over time.
   const updated = await usersCol.findOneAndUpdate(
     { _id: user._id },
-    { $inc: { gold: reward, totalGamesPlayed: 1 }, $set: { lastActive: new Date() } },
+    { $inc: { gold: reward, totalGamesPlayed: 1, stage: 1 }, $set: { lastActive: new Date() } },
     { returnDocument: 'after' }
   );
 
@@ -107,6 +149,7 @@ async function handleLevelClaim(req, res, user) {
   return res.status(200).json({
     success: true,
     reward,
+    stage: updated.stage ?? 1,
     user: { gold: updated.gold, fruitCoin: updated.fruitCoin },
   });
 }
@@ -129,9 +172,9 @@ module.exports = async (req, res) => {
     if (!user) return res.status(404).json({ success: false, error: 'user_not_found' });
     if (user.banned) return res.status(403).json({ success: false, error: 'Account suspended' });
 
-    if (req.body && req.body.action === 'claim_gift') {
-      return await handleClaimGift(req, res, user);
-    }
+    const action = req.body && req.body.action;
+    if (action === 'claim_gift') return await handleClaimGift(req, res, user);
+    if (action === 'start_game') return await handleStartGame(req, res, user);
     return await handleLevelClaim(req, res, user);
   } catch (err) {
     console.error('game_claim error:', err);
