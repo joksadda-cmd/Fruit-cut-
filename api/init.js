@@ -48,17 +48,6 @@ module.exports = async (req, res) => {
     const regen = await applyRegen(usersCol, user);
     user.gameTokens = regen.gameTokens;
 
-    // Pending gift (created via the admin bot's "Send Gift" flow) — the
-    // frontend shows an animated gift-box popup if this is non-null.
-    // Claiming happens through the separate /api/gift_claim endpoint so
-    // the credit only ever happens once, even if init polls again before
-    // the popup is dismissed.
-    const giftsCol = await getCollection('gifts');
-    const pendingGift = await giftsCol.findOne(
-      { telegramId: user.telegramId, status: 'pending' },
-      { sort: { createdAt: 1 } }
-    );
-
     return res.status(200).json({
       success: true,
       status: 'ok',
@@ -73,9 +62,6 @@ module.exports = async (req, res) => {
         lotteryTokens: user.lotteryTokens ?? 0,
         lastFreeLotteryAt: user.lastFreeLotteryAt ?? null,
       },
-      pendingGift: pendingGift
-        ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
-        : null,
     });
   } catch (err) {
     console.error('init sync error:', err);
