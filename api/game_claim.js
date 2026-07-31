@@ -41,7 +41,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { applyRegen, REGEN_INTERVAL_MS } = require('../lib/tokens');
+const { applyRegen, REGEN_INTERVAL_MS, MAX_TOKENS } = require('../lib/tokens');
 const { ObjectId } = require('mongodb');
 
 const REWARD_MIN = 40;
@@ -166,6 +166,105 @@ async function handleLevelClaim(req, res, user) {
   });
 }
 
+// ── Shop — 6-slot Gold item catalog (server-only; never trust a price
+// or item id sent from the client — same rule as everywhere else in
+// this project). Keys are what the frontend sends as `itemId`.
+const SHOP_ITEMS = {
+  token_1:     { cost: 120,  type: 'token',    amount: 1,  label: '1 🎮 Game Token' },
+  token_2:     { cost: 200,  type: 'token',    amount: 2,  label: '2 🎮 Game Token' },
+  token_5:     { cost: 450,  type: 'token',    amount: 5,  label: '5 🎮 Game Token' },
+  token_20:    { cost: 900,  type: 'token',    amount: 20, label: '20 🎮 Game Token' },
+  lottoken_3:  { cost: 650,  type: 'lottoken', amount: 3,  label: '3 🎫 Lottery Token' },
+  lottoken_10: { cost: 2000, type: 'lottoken', amount: 10, label: '10 🎫 Lottery Token' },
+};
+
+async function handleBuyShopItem(req, res, user) {
+  const { itemId } = req.body || {};
+  const item = SHOP_ITEMS[itemId];
+  if (!item) return res.status(400).json({ success: false, error: 'invalid_item' });
+
+  const usersCol = await getCollection('users');
+
+  let updated;
+  if (item.type === 'token') {
+    // Clamp to MAX_TOKENS, same rule as lottery token-prize wins — buying
+    // a bundle while already near/at the cap can't push you over it.
+    updated = await usersCol.findOneAndUpdate(
+      { _id: user._id, gold: { $gte: item.cost } },
+      [{ $set: {
+          gold: { $subtract: ['$gold', item.cost] },
+          gameTokens: { $min: [{ $add: [{ $ifNull: ['$gameTokens', 3] }, item.amount] }, MAX_TOKENS] },
+      } }],
+      { returnDocument: 'after' }
+    );
+  } else {
+    updated = await usersCol.findOneAndUpdate(
+      { _id: user._id, gold: { $gte: item.cost } },
+      { $inc: { gold: -item.cost, lotteryTokens: item.amount } },
+      { returnDocument: 'after' }
+    );
+  }
+
+  if (!updated) return res.status(200).json({ success: false, error: 'not_enough_gold' });
+
+  const txCol = await getCollection('transactions');
+  await txCol.insertOne({
+    telegramId: user.telegramId,
+    type: TRANSACTION_TYPES.SHOP_PURCHASE,
+    amount: -item.cost,
+    balanceAfter: updated.gold,
+    meta: { itemId, itemType: item.type, itemAmount: item.amount },
+    createdAt: new Date(),
+  });
+
+  return res.status(200).json({
+    success: true,
+    label: item.label,
+    user: { gold: updated.gold, gameTokens: updated.gameTokens, lotteryTokens: updated.lotteryTokens },
+  });
+}
+
+const FREEBOX_COOLDOWN_MS = 24 * 60 * 60 * 1000; // rolling 24h from last claim
+const FREEBOX_MIN = 100;
+const FREEBOX_MAX = 500;
+
+async function handleClaimFreebox(req, res, user) {
+  const usersCol = await getCollection('users');
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - FREEBOX_COOLDOWN_MS);
+
+  // Atomic: only succeeds if lastFreeBoxAt is missing/null or older than
+  // the 24h cutoff. Reward computed here — never trust a client amount.
+  const reward = FREEBOX_MIN + Math.floor(Math.random() * (FREEBOX_MAX - FREEBOX_MIN + 1));
+  const updated = await usersCol.findOneAndUpdate(
+    { _id: user._id, $or: [{ lastFreeBoxAt: { $exists: false } }, { lastFreeBoxAt: null }, { lastFreeBoxAt: { $lt: cutoff } }] },
+    { $inc: { gold: reward }, $set: { lastFreeBoxAt: now } },
+    { returnDocument: 'after' }
+  );
+
+  if (!updated) {
+    // Tell the frontend when it'll be available again.
+    const nextAt = user.lastFreeBoxAt ? new Date(new Date(user.lastFreeBoxAt).getTime() + FREEBOX_COOLDOWN_MS) : now;
+    return res.status(200).json({ success: false, error: 'freebox_on_cooldown', nextAt });
+  }
+
+  const txCol = await getCollection('transactions');
+  await txCol.insertOne({
+    telegramId: user.telegramId,
+    type: TRANSACTION_TYPES.FREEBOX_REWARD,
+    amount: reward,
+    balanceAfter: updated.gold,
+    createdAt: now,
+  });
+
+  return res.status(200).json({
+    success: true,
+    reward,
+    nextAt: new Date(now.getTime() + FREEBOX_COOLDOWN_MS),
+    user: { gold: updated.gold },
+  });
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
@@ -187,6 +286,8 @@ module.exports = async (req, res) => {
     const action = req.body && req.body.action;
     if (action === 'claim_gift') return await handleClaimGift(req, res, user);
     if (action === 'start_game') return await handleStartGame(req, res, user);
+    if (action === 'buy_shop_item') return await handleBuyShopItem(req, res, user);
+    if (action === 'claim_freebox') return await handleClaimFreebox(req, res, user);
     return await handleLevelClaim(req, res, user);
   } catch (err) {
     console.error('game_claim error:', err);
