@@ -631,13 +631,13 @@
             ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> + Join our <strong>Official Channel &amp; Community</strong><br>
             <span id="withdraw-req-status">Tasks: 0/5</span>
         </div>
-        <div class="info-text" style="margin-bottom:6px;">Minimum withdrawal: <strong style="color:#ffcc00;">10,000</strong> Fruit Coin · A <strong style="color:#ff8888;">5% fee</strong> applies · 1 withdrawal per day</div>
+        <div class="info-text" style="margin-bottom:6px;">Minimum withdrawal: <strong style="color:#ffcc00;">5,000</strong> Fruit Coin · A <strong style="color:#ff8888;">5% fee</strong> applies · 1 withdrawal per day</div>
         <select id="w-method" onchange="window.updateWithdrawPreview()">
             <option value="binance">Binance UID (USDT)</option>
             <option value="tonkeeper">TonKeeper Address (USDT)</option>
         </select>
         <div style="position:relative;">
-            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount (min 10,000)" min="10000" oninput="window.updateWithdrawPreview()">
+            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount (min 5,000)" min="5000" oninput="window.updateWithdrawPreview()">
             <!-- Animated preview -->
             <div id="w-convert-preview" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08));border:2px solid rgba(255,180,0,0.4);border-radius:12px;padding:10px 14px;margin-top:4px;text-align:center;animation:previewPop 0.3s ease;">
                 <div style="font-size:11px;color:#aaa;margin-bottom:4px;">After 5% fee, you will receive approximately:</div>
@@ -674,8 +674,8 @@
         </div>
         <div style="font-size:12px;color:#aaa;background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin-bottom:10px;text-align:left;">
             <strong style="color:#ffcc00;">Normal Refer:</strong> Instantly get 🎮 1 Game Token + 🎫 1 Lottery Token.<br><br>
-            <strong style="color:#4af;">Valid Refer:</strong> When your friend completes 5 tasks + watches 20 ads, you get 🍎 100 Fruit Coin + 🎮 3 extra Game Tokens + 🎫 1 extra Lottery Token!<br><br>
-            <strong style="color:#7dff00;">Total per complete refer:</strong> 🍎 100 Fruit Coin + 🎮 4 Game Tokens + 🎫 2 Lottery Tokens
+            <strong style="color:#4af;">Valid Refer:</strong> When your friend completes 5 tasks + watches 20 ads, you get 🍎 200 Fruit Coin + 🎮 3 extra Game Tokens + 🎫 1 extra Lottery Token!<br><br>
+            <strong style="color:#7dff00;">Total per complete refer:</strong> 🍎 200 Fruit Coin + 🎮 4 Game Tokens + 🎫 2 Lottery Tokens
         </div>
         <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
         <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
@@ -888,7 +888,7 @@
         document.getElementById('ui-tokens').textContent = window.G.tokens;
         document.getElementById('w-gems').textContent = window.G.gems;
         let wGemsUsdt = document.getElementById('w-gems-usdt');
-        if(wGemsUsdt) wGemsUsdt.textContent = ((window.G.gems || 0) * 0.001).toFixed(2);
+        if(wGemsUsdt) wGemsUsdt.textContent = ((window.G.gems || 0) * 0.00002).toFixed(2);
         document.getElementById('snd-toggle').textContent = window.G.sound ? '🔊' : '🔇';
         document.getElementById('vib-toggle').textContent = window.G.vib ? '📳' : '🔕';
         document.getElementById('refer-count-display').textContent = window.G.referCount || 0;
@@ -1855,10 +1855,10 @@
         }
     };
 
-    // Withdraw conversion rates
+    // Withdraw conversion rates — 50,000 Fruit Coin = $1 (1 🍎 = $0.00002)
     const WITHDRAW_RATES = {
-        binance:   { rate: 0.001, unit: 'USDT', symbol: '$', perFruitCoin: '1 🍎 = $0.001' },
-        tonkeeper: { rate: 0.001, unit: 'USDT', symbol: '$', perFruitCoin: '1 🍎 = $0.001' }
+        binance:   { rate: 0.00002, unit: 'USDT', symbol: '$', perFruitCoin: '50,000 🍎 = $1' },
+        tonkeeper: { rate: 0.00002, unit: 'USDT', symbol: '$', perFruitCoin: '50,000 🍎 = $1' }
     };
     const WITHDRAW_FEE_RATE = 0.05; // 5% — must match FEE_RATE in api/withdraw.js
 
@@ -1903,7 +1903,7 @@
         let addr   = document.getElementById('w-address').value.trim();
         let amount = parseInt(document.getElementById('w-amount').value)||0;
         if(!addr)            return showToast('Enter address!');
-        if(amount < 10000)   return showToast('Minimum withdrawal is 10,000 Fruit Coin!');
+        if(amount < 5000)    return showToast('Minimum withdrawal is 5,000 Fruit Coin!');
         if(window.G.gems < amount) return showToast('Not enough Fruit Coin!');
 
         btn.disabled = true; btn.textContent = "Processing...";
@@ -1923,8 +1923,8 @@
 
     // ── Withdraw History ──────────────────────────────────────────────
     const WD_RATES = {
-        binance:   { sym:'$', unit:'USDT', rate:0.001, label:'Binance UID' },
-        tonkeeper: { sym:'$', unit:'USDT', rate:0.001, label:'TonKeeper (USDT)' },
+        binance:   { sym:'$', unit:'USDT', rate:0.00002, label:'Binance UID' },
+        tonkeeper: { sym:'$', unit:'USDT', rate:0.00002, label:'TonKeeper (USDT)' },
     };
 
     window.toggleWdHistory = function(){
