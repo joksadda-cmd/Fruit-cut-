@@ -200,6 +200,17 @@
         .shop-panel{display:none;}
         .shop-panel.active{display:block;}
         .token-shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+        .shop-item-card{ display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(255,200,0,0.10),rgba(255,100,0,0.06)); border:2px solid rgba(255,180,0,0.28);border-radius:14px;padding:9px 12px;margin-bottom:8px;position:relative; }
+        .shop-item-icon{font-size:24px;flex-shrink:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:11px;}
+        .shop-item-info{flex:1;min-width:0;}
+        .shop-item-title{font-family:'Luckiest Guy',cursive;font-size:15px;color:#fff;line-height:1.2;}
+        .shop-item-price{font-size:12px;color:#ffcc00;font-weight:800;margin-top:1px;}
+        .shop-item-badge{position:absolute;top:-7px;right:8px;background:#ff3355;color:#fff;font-size:9px;font-weight:900;padding:2px 7px;border-radius:8px;}
+        .freebox-card{ display:flex;align-items:center;gap:10px;margin-top:14px;background:linear-gradient(135deg,rgba(76,175,80,0.15),rgba(27,94,32,0.10));border:2px solid rgba(76,175,80,0.4);border-radius:16px;padding:12px 14px;cursor:pointer; }
+        .freebox-icon{font-size:34px;flex-shrink:0;}
+        .freebox-info{flex:1;}
+        .freebox-title{font-family:'Luckiest Guy',cursive;font-size:16px;color:#ffcc00;}
+        .freebox-sub{font-size:11px;color:#aaa;margin-top:2px;}
         .token-shop-card{ background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08)); border:2px solid rgba(255,180,0,0.3);border-radius:16px;padding:14px 10px; text-align:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s; position:relative;overflow:hidden; }
         .token-shop-card:active{transform:scale(0.95);}
         .token-shop-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#ffcc00,transparent);}
@@ -273,6 +284,15 @@
         @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}100%{content:'';}}
 
         #ad-loader{ background:rgba(0,0,0,0.92);display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;justify-content:center;align-items:center;flex-direction:column;gap:16px; }
+        #stage-transition{ background:rgba(0,0,0,0.75);display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;justify-content:center;align-items:center;pointer-events:none; }
+        #stage-transition-inner{ text-align:center;background:linear-gradient(180deg,rgba(255,204,0,0.15),rgba(0,0,0,0.4));border:2px solid rgba(255,204,0,0.5);border-radius:20px;padding:22px 40px;animation:stagePop 0.9s ease forwards; }
+        @keyframes stagePop{
+            0%{ transform:scale(0.5); opacity:0; }
+            30%{ transform:scale(1.12); opacity:1; }
+            50%{ transform:scale(1); }
+            80%{ transform:scale(1); opacity:1; }
+            100%{ transform:scale(0.9); opacity:0; }
+        }
         .spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,0.2);border-top-color:#ffcc00;border-radius:50%;animation:spin 1s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
         #token-toast{ position:fixed;bottom:120px;left:50%;transform:translateX(-50%); background:rgba(0,0,0,0.85);border:2px solid #ffcc00;border-radius:20px; padding:10px 24px;font-size:14px;font-weight:800;color:#fff;z-index:9999; display:none;animation:fadeUp 0.3s ease;white-space:nowrap; }
@@ -556,26 +576,14 @@
             <div class="shop-tab ptr" onclick="window.switchShopTab('promo')" id="tab-promo">🎟️ Promo</div>
         </div>
         <div class="shop-panel active" id="shop-panel-tokens">
-            <div class="shop-daily-info">🎮 Per Token: <strong style="color:#ffcc00;">50 🪙 Gold</strong> &nbsp;|&nbsp; Daily Limit: <strong style="color:#fff;" id="shop-token-left">10</strong>/10 remaining</div>
-            <div class="token-shop-grid">
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(1)"><span class="tsc-icon">🎮</span><div class="tsc-amount">×1 Token</div><div class="tsc-price">50 🪙 Gold</div></div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(3)"><span class="tsc-badge">SAVE</span><span class="tsc-icon">🎮🎮</span><div class="tsc-amount">×3 Token</div><div class="tsc-price">150 🪙 Gold</div></div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(5)"><span class="tsc-badge">HOT</span><span class="tsc-icon">🎮🎮🎮</span><div class="tsc-amount">×5 Token</div><div class="tsc-price">250 🪙 Gold</div></div>
-                <div class="token-shop-card ptr" onclick="window.buyTokenShop(10)"><span class="tsc-badge">MAX</span><span class="tsc-icon">🎮🎮🎮🎮</span><div class="tsc-amount">×10 Token</div><div class="tsc-price">500 🪙 Gold</div></div>
-            </div>
-            <div class="info-text">Use Tokens to play games · Max 10 tokens · Auto +1 refill every 6 hours</div>
-
-            <!-- ── Earn Token via Ads ── -->
-            <div style="margin-top:12px;background:linear-gradient(135deg,rgba(255,120,0,0.15),rgba(200,60,0,0.10));border:2px solid rgba(255,160,0,0.4);border-radius:16px;padding:14px;">
-                <div style="font-family:'Luckiest Guy',cursive;font-size:18px;color:#ffcc00;margin-bottom:4px;">📺 Watch Ads → Earn Tokens</div>
-                <div style="font-size:11px;color:#aaa;margin-bottom:10px;">Watch Adsgram Special ad to earn 1 Game Token. Max <strong style="color:#fff;">10 times/day</strong>. FREE!</div>
-                <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:12px;color:#aaa;font-weight:800;">Claimed today:</span>
-                    <span style="font-size:16px;font-family:'Luckiest Guy',cursive;color:#fff;"><span id="shop-ad-token-count">0</span><span style="color:#aaa;font-size:12px;">/10</span></span>
+            <div id="shop-item-list"></div>
+            <div class="freebox-card" id="freebox-card" onclick="window.claimFreebox()">
+                <div class="freebox-icon">🎁</div>
+                <div class="freebox-info">
+                    <div class="freebox-title">Free Gold Box</div>
+                    <div class="freebox-sub" id="freebox-sub">Claim once every 24h · 100–500 🪙 Gold</div>
                 </div>
-                <button class="btn btn-gold" id="shop-ad-token-btn" onclick="window.watchAdForToken()" style="margin-top:0;">
-                    📺 Watch Ad → +1 Token
-                </button>
+                <button class="task-btn" id="freebox-btn" style="background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;">Claim</button>
             </div>
         </div>
         <div class="shop-panel" id="shop-panel-exchange">
@@ -620,26 +628,19 @@
             <span class="mrow-val">🍎 <span id="w-gems">0</span> <span style="color:#4af;font-size:13px;">(≈ $<span id="w-gems-usdt">0.00</span>)</span></span>
         </div>
         <div id="withdraw-req-box" class="withdraw-req">
-            ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> and give <strong>2 Refers</strong><br>
-            <span id="withdraw-req-status">Tasks: 0/5 · Refers: 0/2</span>
+            ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> + Join our <strong>Official Channel &amp; Community</strong><br>
+            <span id="withdraw-req-status">Tasks: 0/5</span>
         </div>
-        <!-- Rate display — USDT only -->
-        <div id="w-rate-display" style="background:linear-gradient(135deg,rgba(0,120,255,0.15),rgba(0,60,200,0.1));border:2px solid rgba(100,160,255,0.3);border-radius:14px;padding:12px 14px;margin-bottom:10px;text-align:center;">
-            <div style="font-size:11px;color:#aaa;font-weight:800;margin-bottom:6px;">💱 CURRENT EXCHANGE RATE</div>
-            <div style="background:rgba(0,150,255,0.1);border:1px solid rgba(0,150,255,0.25);border-radius:10px;padding:6px 10px;display:inline-block;">
-                <div style="font-family:'Luckiest Guy',cursive;font-size:18px;color:#4af;">💎 100 = $0.1 USDT</div>
-                <div style="font-size:10px;color:#888;">All withdrawals paid in USDT</div>
-            </div>
-        </div>
+        <div class="info-text" style="margin-bottom:6px;">Minimum withdrawal: <strong style="color:#ffcc00;">10,000</strong> Fruit Coin · A <strong style="color:#ff8888;">5% fee</strong> applies · 1 withdrawal per day</div>
         <select id="w-method" onchange="window.updateWithdrawPreview()">
             <option value="binance">Binance UID (USDT)</option>
             <option value="tonkeeper">TonKeeper Address (USDT)</option>
         </select>
         <div style="position:relative;">
-            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount" min="1" oninput="window.updateWithdrawPreview()">
+            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount (min 10,000)" min="10000" oninput="window.updateWithdrawPreview()">
             <!-- Animated preview -->
             <div id="w-convert-preview" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08));border:2px solid rgba(255,180,0,0.4);border-radius:12px;padding:10px 14px;margin-top:4px;text-align:center;animation:previewPop 0.3s ease;">
-                <div style="font-size:11px;color:#aaa;margin-bottom:4px;">You will receive approximately:</div>
+                <div style="font-size:11px;color:#aaa;margin-bottom:4px;">After 5% fee, you will receive approximately:</div>
                 <div id="w-convert-value" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;text-shadow:0 2px 8px rgba(255,200,0,0.4);"></div>
                 <div id="w-convert-label" style="font-size:11px;color:#aaa;margin-top:2px;"></div>
             </div>
@@ -795,6 +796,14 @@
     <div style="font-size:13px;color:#777;margin-top:4px;">Please wait...</div>
 </div>
 
+<div id="stage-transition">
+    <div id="stage-transition-inner">
+        <div style="font-size:44px;">🎉</div>
+        <div id="stage-transition-text" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;letter-spacing:1px;margin-top:6px;">STAGE 2</div>
+        <div style="font-size:13px;color:#8f8;margin-top:2px;">Get Ready!</div>
+    </div>
+</div>
+
 <div id="token-toast"></div>
 
 <!-- Support floating button -->
@@ -833,10 +842,9 @@
         completedTasks: [], gamesPlayed: 0,
         lotteryFreeUsed: false, lotteryTotalSpins: 0, lotteryDailySpins: 0,
         lotteryDiamondsEarned: 0, referDiamonds: 0,
-        shopTokenBought: 0, shopDiamondExchanged: 0,
-        shopAdTokenClaimed: 0,
+        shopDiamondExchanged: 0,
         referredBy: null, validReferRewardGiven: false,
-        username: '', lotteryTokens: 0, lastFreeLotteryAt: null
+        username: '', lotteryTokens: 0, lastFreeLotteryAt: null, lastFreeBoxAt: null
     };
 
     function showToast(msg) {
@@ -899,19 +907,19 @@
 
     function updateWithdrawReqUI(){
         let tasks = (window.G.completedTasks||[]).length;
-        let refers = window.G.referCount || 0;
         let taskOk = tasks >= 5;
-        let referOk = refers >= 2;
-        let allMet = taskOk && referOk;
         let box = document.getElementById('withdraw-req-box');
-        let btn = document.getElementById('btn-withdraw');
         if(box){
-            box.className = 'withdraw-req' + (allMet ? ' met' : '');
-            box.innerHTML = allMet
-                ? '✅ Withdraw unlocked!'
-                : `⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> and give <strong>2 Refers</strong><br><span>Tasks: ${tasks}/5 · Refers: ${refers}/2</span>`;
+            box.className = 'withdraw-req' + (taskOk ? ' met' : '');
+            box.innerHTML = taskOk
+                ? '✅ Task requirement met! (Make sure you\'ve also joined our Official Channel & Community — checked when you submit)'
+                : `⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> + Join our <strong>Official Channel &amp; Community</strong><br><span>Tasks: ${tasks}/5</span>`;
         }
-        if(btn) btn.disabled = !allMet;
+        // NOTE: the button is never disabled here — Channel/Community join
+        // can't be reliably checked from the client, so the real gate is
+        // api/withdraw.js. Submitting always attempts, and the server's
+        // exact error (e.g. "join our Channel & Community first") is
+        // shown if something's missing.
     }
 
     // ── Device fingerprint (weak-signal based; recomputed every load so
@@ -1086,6 +1094,7 @@
                 window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
                 window.G.lotteryTokens = res.user.lotteryTokens ?? window.G.lotteryTokens;
                 window.G.lastFreeLotteryAt = res.user.lastFreeLotteryAt ?? window.G.lastFreeLotteryAt;
+                window.G.lastFreeBoxAt = res.user.lastFreeBoxAt ?? window.G.lastFreeBoxAt;
                 window.G.stage = res.user.stage ?? window.G.stage;
             }
             if(res.pendingGift) window.showGiftModal(res.pendingGift);
@@ -1170,6 +1179,10 @@
             }
         }, 1000);
 
+        // Free Box countdown — cheap re-render, only visually matters
+        // while the Shop modal happens to be open.
+        setInterval(()=>{ updateFreeboxUI(); }, 30000);
+
         // Sync with server every 5 minutes — reduces Firebase writes by 80%
         setInterval(async ()=>{
             if(window.G.tokens < 10 && currentUser){
@@ -1225,14 +1238,82 @@
 
     window.showTokenInfo = function(){ showToast('Tokens: 1 token = 1 game. Max 10. Refills +1 every 6 hours!'); };
 
-    window.buyTokenShop = async function(qty){
-        let cost = qty * 50;
-        if(window.G.coins < cost){ showToast(`Not enough Gold! Need ${cost}`); return; }
-        document.getElementById('ad-loader').style.display='flex';
-        const res = await apiCall('/api/shop', { type: 'token', qty });
-        document.getElementById('ad-loader').style.display='none';
-        if(res.success) { showToast(`${qty} Token(s) purchased!`); updateShopUI(); }
-        else { showToast('Error: ' + (res.error || 'Failed')); }
+    const SHOP_ITEMS_CLIENT = [
+        { id: 'token_1',     icon: '🎮', title: '1 Game Token',     cost: 120  },
+        { id: 'token_2',     icon: '🎮', title: '2 Game Token',     cost: 200  },
+        { id: 'token_5',     icon: '🎮', title: '5 Game Token',     cost: 450,  badge: 'POPULAR' },
+        { id: 'token_20',    icon: '🎮', title: '20 Game Token',    cost: 900,  badge: 'BEST VALUE' },
+        { id: 'lottoken_3',  icon: '🎫', title: '3 Lottery Token',  cost: 650  },
+        { id: 'lottoken_10', icon: '🎫', title: '10 Lottery Token', cost: 2000, badge: 'HOT' },
+    ];
+
+    function renderShopItems(){
+        let c = document.getElementById('shop-item-list');
+        if(!c) return;
+        c.innerHTML = SHOP_ITEMS_CLIENT.map(it => `
+            <div class="shop-item-card">
+                ${it.badge ? `<span class="shop-item-badge">${it.badge}</span>` : ''}
+                <div class="shop-item-icon">${it.icon}</div>
+                <div class="shop-item-info">
+                    <div class="shop-item-title">${it.title}</div>
+                    <div class="shop-item-price">🪙 ${it.cost.toLocaleString()} Gold</div>
+                </div>
+                <button class="task-btn" id="shop-buy-${it.id}" onclick="window.buyShopItem('${it.id}')">Buy</button>
+            </div>`).join('');
+    }
+
+    window.buyShopItem = async function(itemId){
+        let btn = document.getElementById('shop-buy-' + itemId);
+        if(btn) { btn.disabled = true; btn.textContent = '...'; }
+        const res = await apiCall('/api/game_claim', { action: 'buy_shop_item', itemId });
+        if(btn) { btn.disabled = false; btn.textContent = 'Buy'; }
+        if(res.success){
+            if(res.user.gameTokens    !== undefined) window.G.tokens        = res.user.gameTokens;
+            if(res.user.lotteryTokens !== undefined) window.G.lotteryTokens = res.user.lotteryTokens;
+            showToast(`✅ Purchased: ${res.label}`);
+            window.updateUI();
+        } else {
+            showToast(res.error === 'not_enough_gold' ? '❌ Not enough Gold!' : '❌ Purchase failed, try again.');
+        }
+    };
+
+    function freeboxNextAtMs(){
+        if(!window.G.lastFreeBoxAt) return 0;
+        return new Date(window.G.lastFreeBoxAt).getTime() + 24*60*60*1000;
+    }
+
+    function updateFreeboxUI(){
+        let btn = document.getElementById('freebox-btn');
+        let sub = document.getElementById('freebox-sub');
+        if(!btn) return;
+        let nextAt = freeboxNextAtMs();
+        let remain = nextAt - Date.now();
+        if(remain > 0){
+            btn.disabled = true; btn.textContent = 'Locked';
+            let h = Math.floor(remain/3600000), m = Math.floor((remain%3600000)/60000);
+            sub.textContent = `Come back in ${h}h ${m}m for 100–500 🪙 Gold`;
+        } else {
+            btn.disabled = false; btn.textContent = 'Claim';
+            sub.textContent = 'Claim once every 24h · 100–500 🪙 Gold';
+        }
+    }
+
+    window.claimFreebox = async function(){
+        let btn = document.getElementById('freebox-btn');
+        if(!btn || btn.disabled) return;
+        btn.disabled = true; btn.textContent = '...';
+        const res = await apiCall('/api/game_claim', { action: 'claim_freebox' });
+        if(res.success){
+            showToast(`🎁 Free Box: +${res.reward} 🪙 Gold!`);
+            window.G.lastFreeBoxAt = new Date().toISOString();
+            window.updateUI();
+        } else if(res.error === 'freebox_on_cooldown'){
+            window.G.lastFreeBoxAt = res.nextAt ? new Date(new Date(res.nextAt).getTime() - 24*60*60*1000).toISOString() : window.G.lastFreeBoxAt;
+            showToast('⏳ Free Box already claimed — come back later!');
+        } else {
+            showToast('❌ Something went wrong, try again.');
+        }
+        updateFreeboxUI();
     };
 
     let pendingExchangeGold = 0;
@@ -1319,42 +1400,9 @@
         if(sg) sg.textContent = window.G.coins;
         if(sd) sd.textContent = window.G.gems;
 
-        // Token left
-        let tokenLeft = document.getElementById('shop-token-left');
-        if(tokenLeft){
-            let bought = window.G.shopTokenBought || 0;
-            tokenLeft.textContent = Math.max(0, 10 - bought);
-        }
-
-        // Ad token count
-        let adCount = document.getElementById('shop-ad-token-count');
-        if(adCount) adCount.textContent = window.G.shopAdTokenClaimed || 0;
-
-        // Ad token button
-        let adBtn = document.getElementById('shop-ad-token-btn');
-        if(adBtn){
-            let claimed = window.G.shopAdTokenClaimed || 0;
-            adBtn.disabled = claimed >= 10;
-            adBtn.textContent = claimed >= 10 ? '✅ Daily Limit Reached (10/10)' : '📺 Watch Ad → +1 Token';
-        }
+        renderShopItems();
+        updateFreeboxUI();
     }
-
-    // Watch ad in shop to earn 1 game token (max 10/day)
-    window.watchAdForToken = async function(){
-        let claimed = window.G.shopAdTokenClaimed || 0;
-        if(claimed >= 10){ showToast('Daily limit reached! Come back tomorrow.'); return; }
-        const ok = await runAdAndVerifyTime('shop-ad-token-btn', showAdsgramSpecialAd, 'adsgram');
-        if(!ok) return;
-        document.getElementById('ad-loader').style.display = 'flex';
-        const res = await apiCall('/api/ads', { action: 'claim_game_token_by_ad' });
-        document.getElementById('ad-loader').style.display = 'none';
-        if(res.success){
-            showToast('🎮 +1 Token earned! Watch more ads for more tokens.');
-            updateShopUI();
-        } else {
-            showToast('❌ Error: ' + (res.error || 'Failed'));
-        }
-    };
 
     window.copyRefer = function(){
         let txt = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
@@ -1809,9 +1857,10 @@
 
     // Withdraw conversion rates
     const WITHDRAW_RATES = {
-        binance:   { rate: 0.001, unit: 'USDT', symbol: '$', perDiamond: '1 💎 = $0.001' },
-        tonkeeper: { rate: 0.001, unit: 'USDT', symbol: '$', perDiamond: '1 💎 = $0.001' }
+        binance:   { rate: 0.001, unit: 'USDT', symbol: '$', perFruitCoin: '1 🍎 = $0.001' },
+        tonkeeper: { rate: 0.001, unit: 'USDT', symbol: '$', perFruitCoin: '1 🍎 = $0.001' }
     };
+    const WITHDRAW_FEE_RATE = 0.05; // 5% — must match FEE_RATE in api/withdraw.js
 
     window.updateWithdrawPreview = function(){
         let method = document.getElementById('w-method')?.value || 'binance';
@@ -1822,10 +1871,12 @@
         if(!preview) return;
         if(amount >= 1){
             let r = WITHDRAW_RATES[method] || WITHDRAW_RATES.binance;
-            let converted = (amount * r.rate).toFixed(4);
+            let fee = Math.round(amount * WITHDRAW_FEE_RATE);
+            let net = amount - fee;
+            let converted = (net * r.rate).toFixed(4);
             preview.style.display = 'block';
             valEl.textContent = `${r.symbol}${converted} ${r.unit}`;
-            labelEl.textContent = `${amount} Fruit Coin → ${r.perDiamond}`;
+            labelEl.textContent = `${amount} Fruit Coin − ${fee} (5% fee) = ${net} 🍎 → ${r.unit}`;
             // Restart animation
             preview.style.animation = 'none'; preview.offsetHeight;
             preview.style.animation = 'previewPop 0.3s ease';
@@ -1835,24 +1886,31 @@
     };
 
     window.doWithdraw = async function(){
+        let btn = document.getElementById('btn-withdraw');
+        // Re-entrancy guard FIRST — if a request is already in flight,
+        // a second/third rapid tap does nothing at all. The server-side
+        // atomic daily-limit check (api/withdraw.js) is the real
+        // guarantee against double-withdrawal, but this stops even the
+        // second network request from ever being sent.
+        if(btn.disabled) return;
+
         let tasks = (window.G.completedTasks||[]).length;
-        let refers = window.G.referCount || 0;
-        if(tasks < 5 || refers < 2){
-            showToast(`Complete 5 tasks & 2 refers first! (${tasks}/5 tasks, ${refers}/2 refers)`);
+        if(tasks < 5){
+            showToast(`Complete 5 tasks first! (${tasks}/5)`);
             return;
         }
         let method = document.getElementById('w-method').value;
         let addr   = document.getElementById('w-address').value.trim();
         let amount = parseInt(document.getElementById('w-amount').value)||0;
-        if(!addr)          return showToast('Enter address!');
-        if(amount < 100)   return showToast('Min 100 Fruit Coin!');
+        if(!addr)            return showToast('Enter address!');
+        if(amount < 10000)   return showToast('Minimum withdrawal is 10,000 Fruit Coin!');
         if(window.G.gems < amount) return showToast('Not enough Fruit Coin!');
-        let btn = document.getElementById('btn-withdraw');
+
         btn.disabled = true; btn.textContent = "Processing...";
         const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
         btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
         if(res.success){
-            showToast('✅ Withdrawal Request Sent! Check history below.');
+            showToast(`✅ Withdrawal requested! You'll receive ${res.convertedAmount} ${res.unit || 'USDT'} after the 5% fee.`);
             document.getElementById('w-amount').value  = '';
             document.getElementById('w-address').value = '';
             document.getElementById('w-convert-preview').style.display = 'none';
@@ -2149,6 +2207,7 @@
             }
             window.G.tokens = res.tokens;
             if(res.stage !== undefined) window.G.stage = res.stage;
+            if(res.nextTokenAt !== undefined) window.G.nextTokenAt = res.nextTokenAt;
             window.updateUI();
         }
         stopSound('menu');
@@ -2231,29 +2290,49 @@
         document.getElementById('ad-loader').style.display='none'; window.tryStartGame(true);
     };
 
+    function showStageTransition(stageNum){
+        return new Promise((resolve) => {
+            let el = document.getElementById('stage-transition');
+            let inner = document.getElementById('stage-transition-inner');
+            let txt = document.getElementById('stage-transition-text');
+            txt.textContent = `STAGE ${stageNum}`;
+            // restart the CSS animation
+            inner.style.animation = 'none';
+            void inner.offsetWidth;
+            inner.style.animation = '';
+            el.style.display = 'flex';
+            if(window.G.sound) playSound('spin');
+            setTimeout(() => { el.style.display = 'none'; resolve(); }, 900);
+        });
+    }
+
     window.claimReward = async function(watchAd){
         window.hideModal('complete-modal');
-        document.getElementById('ad-loader').style.display='flex';
 
         let adConfirmed = false;
         if(watchAd){
+            document.getElementById('ad-loader').style.display='flex';
             try { await playRandomRewardedAd(); adConfirmed = true; }
             catch(e){
                 document.getElementById('ad-loader').style.display='none';
                 showToast('⚠️ Ad failed — reward not doubled. Try again or tap Next Level.');
                 return;
             }
+            document.getElementById('ad-loader').style.display='none';
         }
 
         // NOTE: the actual gold amount is computed server-side in
         // api/game_claim.js (not trusted from pendingReward here) —
         // this only tells the server WHETHER a real ad was watched.
         const res = await apiCall('/api/game_claim', { isAdWatched: adConfirmed });
-        document.getElementById('ad-loader').style.display='none';
 
         if(res.success){
             if(res.reward) showToast(`+${res.reward} 🪙 Gold`);
             if(res.stage !== undefined) window.G.stage = res.stage;
+            // Plain "Next Level" (no ad) gets a real transition animation
+            // instead of the "Ad Loading" screen that used to show here
+            // even when no ad was involved at all.
+            await showStageTransition(window.G.stage);
             window.tryStartGame(true);
         } else {
             showToast('❌ Error Saving Data! ' + (res.error || ''));
