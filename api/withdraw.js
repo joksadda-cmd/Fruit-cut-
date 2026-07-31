@@ -134,6 +134,46 @@ module.exports = async (req, res) => {
       createdAt: now,
     });
 
+    // Push an immediate alert to the admin instead of relying on them to
+    // manually open the bot and check the Withdrawals list. Uses the
+    // SAME callback_data format (a_wd_ok_<id> / a_wd_no_<id>) that
+    // api/bot.js's approve/reject handler already expects, so these
+    // buttons work exactly like the ones in the polled list.
+    // NOTE: this is awaited on purpose — Vercel can freeze a serverless
+    // function's execution right after the response is sent, so a
+    // fire-and-forget call here risks silently never actually going out.
+    const ADMIN_ID = process.env.ADMIN_TELEGRAM_ID || process.env.ADMIN_ID;
+    if (ADMIN_ID && process.env.BOT_TOKEN) {
+      try {
+        await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: ADMIN_ID,
+            text:
+              `🔔 <b>New Withdrawal Request</b>\n\n` +
+              `👤 @${user.username || 'unknown'} (ID: <code>${user.telegramId}</code>)\n` +
+              `💰 ${amt.toLocaleString()} Fruit Coin → <b>${convertedAmount} ${r.unit}</b> (after 5% fee)\n` +
+              `📍 ${method === 'binance' ? 'Binance UID' : 'TonKeeper'}: <code>${trimmedAddress}</code>`,
+            parse_mode: 'HTML',
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '✅ Approve', callback_data: `a_wd_ok_${insertResult.insertedId}` },
+                { text: '❌ Reject', callback_data: `a_wd_no_${insertResult.insertedId}` },
+              ]],
+            },
+          }),
+        });
+      } catch (e) {
+        // Never let a failed Telegram push break the withdrawal itself —
+        // the request is already safely stored as 'pending' and will
+        // still show up next time the admin opens the Withdrawals list.
+        console.error('admin withdraw notify failed:', e);
+      }
+    } else {
+      console.warn('withdraw: ADMIN_ID or BOT_TOKEN not set — admin push notification skipped');
+    }
+
     return res.status(200).json({ success: true, withdrawalId: insertResult.insertedId, feeFruitCoin, netFruitCoin, convertedAmount, unit: r.unit });
   } catch (err) {
     console.error('withdraw error:', err);
