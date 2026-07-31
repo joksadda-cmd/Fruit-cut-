@@ -72,6 +72,7 @@ module.exports = async (req, res) => {
         referralCount: user.referralCount,
         lotteryTokens: user.lotteryTokens ?? 0,
         lastFreeLotteryAt: user.lastFreeLotteryAt ?? null,
+        lastFreeBoxAt: user.lastFreeBoxAt ?? null,
         stage: user.stage ?? 1,
       },
       pendingGift: pendingGift
