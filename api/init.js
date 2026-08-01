@@ -70,6 +70,7 @@ module.exports = async (req, res) => {
         nextTokenAt: regen.nextTokenAt,
         highScore: user.highScore,
         referralCount: user.referralCount,
+        referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
         lotteryTokens: user.lotteryTokens ?? 0,
         lastFreeLotteryAt: user.lastFreeLotteryAt ?? null,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
