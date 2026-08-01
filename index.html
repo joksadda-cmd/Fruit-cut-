@@ -872,6 +872,7 @@
                 if(result.user.gold      !== undefined) window.G.coins = result.user.gold;
                 if(result.user.fruitCoin !== undefined) window.G.gems  = result.user.fruitCoin;
                 if(result.user.referralCount !== undefined) window.G.referCount = result.user.referralCount;
+                if(result.user.referralFruitCoinEarned !== undefined) window.G.referDiamonds = result.user.referralFruitCoinEarned;
                 window.updateUI();
             }
             return result;
@@ -1104,6 +1105,7 @@
                 window.G.coins      = res.user.gold          ?? window.G.coins;
                 window.G.gems        = res.user.fruitCoin      ?? window.G.gems;
                 window.G.referCount = res.user.referralCount  ?? window.G.referCount;
+                window.G.referDiamonds = res.user.referralFruitCoinEarned ?? window.G.referDiamonds;
                 window.G.tokens      = res.user.gameTokens    ?? window.G.tokens;
                 window.G.maxTokens   = res.user.maxTokens      ?? window.G.maxTokens;
                 window.G.nextTokenAt = res.user.nextTokenAt    ?? window.G.nextTokenAt;
@@ -1258,7 +1260,6 @@
         { id: 'token_1',     icon: '🎮', title: '1 Game Token',     cost: 120  },
         { id: 'token_2',     icon: '🎮', title: '2 Game Token',     cost: 200  },
         { id: 'token_5',     icon: '🎮', title: '5 Game Token',     cost: 450,  badge: 'POPULAR' },
-        { id: 'token_20',    icon: '🎮', title: '20 Game Token',    cost: 900,  badge: 'BEST VALUE' },
         { id: 'lottoken_3',  icon: '🎫', title: '3 Lottery Token',  cost: 650  },
         { id: 'lottoken_10', icon: '🎫', title: '10 Lottery Token', cost: 2000, badge: 'HOT' },
     ];
@@ -2003,7 +2004,11 @@
 
         try {
             const res = await apiCall('/api/withdraw_history', {});
-            if(!res || !res.success || !res.history || !res.history.length){
+            if(!res || !res.success){
+                list.innerHTML = '<div style="text-align:center;color:#ff6666;font-size:12px;padding:12px;">⚠️ Could not load history, try again.</div>';
+                return;
+            }
+            if(!res.history || !res.history.length){
                 list.innerHTML = '<div style="text-align:center;color:#aaa;font-size:12px;padding:12px;">No withdrawal history yet.</div>';
                 return;
             }
@@ -2494,7 +2499,30 @@
         // Ask the server FIRST — it claims the spin (token/free) and picks
         // the prize. The slot animation below just visualizes whatever
         // the server already decided; nothing here can influence the win.
-        const res = await apiCall('/api/lottery', { useToken });
+        let res = await apiCall('/api/lottery', { useToken });
+
+        // Every 3rd spin requires a watched ad before the server will let
+        // it proceed — nothing was spent yet, so this is safe to do here.
+        if(!res.success && res.error === 'ad_required'){
+            const sessionRes = await apiCall('/api/lottery', { action: 'ad_session' });
+            if(!sessionRes.success){
+                lotterySpinning = false;
+                if(tokenBtn) tokenBtn.disabled = (window.G.lotteryTokens||0) <= 0;
+                if(freeBtn)  freeBtn.disabled  = false;
+                showToast('⚠️ Could not start ad. Try again.');
+                return;
+            }
+            try{
+                await playRandomRewardedAd();
+            } catch(e){
+                lotterySpinning = false;
+                if(tokenBtn) tokenBtn.disabled = (window.G.lotteryTokens||0) <= 0;
+                if(freeBtn)  freeBtn.disabled  = false;
+                showToast(adErrorText(e && e.message));
+                return;
+            }
+            res = await apiCall('/api/lottery', { useToken, sessionId: sessionRes.sessionId });
+        }
 
         if(!res.success){
             lotterySpinning = false;
@@ -2502,6 +2530,7 @@
             if(freeBtn)  freeBtn.disabled  = false;
             const msg = res.error === 'no_lottery_tokens' ? 'No Lottery Tokens! Earn them by referring friends.'
                       : res.error === 'free_spin_already_used' ? 'Free spin already used today — come back after UTC midnight!'
+                      : res.error === 'ad_not_verified' ? '⚠️ Ad not verified, try again.'
                       : 'Server Error, try again.';
             showToast(msg);
             window.renderLotteryModal();
