@@ -9,11 +9,10 @@
 // amount sent from the client.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
-const { getCollection, findUserByTelegramId } = require('../lib/db');
+const { getCollection, findUserByTelegramId, idVariants } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { createAdSession, claimAdSession } = require('../lib/adSession');
-const { redeemPromoCode } = require('../lib/promo');
+const { redeemPromoCode, revertPromoRedeem } = require('../lib/promo');
 
 const MIN_GOLD_PER_CONVERT = 20000;
 const MAX_GOLD_PER_CONVERT = 2000000;
@@ -35,37 +34,37 @@ module.exports = async (req, res) => {
     const telegramId = verify.user.id;
     const action = body.action;
 
-    // ── Promo Step 1: issue an ad-watch session ──────────────────────
-    // Uses its own 'promo' network key in lib/adSession.js so it never
-    // touches the Ads tab's daily per-network claim limits.
-    if (action === 'request_promo_ad_session') {
-      const sessionId = await createAdSession(telegramId, 'promo');
-      return res.status(200).json({ success: true, sessionId });
-    }
-
-    // ── Promo Step 2: verify the ad was actually watched, then redeem ──
+    // ── Promo: validate the code + credit the reward FIRST. An ad only
+    // plays AFTER a successful redeem (pure revenue, not a gate) — an
+    // invalid/expired/already-used code is rejected immediately with no
+    // ad shown at all. The frontend plays the ad itself once it sees
+    // success:true; this endpoint doesn't need to know about ads at all.
     if (action === 'redeem_promo') {
-      const { code, sessionId } = body;
-      if (!sessionId) {
-        return res.status(200).json({ success: false, error: 'watch_ad_first' });
-      }
-      const claim = await claimAdSession(telegramId, sessionId, 'promo');
-      if (!claim.ok) {
-        return res.status(200).json({ success: false, error: 'watch_ad_first' });
-      }
+      const { code } = body;
 
       const result = await redeemPromoCode(telegramId, code);
       if (!result.ok) {
         return res.status(200).json({ success: false, error: result.reason });
       }
 
+      // IMPORTANT: telegramId can be stored as either a string or a number
+      // depending on how the user doc was created — always match both forms
+      // via idVariants(), same as every other endpoint in this project.
+      // A plain { telegramId } query here previously caused the credit to
+      // silently fail as "not found" AFTER the code was already marked
+      // used, permanently locking users out of a code they never got paid
+      // for. Fixed, plus a rollback below as a second safety net.
       const usersCol = await getCollection('users');
       const updatedUser = await usersCol.findOneAndUpdate(
-        { telegramId },
+        { telegramId: { $in: idVariants(telegramId) } },
         { $inc: { fruitCoin: result.rewardFc }, $set: { lastActive: new Date() } },
         { returnDocument: 'after' }
       );
+
       if (!updatedUser) {
+        // Credit failed after the code was already marked used — undo that
+        // so the user can retry instead of being stuck on "already_redeemed".
+        await revertPromoRedeem(code, telegramId);
         return res.status(404).json({ success: false, error: 'user_not_found' });
       }
 
