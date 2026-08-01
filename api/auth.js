@@ -30,8 +30,16 @@ module.exports = async (req, res) => {
 
   try {
     const initData = req.headers['x-telegram-init-data'] || '';
-    const { deviceId, referredBy } = req.body || {};
+    const { deviceId, referredBy: rawReferredBy } = req.body || {};
     const botToken = process.env.BOT_TOKEN;
+
+    // referredBy must look like a real Telegram id (digits only). This
+    // endpoint can be hit directly (curl/termux/devtools), bypassing the
+    // frontend's own validation, so re-check here rather than trusting the
+    // client. telegramId itself can never be forged this way — it always
+    // comes from verify.user.id below, derived from the HMAC-verified
+    // initData, not from anything in the request body.
+    const referredBy = typeof rawReferredBy === 'string' && /^\d+$/.test(rawReferredBy) ? rawReferredBy : null;
 
     const verify = verifyTelegramInitData(initData, botToken);
     if (!verify.valid) {
