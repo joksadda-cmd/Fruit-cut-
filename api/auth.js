@@ -204,6 +204,7 @@ module.exports = async (req, res) => {
         completedTasks: user.completedTasks ?? [],
         highScore: user.highScore,
         referralCount: user.referralCount,
+        referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
