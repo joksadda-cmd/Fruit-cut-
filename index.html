@@ -1030,8 +1030,24 @@
 
         const userId   = String(tgUser.id);
         currentUser    = { id: userId };
+
+        // window.G.referCode used to be initialized to '' and NEVER assigned
+        // anywhere — every user's "Your Refer Link" therefore ended with a
+        // blank ?startapp= (nothing after the '='), so friends who joined
+        // through it carried no referrer id at all and referral counts
+        // never moved. Fix: the code IS just the user's own numeric
+        // Telegram id — same format api/bot.js's own /start referral link
+        // already uses (?startapp=<telegramId>), so both link sources stay
+        // consistent.
+        window.G.referCode = userId;
+
         let startParam = tg.initDataUnsafe?.start_param;
-        let referredBy = (startParam && startParam !== `FC${userId}`) ? startParam.replace('FC','') : null;
+        // start_param is plain digits (a Telegram id) when it's a real
+        // referral. Validate it's actually numeric before trusting it as
+        // someone's id — guards against a tampered/garbage value reaching
+        // the server (e.g. someone poking the Mini App URL by hand outside
+        // Telegram's normal launch flow).
+        let referredBy = (startParam && /^\d+$/.test(startParam) && startParam !== userId) ? startParam : null;
 
         // ── Auto retry: 5 attempts ────────────────────────────────────
         let res = null;
