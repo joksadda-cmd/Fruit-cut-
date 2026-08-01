@@ -12,6 +12,8 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
 const { TRANSACTION_TYPES } = require('../lib/constants');
+const { createAdSession, claimAdSession } = require('../lib/adSession');
+const { redeemPromoCode } = require('../lib/promo');
 
 const MIN_GOLD_PER_CONVERT = 20000;
 const MAX_GOLD_PER_CONVERT = 2000000;
@@ -23,7 +25,7 @@ module.exports = async (req, res) => {
 
   try {
     const initData = req.headers['x-telegram-init-data'] || '';
-    const { goldAmount } = req.body || {};
+    const body = req.body || {};
     const botToken = process.env.BOT_TOKEN;
 
     const verify = verifyTelegramInitData(initData, botToken);
@@ -31,6 +33,61 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Auth failed' });
     }
     const telegramId = verify.user.id;
+    const action = body.action;
+
+    // ── Promo Step 1: issue an ad-watch session ──────────────────────
+    // Uses its own 'promo' network key in lib/adSession.js so it never
+    // touches the Ads tab's daily per-network claim limits.
+    if (action === 'request_promo_ad_session') {
+      const sessionId = await createAdSession(telegramId, 'promo');
+      return res.status(200).json({ success: true, sessionId });
+    }
+
+    // ── Promo Step 2: verify the ad was actually watched, then redeem ──
+    if (action === 'redeem_promo') {
+      const { code, sessionId } = body;
+      if (!sessionId) {
+        return res.status(200).json({ success: false, error: 'watch_ad_first' });
+      }
+      const claim = await claimAdSession(telegramId, sessionId, 'promo');
+      if (!claim.ok) {
+        return res.status(200).json({ success: false, error: 'watch_ad_first' });
+      }
+
+      const result = await redeemPromoCode(telegramId, code);
+      if (!result.ok) {
+        return res.status(200).json({ success: false, error: result.reason });
+      }
+
+      const usersCol = await getCollection('users');
+      const updatedUser = await usersCol.findOneAndUpdate(
+        { telegramId },
+        { $inc: { fruitCoin: result.rewardFc }, $set: { lastActive: new Date() } },
+        { returnDocument: 'after' }
+      );
+      if (!updatedUser) {
+        return res.status(404).json({ success: false, error: 'user_not_found' });
+      }
+
+      const txCol = await getCollection('transactions');
+      await txCol.insertOne({
+        telegramId,
+        type: TRANSACTION_TYPES.PROMO_REWARD,
+        amount: result.rewardFc,
+        balanceAfter: updatedUser.fruitCoin,
+        meta: { code: result.code },
+        createdAt: new Date(),
+      });
+
+      return res.status(200).json({
+        success: true,
+        rewardFc: result.rewardFc,
+        user: { fruitCoin: updatedUser.fruitCoin },
+      });
+    }
+
+    // ── Default action: Gold -> Fruit Coin conversion (unchanged) ──────
+    const { goldAmount } = body;
 
     const gold = parseInt(goldAmount, 10);
     if (!gold || gold < MIN_GOLD_PER_CONVERT) {
