@@ -174,7 +174,6 @@ const SHOP_ITEMS = {
   token_1:     { cost: 120,  type: 'token',    amount: 1,  label: '1 🎮 Game Token' },
   token_2:     { cost: 200,  type: 'token',    amount: 2,  label: '2 🎮 Game Token' },
   token_5:     { cost: 450,  type: 'token',    amount: 5,  label: '5 🎮 Game Token' },
-  token_20:    { cost: 900,  type: 'token',    amount: 20, label: '20 🎮 Game Token' },
   lottoken_3:  { cost: 650,  type: 'lottoken', amount: 3,  label: '3 🎫 Lottery Token' },
   lottoken_10: { cost: 2000, type: 'lottoken', amount: 10, label: '10 🎫 Lottery Token' },
 };
