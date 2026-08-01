@@ -42,6 +42,7 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { applyRegen, REGEN_INTERVAL_MS, MAX_TOKENS } = require('../lib/tokens');
+const { createAdSession, claimAdSession, revertAdSession } = require('../lib/adSession');
 const { ObjectId } = require('mongodb');
 
 const REWARD_MIN = 40;
@@ -227,8 +228,26 @@ async function handleBuyShopItem(req, res, user) {
 const FREEBOX_COOLDOWN_MS = 24 * 60 * 60 * 1000; // rolling 24h from last claim
 const FREEBOX_MIN = 100;
 const FREEBOX_MAX = 500;
+const FREEBOX_AD_NETWORK = 'freebox'; // synthetic network tag — kept separate
+// from 'adsgram'/'adsgramDaily'/'gigapub'/'monetag' on purpose, so watching
+// an ad to unlock the free box never eats into the daily watch caps shown
+// on the "5/5 remaining" / "10/10 remaining" ad-for-gold buttons in Shop.
+
+async function handleFreeboxAdSession(req, res, user) {
+  const sessionId = await createAdSession(user.telegramId, FREEBOX_AD_NETWORK);
+  return res.status(200).json({ success: true, sessionId });
+}
 
 async function handleClaimFreebox(req, res, user) {
+  const { sessionId } = req.body || {};
+  if (!sessionId) {
+    return res.status(400).json({ success: false, error: 'missing_ad_session' });
+  }
+  const adClaim = await claimAdSession(user.telegramId, sessionId, FREEBOX_AD_NETWORK);
+  if (!adClaim.ok) {
+    return res.status(200).json({ success: false, error: 'ad_not_verified', reason: adClaim.reason });
+  }
+
   const usersCol = await getCollection('users');
   const now = new Date();
   const cutoff = new Date(now.getTime() - FREEBOX_COOLDOWN_MS);
@@ -243,7 +262,10 @@ async function handleClaimFreebox(req, res, user) {
   );
 
   if (!updated) {
-    // Tell the frontend when it'll be available again.
+    // Already watched the ad but the box turned out to still be on
+    // cooldown (stale client state) — give the session back instead of
+    // burning a real ad watch for nothing.
+    await revertAdSession(sessionId, user.telegramId);
     const nextAt = user.lastFreeBoxAt ? new Date(new Date(user.lastFreeBoxAt).getTime() + FREEBOX_COOLDOWN_MS) : now;
     return res.status(200).json({ success: false, error: 'freebox_on_cooldown', nextAt });
   }
@@ -288,6 +310,7 @@ module.exports = async (req, res) => {
     if (action === 'start_game') return await handleStartGame(req, res, user);
     if (action === 'buy_shop_item') return await handleBuyShopItem(req, res, user);
     if (action === 'claim_freebox') return await handleClaimFreebox(req, res, user);
+    if (action === 'freebox_ad_session') return await handleFreeboxAdSession(req, res, user);
     return await handleLevelClaim(req, res, user);
   } catch (err) {
     console.error('game_claim error:', err);
