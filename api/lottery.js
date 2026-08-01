@@ -19,6 +19,12 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { pickPrize } = require('../lib/lottery');
 const { MAX_TOKENS } = require('../lib/tokens');
+const { createAdSession, claimAdSession } = require('../lib/adSession');
+
+const SPIN_AD_NETWORK = 'lottery_spin'; // own synthetic network tag — separate
+// from the Shop's Adsgram/GigaPub/Monetag daily-limit counters, same as
+// the Free Gold Box gate.
+const SPIN_AD_EVERY = 3; // every 3rd spin (3, 6, 9, ...) requires a watched ad first
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -33,19 +39,40 @@ module.exports = async (req, res) => {
     }
     const telegramId = verify.user.id;
 
-    const { useToken } = req.body || {};
+    // ── ad-session action (client calls this first when told ad_required) ──
+    if (req.body && req.body.action === 'ad_session') {
+      const sessionId = await createAdSession(telegramId, SPIN_AD_NETWORK);
+      return res.status(200).json({ success: true, sessionId });
+    }
+
+    const { useToken, sessionId } = req.body || {};
 
     const usersCol = await getCollection('users');
     const user = await findUserByTelegramId(usersCol, telegramId);
     if (!user) return res.status(404).json({ success: false, error: 'user_not_found' });
     if (user.banned) return res.status(403).json({ success: false, error: 'Account suspended' });
 
+    // ── Every 3rd spin needs a watched ad BEFORE it's allowed to
+    // spend the token/free-spin — checked (and only checked) here, so a
+    // rejected spin never costs the user anything. ────────────────────
+    const upcomingSpinNumber = (user.lotterySpinCount || 0) + 1;
+    const adRequired = upcomingSpinNumber % SPIN_AD_EVERY === 0;
+    if (adRequired) {
+      if (!sessionId) {
+        return res.status(200).json({ success: false, error: 'ad_required' });
+      }
+      const adClaim = await claimAdSession(telegramId, sessionId, SPIN_AD_NETWORK);
+      if (!adClaim.ok) {
+        return res.status(200).json({ success: false, error: 'ad_not_verified', reason: adClaim.reason });
+      }
+    }
+
     // ── STEP 1: atomically claim the spin itself ─────────────────────
     let claimedUser;
     if (useToken) {
       claimedUser = await usersCol.findOneAndUpdate(
         { _id: user._id, lotteryTokens: { $gte: 1 } },
-        { $inc: { lotteryTokens: -1 } },
+        { $inc: { lotteryTokens: -1, lotterySpinCount: 1 } },
         { returnDocument: 'after' }
       );
       if (!claimedUser) {
@@ -60,7 +87,7 @@ module.exports = async (req, res) => {
           _id: user._id,
           $or: [{ lastFreeLotteryAt: { $exists: false } }, { lastFreeLotteryAt: null }, { lastFreeLotteryAt: { $lt: startOfTodayUTC } }],
         },
-        { $set: { lastFreeLotteryAt: new Date() } },
+        { $set: { lastFreeLotteryAt: new Date() }, $inc: { lotterySpinCount: 1 } },
         { returnDocument: 'after' }
       );
       if (!claimedUser) {
