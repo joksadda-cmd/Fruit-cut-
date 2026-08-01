@@ -57,7 +57,10 @@ module.exports = async (req, res) => {
       const usersCol = await getCollection('users');
       const updatedUser = await usersCol.findOneAndUpdate(
         { telegramId: { $in: idVariants(telegramId) } },
-        { $inc: { fruitCoin: result.rewardFc }, $set: { lastActive: new Date() } },
+        {
+          $inc: { fruitCoin: result.rewardFc || 0, gold: result.rewardGold || 0 },
+          $set: { lastActive: new Date() },
+        },
         { returnDocument: 'after' }
       );
 
@@ -72,16 +75,17 @@ module.exports = async (req, res) => {
       await txCol.insertOne({
         telegramId,
         type: TRANSACTION_TYPES.PROMO_REWARD,
-        amount: result.rewardFc,
+        amount: result.rewardFc || 0,
         balanceAfter: updatedUser.fruitCoin,
-        meta: { code: result.code },
+        meta: { code: result.code, rewardGold: result.rewardGold || 0 },
         createdAt: new Date(),
       });
 
       return res.status(200).json({
         success: true,
-        rewardFc: result.rewardFc,
-        user: { fruitCoin: updatedUser.fruitCoin },
+        rewardFc: result.rewardFc || 0,
+        rewardGold: result.rewardGold || 0,
+        user: { fruitCoin: updatedUser.fruitCoin, gold: updatedUser.gold },
       });
     }
 
