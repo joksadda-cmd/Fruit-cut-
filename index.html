@@ -1318,7 +1318,25 @@
         let btn = document.getElementById('freebox-btn');
         if(!btn || btn.disabled) return;
         btn.disabled = true; btn.textContent = '...';
-        const res = await apiCall('/api/game_claim', { action: 'claim_freebox' });
+
+        // Must watch one rewarded ad (random network) before the box opens.
+        const sessionRes = await apiCall('/api/game_claim', { action: 'freebox_ad_session' });
+        if(!sessionRes.success){
+            showToast('⚠️ Could not start ad. Try again.');
+            updateFreeboxUI();
+            return;
+        }
+        btn.textContent = '📺';
+        try{
+            await playRandomRewardedAd();
+        } catch(e){
+            showToast(adErrorText(e && e.message));
+            updateFreeboxUI();
+            return;
+        }
+
+        btn.textContent = '...';
+        const res = await apiCall('/api/game_claim', { action: 'claim_freebox', sessionId: sessionRes.sessionId });
         if(res.success){
             showToast(`🎁 Free Box: +${res.reward} 🪙 Gold!`);
             window.G.lastFreeBoxAt = new Date().toISOString();
@@ -1326,6 +1344,8 @@
         } else if(res.error === 'freebox_on_cooldown'){
             window.G.lastFreeBoxAt = res.nextAt ? new Date(new Date(res.nextAt).getTime() - 24*60*60*1000).toISOString() : window.G.lastFreeBoxAt;
             showToast('⏳ Free Box already claimed — come back later!');
+        } else if(res.error === 'ad_not_verified'){
+            showToast('⚠️ Ad not verified, try again.');
         } else {
             showToast('❌ Something went wrong, try again.');
         }
@@ -2395,15 +2415,15 @@
        present anywhere in this file.
     ========================================================= */
     const LOTTERY_PRIZES = [
-        { id:1,  label:'2000 🪙 Gold',        icon:'🪙',  type:'coin',     val:2000 },
-        { id:2,  label:'500 🪙 Gold',         icon:'🪙',  type:'coin',     val:500  },
-        { id:3,  label:'1000 🪙 Gold',        icon:'🪙',  type:'coin',     val:1000 },
-        { id:4,  label:'20 🍎 Fruit Coin',    icon:'🍎',  type:'fc',       val:20   },
-        { id:5,  label:'100 🍎 Fruit Coin',   icon:'🍎',  type:'fc',       val:100  },
-        { id:6,  label:'2 🎫 Lottery Token',  icon:'🎫',  type:'lottoken', val:2    },
-        { id:7,  label:'50 🍎 Fruit Coin',    icon:'🍎',  type:'fc',       val:50   },
-        { id:8,  label:'2 🎮 Game Token',     icon:'🎮',  type:'token',    val:2    },
-        { id:9,  label:'3 🎮 Game Token',     icon:'🎮',  type:'token',    val:3    },
+        { id:1,  label:'100 🪙 Gold',         icon:'🪙',  type:'coin',     val:100  },
+        { id:2,  label:'1000 🪙 Gold',        icon:'🪙',  type:'coin',     val:1000 },
+        { id:3,  label:'100 🍎 Fruit Coin',   icon:'🍎',  type:'fc',       val:100  },
+        { id:4,  label:'50 🍎 Fruit Coin',    icon:'🍎',  type:'fc',       val:50   },
+        { id:5,  label:'3 🎮 Game Token',     icon:'🎮',  type:'token',    val:3    },
+        { id:6,  label:'200 🪙 Gold',         icon:'🪙',  type:'coin',     val:200  },
+        { id:7,  label:'20 🍎 Fruit Coin',    icon:'🍎',  type:'fc',       val:20   },
+        { id:8,  label:'2 🎫 Lottery Token',  icon:'🎫',  type:'lottoken', val:2    },
+        { id:9,  label:'2 🎮 Game Token',     icon:'🎮',  type:'token',    val:2    },
         { id:10, label:'1000 🍎 Fruit Coin',  icon:'🍎',  type:'fc',       val:1000 },
     ];
     const SLOT_SYMBOLS = ['🪙','🍋','🎰','7️⃣','⭐','🎮','🍊','🪙','🔔','🍒'];
