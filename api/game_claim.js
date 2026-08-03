@@ -43,6 +43,7 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { applyRegen, REGEN_INTERVAL_MS, MAX_TOKENS } = require('../lib/tokens');
 const { createAdSession, claimAdSession, revertAdSession } = require('../lib/adSession');
+const { createGameSession, claimGameSession, checkHourlyClaimCap } = require('../lib/gameSession');
 const { ObjectId } = require('mongodb');
 
 const REWARD_MIN = 40;
@@ -50,11 +51,27 @@ const REWARD_MAX = 120; // inclusive, matches index.html's `40 + rand(0..80)`
 
 async function handleStartGame(req, res, user) {
   const usersCol = await getCollection('users');
+  const { free } = req.body || {};
 
   // Credit any tokens the player earned while away BEFORE checking
   // availability, so someone who's been offline a while isn't wrongly
   // blocked right as a token should have refilled.
   const regen = await applyRegen(usersCol, user);
+
+  // "Watch Ad -> Play Free" path — no token spent. Still needs a real
+  // server-side session below so the level-complete claim can't be hit
+  // for free with zero cost and zero proof a level was ever started.
+  if (free) {
+    const sessionId = await createGameSession(user.telegramId, { free: true });
+    return res.status(200).json({
+      success: true,
+      tokens: regen.gameTokens,
+      stage: user.stage ?? 1,
+      nextTokenAt: regen.nextTokenAt,
+      sessionId,
+    });
+  }
+
   if (regen.gameTokens <= 0) {
     return res.status(200).json({ success: false, error: 'no_tokens', tokens: regen.gameTokens });
   }
@@ -77,11 +94,17 @@ async function handleStartGame(req, res, user) {
     return res.status(200).json({ success: false, error: 'no_tokens', tokens: 0 });
   }
 
+  // SECURITY: create a real session tied to this token spend — see
+  // lib/gameSession.js. This is what closes the "call level-complete
+  // directly, no token, no session, unlimited Gold" exploit.
+  const sessionId = await createGameSession(user.telegramId, { free: false });
+
   return res.status(200).json({
     success: true,
     tokens: updated.gameTokens,
     stage: updated.stage ?? 1,
     nextTokenAt: new Date(now.getTime() + REGEN_INTERVAL_MS),
+    sessionId,
   });
 }
 
@@ -126,7 +149,27 @@ async function handleClaimGift(req, res, user) {
 }
 
 async function handleLevelClaim(req, res, user) {
-  const { isAdWatched, skip } = req.body || {};
+  const { isAdWatched, skip, sessionId } = req.body || {};
+
+  // SECURITY: reward only ever pays out against a session that was
+  // actually created by start_game (real token spend OR a genuine
+  // "watch ad to play free" call) — see lib/gameSession.js. This is the
+  // fix for the bug where this branch could be hit directly, with no
+  // game ever started and no token spent, in a script loop for
+  // unlimited Gold.
+  const sessionCheck = await claimGameSession(user.telegramId, sessionId);
+  if (!sessionCheck.ok) {
+    return res.status(200).json({ success: false, error: 'invalid_session', reason: sessionCheck.reason });
+  }
+
+  // Defense in depth: even with a valid session, cap real level-claims to
+  // a sane number per user per hour (this enforces the MAX_GAMES_PER_HOUR
+  // constant from lib/constants.js, which existed before but was never
+  // actually wired up anywhere).
+  const hourly = await checkHourlyClaimCap(user.telegramId);
+  if (!hourly.allowed) {
+    return res.status(200).json({ success: false, error: 'hourly_limit_reached' });
+  }
 
   const usersCol = await getCollection('users');
 
