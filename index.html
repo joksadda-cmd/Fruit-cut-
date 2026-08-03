@@ -2406,7 +2406,13 @@
             // instead of the "Ad Loading" screen that used to show here
             // even when no ad was involved at all.
             await showStageTransition(window.G.stage);
-            window.tryStartGame(true);
+            // FIX: continuing after a WIN used to be free — this used to
+            // call tryStartGame(true) which reuses the old session with
+            // zero token cost. Now every new round costs a token, win or
+            // lose, exactly like retryGame() does after a loss. Out of
+            // tokens shows the same "watch ad to play free" modal.
+            if(window.G.tokens <= 0){ window.showNoTokenModal(); return; }
+            window.tryStartGame();
         } else {
             showToast('❌ Error Saving Data! ' + (res.error || ''));
             window.quitGame();
@@ -2423,8 +2429,12 @@
         document.getElementById('ad-loader').style.display='none';
         if(res.success) {
             if(res.stage !== undefined) window.G.stage = res.stage;
-            window.tryStartGame(true);
             showToast('Stage skipped!');
+            // FIX: same rule as the win-continue path above — skipping
+            // still costs a fresh token (or a fresh ad-watch if out of
+            // tokens), it's not a free continuation anymore.
+            if(window.G.tokens <= 0){ window.showNoTokenModal(); return; }
+            window.tryStartGame();
         }
         else { showToast('❌ ' + (res.error || 'Error saving data')); }
     };
