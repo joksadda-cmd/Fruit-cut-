@@ -65,25 +65,39 @@ module.exports = async (req, res) => {
 
       const settings = await getSettings();
       const amount = (settings.adRewardGold && settings.adRewardGold[action]) || 100;
-      const result = await creditGoldForAd(telegramId, amount, action, `session_${sessionId}`);
+
+      // CRITICAL FIX: the daily cap used to only be checked back in
+      // request_session, based on a count of already-CLAIMED sessions.
+      // Nothing stopped a script from pre-creating hundreds of PENDING
+      // sessions first (countClaimedToday was still 0, so that check kept
+      // passing) and then claiming them all back-to-back — this credit
+      // step never rechecked the cap at all. Passing dailyLimitMax here
+      // makes creditGoldForAd enforce it atomically at the only point
+      // that actually matters: the moment gold is paid out.
+      const dailyLimitMax = (settings.adDailyLimits && settings.adDailyLimits[action]) || 999;
+      const result = await creditGoldForAd(telegramId, amount, action, `session_${sessionId}`, dailyLimitMax);
 
       if (!result.success) {
         console.warn(`[ads] credit failed: telegramId=${telegramId} network=${action} sessionId=${sessionId} reason=${result.reason}`);
 
         // A duplicate/idempotency hit means gold was already credited by an
         // earlier request for this exact session — never reopen that one,
-        // it's not a real failure. Everything else (e.g. user_not_found, a
-        // transient DB error) means no reward was actually given, so give
-        // the session a second chance instead of silently burning the
-        // user's daily slot for an ad they genuinely watched.
-        if (!result.duplicate) {
+        // it's not a real failure. A daily-limit hit means the cap is
+        // genuinely reached for today — reopening it would just let the
+        // same session get retried tomorrow for free, so don't. Everything
+        // else (e.g. user_not_found, a transient DB error) means no reward
+        // was actually given for an ad that really played, so give the
+        // session a second chance instead of silently burning the user's
+        // daily slot.
+        const isDailyLimit = result.reason === 'daily_limit_reached';
+        if (!result.duplicate && !isDailyLimit) {
           await revertAdSession(sessionId, telegramId);
         }
 
         return res.status(200).json({
           success: false,
           message: result.duplicate ? 'already_used' : (result.reason || 'credit_failed'),
-          retryable: !result.duplicate,
+          retryable: !result.duplicate && !isDailyLimit,
         });
       }
 
