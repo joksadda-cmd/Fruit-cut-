@@ -4,7 +4,7 @@
 // Header: x-telegram-init-data (verified, same pattern as api/auth.js)
 //
 // Converts Gold -> Fruit Coin using the rate stored in settings.goldToFc
-// (currently 1,000,000 Gold = 50,000 FC, i.e. 20 Gold = 1 FC).
+// (currently 100,000 Gold = 10,000 FC, i.e. 10 Gold = 1 FC).
 // The server recalculates the FC amount itself — it never trusts an FC
 // amount sent from the client.
 
@@ -101,7 +101,7 @@ module.exports = async (req, res) => {
     }
 
     const settings = await getSettings();
-    const rate = settings.goldToFc || { goldAmount: 1000000, fcAmount: 50000 };
+    const rate = settings.goldToFc || { goldAmount: 100000, fcAmount: 10000 };
 
     const usersCol = await getCollection('users');
     const user = await findUserByTelegramId(usersCol, telegramId);
