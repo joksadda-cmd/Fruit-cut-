@@ -20,10 +20,10 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { checkChannelMembership } = require('../lib/joinGate');
 
-// 50,000 Fruit Coin = $1 USDT  →  1 FC = $0.00002
+// 10,000 Fruit Coin = $1 USDT  →  1 FC = $0.0001
 const RATES = {
-  binance: { rate: 0.00002, unit: 'USDT', decimals: 4 },
-  tonkeeper: { rate: 0.00002, unit: 'USDT', decimals: 4 },
+  binance: { rate: 0.0001, unit: 'USDT', decimals: 4 },
+  tonkeeper: { rate: 0.0001, unit: 'USDT', decimals: 4 },
 };
 
 const MIN_FRUIT_COIN = 5000;
