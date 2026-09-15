@@ -68,13 +68,10 @@ module.exports = async (req, res) => {
         tokens: user.gameTokens ?? 3,   // frontend's window.G.tokens field
         maxTokens: MAX_TOKENS,
         nextTokenAt: regen.nextTokenAt,
-        highScore: user.highScore,
         referralCount: user.referralCount,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
-        lotteryTokens: user.lotteryTokens ?? 0,
-        lastFreeLotteryAt: user.lastFreeLotteryAt ?? null,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
-        stage: user.stage ?? 1,
+        lastSlashAt: user.lastSlashAt ?? null,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
