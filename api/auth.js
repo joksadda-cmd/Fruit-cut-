@@ -96,14 +96,12 @@ module.exports = async (req, res) => {
         fruitCoin: 0,
         gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
         lastTokenRegenAt: new Date(),
-        stage: 1,
-        lotteryTokens: 0,
-        lastFreeLotteryAt: null,
         lastFreeBoxAt: null,
+        lastSlashAt: null,
+        slashEarningsUsd: 0,
         completedTasks: [],
         totalAdsWatched: 0,
         validReferralGiven: false,
-        highScore: 0,
         totalGamesPlayed: 0,
         deviceId: deviceId || null,
         referredBy: referredBy || null,
@@ -131,7 +129,6 @@ module.exports = async (req, res) => {
                   // normal 10 cap (per spec) — natural 4h regen elsewhere
                   // caps at 10, this doesn't.
                   gameTokens: { $add: [{ $ifNull: ['$gameTokens', 3] }, 1] },
-                  lotteryTokens: { $add: [{ $ifNull: ['$lotteryTokens', 0] }, 1] },
                   referralCount: { $add: [{ $ifNull: ['$referralCount', 0] }, 1] },
                   lastActive: new Date(),
                 },
@@ -146,7 +143,7 @@ module.exports = async (req, res) => {
             type: TRANSACTION_TYPES.REFERRAL_REWARD,
             amount: 0, // no gold/FC in the instant reward — just tokens (logged in meta)
             balanceAfter: updated ? updated.gold : referrer.gold,
-            meta: { gameTokens: 1, lotteryTokens: 1, referredTelegramId: telegramId },
+            meta: { gameTokens: 1, referredTelegramId: telegramId },
             createdAt: new Date(),
           });
 
@@ -156,8 +153,7 @@ module.exports = async (req, res) => {
             referrer.telegramId,
             `🎉 <b>Refer Reward Received!</b>\n\n` +
               `${joinedWho} joined using your invite link!\n\n` +
-              `🎮 +1 Game Token added!\n` +
-              `🎰 +1 Lottery Token added!\n\n` +
+              `🎮 +1 Game Token added!\n\n` +
               `Keep inviting friends to earn more! 🚀`,
             {
               reply_markup: {
@@ -197,12 +193,9 @@ module.exports = async (req, res) => {
         gameTokens: user.gameTokens ?? 3,
         maxTokens: MAX_TOKENS,
         nextTokenAt: finalRegen.nextTokenAt,
-        lotteryTokens: user.lotteryTokens ?? 0,
-        lastFreeLotteryAt: user.lastFreeLotteryAt ?? null,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
-        stage: user.stage ?? 1,
+        lastSlashAt: user.lastSlashAt ?? null,
         completedTasks: user.completedTasks ?? [],
-        highScore: user.highScore,
         referralCount: user.referralCount,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
       },
