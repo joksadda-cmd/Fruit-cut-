@@ -63,7 +63,6 @@ module.exports = async (req, res) => {
       success: true,
       status: 'ok',
       user: {
-        coins: user.gold,               // frontend's window.G.coins field
         fruitCoin: user.fruitCoin,
         tokens: user.gameTokens ?? 3,   // frontend's window.G.tokens field
         maxTokens: MAX_TOKENS,
@@ -72,6 +71,7 @@ module.exports = async (req, res) => {
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
+        profileLevel: user.profileLevel ?? 1,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
