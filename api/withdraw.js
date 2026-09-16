@@ -10,7 +10,8 @@
 // Requirements (per Rashu's spec): 5 tasks completed AND joined the
 // official channel + community — no more referral requirement.
 //
-// Once per (UTC) day, and a 5% fee is taken out of every withdrawal.
+// Once per (UTC) day, and a 15% fee is taken out of every withdrawal
+// (earnings fee, per Rashu's spec — Sept 2026 economy update).
 // Both the daily-limit check AND the balance deduction happen in the
 // SAME atomic findOneAndUpdate call below, so a double-tap/double-submit
 // can never produce two withdrawals — the second request's filter simply
@@ -20,15 +21,15 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { checkChannelMembership } = require('../lib/joinGate');
 
-// 10,000 Fruit Coin = $1 USDT  →  1 FC = $0.0001
+// 25,000 Fruit Coin = $1 USDT  →  1 FC = $0.00004
 const RATES = {
-  binance: { rate: 0.0001, unit: 'USDT', decimals: 4 },
-  tonkeeper: { rate: 0.0001, unit: 'USDT', decimals: 4 },
+  binance: { rate: 0.00004, unit: 'USDT', decimals: 5 },
+  tonkeeper: { rate: 0.00004, unit: 'USDT', decimals: 5 },
 };
 
 const MIN_FRUIT_COIN = 5000;
 const MIN_TASKS = 5;
-const FEE_RATE = 0.05; // 5%
+const FEE_RATE = 0.15; // 15%
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -75,8 +76,8 @@ module.exports = async (req, res) => {
       });
     }
 
-    // 5% fee — the FULL requested amount leaves the user's Fruit Coin
-    // balance, but only 95% of it is what actually gets converted/paid.
+    // 15% fee — the FULL requested amount leaves the user's Fruit Coin
+    // balance, but only 85% of it is what actually gets converted/paid.
     const feeFruitCoin = Math.round(amt * FEE_RATE);
     const netFruitCoin = amt - feeFruitCoin;
 
@@ -154,7 +155,7 @@ module.exports = async (req, res) => {
             text:
               `🔔 <b>New Withdrawal Request</b>\n\n` +
               `👤 @${user.username || 'unknown'} (ID: <code>${user.telegramId}</code>)\n` +
-              `💰 ${amt.toLocaleString()} Fruit Coin → <b>${convertedAmount} ${r.unit}</b> (after 5% fee)\n` +
+              `💰 ${amt.toLocaleString()} Fruit Coin → <b>${convertedAmount} ${r.unit}</b> (after 15% fee)\n` +
               `📍 ${method === 'binance' ? 'Binance UID' : 'TonKeeper'}: <code>${trimmedAddress}</code>`,
             parse_mode: 'HTML',
             reply_markup: {
