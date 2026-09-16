@@ -10,13 +10,13 @@
 //   Atomic: the filter requires status:'pending', so a double-tap or two
 //   overlapping requests can only ever credit the user once.
 //
-// action: 'buy_shop_item' -> spends Gold on a Game Token bundle.
+// action: 'buy_shop_item' -> spends Fruit Coin on a Game Token bundle.
 // action: 'freebox_ad_session' / 'claim_freebox' -> the 24h Free Box flow.
 //
 // NOTE: the old Level/Stage system (start_game / level-complete claim)
 // lived here before — removed along with the fruit-slicing game itself.
 // It's gone from index.html, so these actions are no longer reachable;
-// removing the handlers too so there's no dead code claiming Gold for a
+// removing the handlers too so there's no dead code claiming Fruit Coin for a
 // "level" that no longer exists anywhere in the app.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
@@ -62,11 +62,11 @@ async function handleClaimGift(req, res, user) {
     success: true,
     amount: gift.amount,
     reason: gift.reason,
-    user: { gold: updatedUser.gold, fruitCoin: updatedUser.fruitCoin },
+    user: { fruitCoin: updatedUser.fruitCoin },
   });
 }
 
-// ── Shop — 6-slot Gold item catalog (server-only; never trust a price
+// ── Shop — Fruit Coin item catalog (server-only; never trust a price
 // or item id sent from the client — same rule as everywhere else in
 // this project). Keys are what the frontend sends as `itemId`.
 const SHOP_ITEMS = {
@@ -85,22 +85,22 @@ async function handleBuyShopItem(req, res, user) {
   // Clamp to MAX_TOKENS — buying a bundle while already near/at the cap
   // can't push you over it.
   const updated = await usersCol.findOneAndUpdate(
-    { _id: user._id, gold: { $gte: item.cost } },
+    { _id: user._id, fruitCoin: { $gte: item.cost } },
     [{ $set: {
-        gold: { $subtract: ['$gold', item.cost] },
+        fruitCoin: { $subtract: ['$fruitCoin', item.cost] },
         gameTokens: { $min: [{ $add: [{ $ifNull: ['$gameTokens', 3] }, item.amount] }, MAX_TOKENS] },
     } }],
     { returnDocument: 'after' }
   );
 
-  if (!updated) return res.status(200).json({ success: false, error: 'not_enough_gold' });
+  if (!updated) return res.status(200).json({ success: false, error: 'not_enough_fruitcoin' });
 
   const txCol = await getCollection('transactions');
   await txCol.insertOne({
     telegramId: user.telegramId,
     type: TRANSACTION_TYPES.SHOP_PURCHASE,
     amount: -item.cost,
-    balanceAfter: updated.gold,
+    balanceAfter: updated.fruitCoin,
     meta: { itemId, itemType: item.type, itemAmount: item.amount },
     createdAt: new Date(),
   });
@@ -108,7 +108,7 @@ async function handleBuyShopItem(req, res, user) {
   return res.status(200).json({
     success: true,
     label: item.label,
-    user: { gold: updated.gold, gameTokens: updated.gameTokens },
+    user: { fruitCoin: updated.fruitCoin, gameTokens: updated.gameTokens },
   });
 }
 
@@ -118,7 +118,7 @@ const FREEBOX_MAX = 500;
 const FREEBOX_AD_NETWORK = 'freebox'; // synthetic network tag — kept separate
 // from 'adsgram'/'adsgramDaily'/'gigapub'/'monetag' on purpose, so watching
 // an ad to unlock the free box never eats into the daily watch caps shown
-// on the "5/5 remaining" / "10/10 remaining" ad-for-gold buttons in Shop.
+// on the "5/5 remaining" / "10/10 remaining" ad-for-FC buttons in Shop.
 
 async function handleFreeboxAdSession(req, res, user) {
   const sessionId = await createAdSession(user.telegramId, FREEBOX_AD_NETWORK);
@@ -144,7 +144,7 @@ async function handleClaimFreebox(req, res, user) {
   const reward = FREEBOX_MIN + Math.floor(Math.random() * (FREEBOX_MAX - FREEBOX_MIN + 1));
   const updated = await usersCol.findOneAndUpdate(
     { _id: user._id, $or: [{ lastFreeBoxAt: { $exists: false } }, { lastFreeBoxAt: null }, { lastFreeBoxAt: { $lt: cutoff } }] },
-    { $inc: { gold: reward }, $set: { lastFreeBoxAt: now } },
+    { $inc: { fruitCoin: reward }, $set: { lastFreeBoxAt: now } },
     { returnDocument: 'after' }
   );
 
@@ -162,7 +162,7 @@ async function handleClaimFreebox(req, res, user) {
     telegramId: user.telegramId,
     type: TRANSACTION_TYPES.FREEBOX_REWARD,
     amount: reward,
-    balanceAfter: updated.gold,
+    balanceAfter: updated.fruitCoin,
     createdAt: now,
   });
 
@@ -170,7 +170,7 @@ async function handleClaimFreebox(req, res, user) {
     success: true,
     reward,
     nextAt: new Date(now.getTime() + FREEBOX_COOLDOWN_MS),
-    user: { gold: updated.gold },
+    user: { fruitCoin: updated.fruitCoin },
   });
 }
 
