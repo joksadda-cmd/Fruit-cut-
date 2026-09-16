@@ -92,13 +92,16 @@ module.exports = async (req, res) => {
       const newUser = {
         telegramId,
         username,
-        gold: 0,
         fruitCoin: 0,
         gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
         lastTokenRegenAt: new Date(),
         lastFreeBoxAt: null,
         lastSlashAt: null,
         slashEarningsUsd: 0,
+        totalSlashWins: 0,
+        // Profile level system (1-10) is scoped for a later phase — this
+        // field is just a placeholder so the schema is ready for it.
+        profileLevel: 1,
         completedTasks: [],
         totalAdsWatched: 0,
         validReferralGiven: false,
@@ -141,8 +144,8 @@ module.exports = async (req, res) => {
           await txCol.insertOne({
             telegramId: referrer.telegramId,
             type: TRANSACTION_TYPES.REFERRAL_REWARD,
-            amount: 0, // no gold/FC in the instant reward — just tokens (logged in meta)
-            balanceAfter: updated ? updated.gold : referrer.gold,
+            amount: 0, // no FC in the instant reward — just tokens (logged in meta)
+            balanceAfter: updated ? updated.fruitCoin : referrer.fruitCoin,
             meta: { gameTokens: 1, referredTelegramId: telegramId },
             createdAt: new Date(),
           });
@@ -188,7 +191,6 @@ module.exports = async (req, res) => {
       user: {
         telegramId: user.telegramId,
         username: user.username,
-        gold: user.gold,
         fruitCoin: user.fruitCoin,
         gameTokens: user.gameTokens ?? 3,
         maxTokens: MAX_TOKENS,
@@ -198,6 +200,7 @@ module.exports = async (req, res) => {
         completedTasks: user.completedTasks ?? [],
         referralCount: user.referralCount,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
+        profileLevel: user.profileLevel ?? 1,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
