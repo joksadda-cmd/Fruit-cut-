@@ -116,14 +116,16 @@ module.exports = async (req, res) => {
       }
     }
 
-    const coinsReward = task.reward || 0;
-    const gemsReward = task.rewardFc || 0;
+    // GOLD REMOVED (2026-09): task.reward and task.rewardFc used to pay
+    // Gold and Fruit Coin separately. Both now land in Fruit Coin, so they
+    // are simply added together into one FC credit.
+    const fcReward = (task.reward || 0) + (task.rewardFc || 0);
 
     // Driver v6+: findOneAndUpdate returns the document directly, not { value }.
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id, completedTasks: { $ne: taskId } }, // re-check atomically (race guard)
       {
-        $inc: { gold: coinsReward, fruitCoin: gemsReward },
+        $inc: { fruitCoin: fcReward },
         $addToSet: { completedTasks: taskId },
         $set: { lastActive: new Date() },
       },
@@ -140,19 +142,17 @@ module.exports = async (req, res) => {
     await txCol.insertOne({
       telegramId,
       type: 'task_reward',
-      amount: coinsReward,
-      balanceAfter: updatedUser.gold,
+      amount: fcReward,
+      balanceAfter: updatedUser.fruitCoin,
       meta: { taskId, taskType: task.type, title: task.title },
       createdAt: new Date(),
     });
 
     return res.status(200).json({
       success: true,
-      coinsReward,
-      gemsReward,
+      fcReward,
       user: {
-        coins: updatedUser.gold,
-        gems: updatedUser.fruitCoin,
+        fruitCoin: updatedUser.fruitCoin,
         completedTasks: updatedUser.completedTasks,
       },
     });
