@@ -18,6 +18,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
+const { computeLevel } = require('../lib/level');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { computeRegen, applyRegen, MAX_TOKENS } = require('../lib/tokens');
 
@@ -97,11 +98,7 @@ module.exports = async (req, res) => {
         lastTokenRegenAt: new Date(),
         lastFreeBoxAt: null,
         lastSlashAt: null,
-        slashEarningsUsd: 0,
         totalSlashWins: 0,
-        // Profile level system (1-10) is scoped for a later phase — this
-        // field is just a placeholder so the schema is ready for it.
-        profileLevel: 1,
         completedTasks: [],
         totalAdsWatched: 0,
         validReferralGiven: false,
@@ -199,8 +196,9 @@ module.exports = async (req, res) => {
         lastSlashAt: user.lastSlashAt ?? null,
         completedTasks: user.completedTasks ?? [],
         referralCount: user.referralCount,
+        totalAdsWatched: user.totalAdsWatched || 0,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
-        profileLevel: user.profileLevel ?? 1,
+        ...computeLevel(user),
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
