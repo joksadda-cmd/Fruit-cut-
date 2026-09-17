@@ -12,6 +12,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { applyRegen, MAX_TOKENS } = require('../lib/tokens');
+const { computeLevel } = require('../lib/level');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -68,10 +69,11 @@ module.exports = async (req, res) => {
         maxTokens: MAX_TOKENS,
         nextTokenAt: regen.nextTokenAt,
         referralCount: user.referralCount,
+        totalAdsWatched: user.totalAdsWatched || 0,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
-        profileLevel: user.profileLevel ?? 1,
+        ...computeLevel(user),
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
