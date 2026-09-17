@@ -7,8 +7,8 @@
 // (Binance UID vs a TonKeeper address paid in USDT-on-TON). Rates here
 // match WITHDRAW_RATES in index.html exactly — if you change one, change both.
 //
-// Requirements (per Rashu's spec): 5 tasks completed AND joined the
-// official channel + community — no more referral requirement.
+// Requirements: 5 tasks completed AND joined the official channel +
+// community — only the public "payment channel" post was removed.
 //
 // Once per (UTC) day, and a 15% fee is taken out of every withdrawal
 // (earnings fee, per Rashu's spec — Sept 2026 economy update).
