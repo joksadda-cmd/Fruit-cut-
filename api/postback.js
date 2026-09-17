@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
 
     // Same daily cap as everything else (default 20/day for gigapub)
     const settings = await getSettings();
-    const maxPerDay = (settings.adDailyLimits && settings.adDailyLimits.gigapub) || 20;
+    const maxPerDay = (settings.adDailyLimits && settings.adDailyLimits.gigapub) || 20; // 20/day per current spec
     const todayStr = new Date().toISOString().slice(0, 10);
     const startOfDay = new Date(todayStr + 'T00:00:00.000Z');
     const countToday = await eventsCol.countDocuments({
@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
     });
     if (countToday >= maxPerDay) return ok();
 
-    const rewardFc = (settings.adRewardFc && settings.adRewardFc.gigapub) || 120;
+    const rewardFc = (settings.adRewardFc && settings.adRewardFc.gigapub) || 20; // 20 FC per current spec
 
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id },
