@@ -42,8 +42,10 @@ async function isMemberOf(chatId, telegramId) {
 // ── GET: list active tasks, grouped by category ──────────────────────
 async function handleList(req, res) {
   const tasksCol = await getCollection('tasks');
+  // 'social' category/tab was removed from the app — never surface any
+  // task still sitting in the DB under that old category.
   const tasks = await tasksCol
-    .find({ active: true })
+    .find({ active: true, category: { $ne: 'social' } })
     .sort({ createdAt: -1 })
     .toArray();
 
@@ -53,7 +55,7 @@ async function handleList(req, res) {
     id: String(t._id),
     title: t.title,
     description: t.description || '',
-    category: t.category || 'social', // daily | social | exclusive | partner
+    category: t.category || 'daily', // daily | exclusive | partner
     type: t.type,                     // 'api' | 'nonapi'
     icon: t.icon || (t.type === 'api' ? '📢' : '⚡'),
     url: t.url || '',
