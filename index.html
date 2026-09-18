@@ -327,8 +327,44 @@
         .refer-diamonds-label{font-size:11px;color:#aaa;}
         
         .withdraw-req{ background:rgba(255,50,50,0.1);border:1px solid rgba(255,50,50,0.3);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#ff7788;text-align:center;font-weight:800; }
-        .withdraw-req.met{ background:rgba(0,200,100,0.1);border-color:rgba(0,200,100,0.3);color:#4caf50; }
-        @keyframes previewPop{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}
+        /* Level and High Graphics Fruit Cut Styles */
+        .level-box{ background:linear-gradient(135deg,rgba(15,35,48,0.92),rgba(8,20,28,0.96));border:2px solid #00e5ff;border-radius:16px;padding:6px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(0,229,255,0.25),0 4px 0 #007788;cursor:pointer;transition:transform 0.15s; }
+        .level-box:active{ transform:translateY(2px);box-shadow:0 2px 6px rgba(0,229,255,0.25),0 2px 0 #007788; }
+        .level-badge-txt{ font-family:'Luckiest Guy',cursive;font-size:15px;color:#00e5ff;line-height:1;letter-spacing:0.5px; }
+        .level-bar-bg{ width:58px;height:5px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;margin-top:3px; }
+        .level-bar-fill{ height:100%;width:0%;background:linear-gradient(90deg,#00e5ff,#7dff00);border-radius:4px;transition:width 0.3s; }
+
+        .quick-amounts{ display:flex;flex-wrap:wrap;gap:6px;margin:8px 0; }
+        .quick-amt-btn{ flex:1;min-width:30%;background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.3);border-radius:10px;padding:7px 4px;font-size:11px;font-weight:800;color:#ffcc00;text-align:center;cursor:pointer;transition:all 0.15s; }
+        .quick-amt-btn:active{ background:rgba(255,200,0,0.25);transform:scale(0.97); }
+
+        /* Fullscreen HD Fruit Cut Arena */
+        #slash-arena{ position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1000;background:radial-gradient(circle at 50% 35%,#0b2f3d 0%,#04151c 70%,#00090e 100%);display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:16px 16px 28px;overflow:hidden;touch-action:none; }
+        #blade-canvas{ position:absolute;top:0;left:0;width:100%;height:100%;z-index:20;pointer-events:auto;cursor:crosshair; }
+        .arena-top-bar{ width:100%;display:flex;justify-content:space-between;align-items:center;z-index:30;pointer-events:none; }
+        .arena-header-pill{ background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px);pointer-events:auto; }
+        .slash-fruit-stage{ position:relative;width:280px;height:280px;margin:auto;display:flex;align-items:center;justify-content:center;z-index:10; }
+        .slash-fruit-halo{ position:absolute;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,204,0,0.28) 0%,rgba(255,100,0,0.08) 50%,transparent 70%);animation:fruitHaloPulse 2.2s ease-in-out infinite alternate;pointer-events:none; }
+        @keyframes fruitHaloPulse{ from{transform:scale(0.92);opacity:0.55;} to{transform:scale(1.3);opacity:0.95;} }
+        .slash-fruit-target{ position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;animation:fruitBob 2.8s ease-in-out infinite alternate; }
+        @keyframes fruitBob{ 0%{transform:translateY(-10px) rotate(-3deg);} 100%{transform:translateY(10px) rotate(3deg);} }
+        .fruit-piece{ position:absolute;width:100%;height:100%;display:flex;align-items:center;justify-content:center;transition:transform 0.5s cubic-bezier(0.16,1,0.3,1),opacity 0.5s ease; }
+        .fruit-piece.left-cut{ transform:translate(-100px, 70px) rotate(-45deg) scale(0.85) !important;opacity:0 !important; }
+        .fruit-piece.right-cut{ transform:translate(100px, 70px) rotate(45deg) scale(0.85) !important;opacity:0 !important; }
+        .juice-particle{ position:absolute;border-radius:50%;pointer-events:none;z-index:25;animation:juiceFly 0.55s forwards cubic-bezier(0.25,1,0.5,1); }
+        @keyframes juiceFly{ 0%{transform:translate(0,0) scale(1);opacity:1;} 100%{transform:translate(var(--dx),var(--dy)) scale(0.2);opacity:0;} }
+        .reward-burst{ position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.5);z-index:35;pointer-events:none;text-align:center;opacity:0;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+        .reward-burst.show{ transform:translate(-50%,-50%) scale(1.1);opacity:1; }
+        .reward-burst-amount{ font-family:'Luckiest Guy',cursive;font-size:44px;color:#ffcc00;text-shadow:0 0 25px rgba(255,204,0,0.85),0 4px 0 #b37400;line-height:1; }
+        .reward-burst-usdt{ font-size:14px;font-weight:900;color:#00e5ff;text-shadow:0 2px 6px rgba(0,0,0,0.8);margin-top:6px; }
+        .slash-action-btns{ width:100%;display:flex;flex-direction:column;align-items:center;gap:10px;z-index:30; }
+        .slash-hint{ font-size:12px;font-weight:800;color:rgba(255,255,255,0.7);text-align:center;letter-spacing:0.5px;text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+
+        /* Level modal cards */
+        .level-item-card{ background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px; }
+        .level-item-card.current{ background:rgba(0,229,255,0.12);border-color:#00e5ff;box-shadow:0 0 15px rgba(0,229,255,0.25); }
+        .level-item-card.completed{ background:rgba(76,175,80,0.08);border-color:rgba(76,175,80,0.3); }
+        .level-icon-badge{ width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0; }
     </style>
 </head>
 <body>
@@ -380,6 +416,17 @@
   </div>
 </div>
 
+<!-- Join-gate overlay: must join official channels before playing -->
+<div id="join-gate-overlay">
+  <div class="blocked-card">
+    <div class="blocked-icon" id="join-gate-icon">📢</div>
+    <div class="blocked-title">Join to Continue</div>
+    <div class="blocked-desc">Join our official channels to unlock Fruit Cut — takes 10 seconds!</div>
+    <div id="join-gate-list"></div>
+    <button class="blocked-retry-btn" id="join-gate-verify-btn" onclick="window.verifyJoinGate()">✅ I've Joined — Verify</button>
+  </div>
+</div>
+
 <div class="bg-stripes"></div>
 <div class="bg-left-shelf"></div>
 <div class="bg-right-shelf"></div>
@@ -389,13 +436,22 @@
 
 <div id="ui">
     <div id="top-bar" class="ptr">
-        <div class="coin-box" onclick="window.showModal('profile-modal'); window.switchProfileTab('leaderboard');">
-            <span style="font-size:18px">🔪</span>
-            <div><div class="coin-label">WEEKLY SLASHES</div><div class="coin-value" id="ui-slashes">0</div></div>
+        <div class="level-box" onclick="window.showModal('level-modal')">
+            <span id="ui-level-fruit" style="font-size:20px">🍎</span>
+            <div>
+                <div class="level-badge-txt" id="ui-level-title">LV. 1</div>
+                <div class="level-bar-bg">
+                    <div class="level-bar-fill" id="ui-level-fill"></div>
+                </div>
+            </div>
         </div>
-        <div class="diamond-box">
-            <span style="font-size:18px">🍎</span>
-            <div><div class="coin-label">FRUIT COIN</div><div class="diamond-value" id="ui-gems">0</div></div>
+        <div class="diamond-box" onclick="window.showModal('wallet-modal')">
+            <span style="font-size:20px">🍎</span>
+            <div>
+                <div class="coin-label">FRUIT COIN</div>
+                <div class="diamond-value" id="ui-gems">0</div>
+                <div id="ui-usdt-badge" style="font-size:10px;color:#7dff00;font-weight:900;line-height:1;margin-top:2px;">≈ $0.000 USDT</div>
+            </div>
         </div>
     </div>
 </div>
@@ -440,42 +496,99 @@
     <!-- BOTTOM ICONS -->
     <div id="bottom-icons">
         <div class="icon-btn ptr" onclick="window.showModal('setting-modal')"><div class="icon-face ic-setting">⚙️</div><span class="icon-label">Setting</span></div>
-        <div class="icon-btn ptr" onclick="window.showModal('profile-modal')"><div class="icon-face ic-shop">👤</div><span class="icon-label">Profile</span></div>
+        <div class="icon-btn ptr" onclick="window.showModal('shop-modal')"><div class="icon-face ic-shop">🛍️</div><span class="icon-label">Shop</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('wallet-modal')"><div class="icon-face ic-wallet">💳</div><span class="icon-label">Wallet</span></div>
         <div class="icon-btn ptr" onclick="window.showModal('ads-modal')"><div class="icon-face ic-ads">📺</div><span class="icon-label">Ads</span></div>
     </div>
 </div>
 
-<div class="overlay ptr" id="slash-modal">
-    <div class="modal" style="text-align:center;">
-        <div class="mh mh-gold">🔪 Slash the Fruit!</div>
-        <div id="slash-cooldown-view" style="display:none;">
-            <div style="font-size:56px;margin:10px 0;">⏳</div>
-            <div style="color:#aaa;font-size:13px;margin-bottom:6px;">Come back in</div>
-            <div id="slash-cooldown-timer" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;margin-bottom:14px;">00:00:00</div>
-            <button class="btn btn-grey" onclick="window.hideModal('slash-modal')">CLOSE</button>
-        </div>
-        <div id="slash-play-view" style="display:none;">
-            <div style="color:#aaa;font-size:12px;margin-bottom:6px;">Tap the fruit until it's destroyed!</div>
-            <div id="slash-hp-wrap" style="background:rgba(255,255,255,0.08);border-radius:10px;height:10px;margin-bottom:14px;overflow:hidden;">
-                <div id="slash-hp-fill" style="background:linear-gradient(90deg,#7dff00,#4caf50);height:100%;width:100%;transition:width 0.15s;"></div>
+<!-- FULLSCREEN HD FRUIT CUT ARENA -->
+<div id="slash-arena">
+    <canvas id="blade-canvas"></canvas>
+    
+    <!-- Arena Top Bar -->
+    <div class="arena-top-bar">
+        <div class="arena-header-pill" onclick="window.showModal('level-modal')">
+            <span id="arena-level-fruit" style="font-size:18px">🍎</span>
+            <div style="text-align:left;">
+                <div style="font-size:9px;color:#aaa;font-weight:800;">LEVEL <span id="arena-level-num">1</span></div>
+                <div style="font-size:12px;color:#00e5ff;font-weight:900;" id="arena-level-name">Novice Slicer</div>
             </div>
-            <div id="slash-fruit" class="ptr" style="font-size:110px;line-height:1;cursor:pointer;user-select:none;margin:6px 0 18px;">🍉</div>
-            <div style="font-size:11px;color:#888;">Hits: <span id="slash-hit-count">0</span>/<span id="slash-hit-target">10</span></div>
         </div>
-        <div id="slash-gate-view" style="display:none;">
-            <div style="font-size:56px;margin:10px 0;">📺</div>
-            <div class="mh mh-cyan" style="margin-bottom:4px;">Almost there!</div>
-            <div style="color:#aaa;font-size:12px;margin-bottom:14px;">Watch one quick ad to claim your reward</div>
-            <button class="btn btn-blue" id="slash-gate-btn" onclick="window.slashWatchGateAd()" style="font-size:16px;">▶ Watch Ad & Claim</button>
+        <div class="arena-header-pill">
+            <span style="font-size:16px;">🎮</span>
+            <span style="font-size:14px;font-weight:900;color:#ffcc00;" id="arena-tokens-val">3</span>
+            <span style="font-size:11px;color:#888;">/ 10</span>
         </div>
-        <div id="slash-reward-view" style="display:none;">
-            <div style="font-size:56px;margin:10px 0;">💥</div>
-            <div class="mh mh-gold" style="margin-bottom:4px;">Destroyed!</div>
-            <div style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#7dff00;margin-bottom:6px;">+<span id="slash-reward-amount">0</span> 🍎</div>
-            <div style="color:#888;font-size:12px;margin-bottom:14px;">Come back in 1 hour for another slash!</div>
-            <button class="btn btn-gold" onclick="window.hideModal('slash-modal')">AWESOME!</button>
+        <button class="arena-header-pill" style="border:none;cursor:pointer;background:rgba(255,50,50,0.25);color:#fff;font-weight:900;font-size:15px;padding:6px 12px;" onclick="window.closeSlashArena()">✕</button>
+    </div>
+
+    <!-- Arena Centerpiece (Big Animated Fruit) -->
+    <div class="slash-fruit-stage">
+        <div class="slash-fruit-halo"></div>
+
+        <div class="slash-fruit-target" id="arena-fruit-target">
+            <div class="fruit-piece" id="fruit-left-piece"></div>
+            <div class="fruit-piece" id="fruit-right-piece"></div>
         </div>
+
+        <!-- Reward Burst Popup -->
+        <div class="reward-burst" id="arena-reward-burst">
+            <div style="font-size:38px;margin-bottom:2px;">✨💥✨</div>
+            <div class="reward-burst-amount">+<span id="arena-reward-amount">0</span> <span style="font-size:24px;">🍎</span></div>
+            <div class="reward-burst-usdt" id="arena-reward-usdt">≈ $0.0000 USDT</div>
+        </div>
+    </div>
+
+    <!-- Level-Up Milestone Banner -->
+    <div id="arena-levelup-banner" style="display:none;position:absolute;top:22%;left:50%;transform:translateX(-50%);z-index:40;background:linear-gradient(135deg,rgba(0,229,255,0.95),rgba(125,255,0,0.95));color:#00242b;border-radius:18px;padding:12px 24px;text-align:center;box-shadow:0 0 30px rgba(0,229,255,0.8);animation:previewPop 0.4s ease;">
+        <div style="font-size:22px;font-family:'Luckiest Guy',cursive;letter-spacing:1px;">🎉 LEVEL UP! 🎉</div>
+        <div style="font-size:15px;font-weight:900;" id="arena-levelup-text">Level 2: Fruit Peeler</div>
+        <div style="font-size:12px;font-weight:800;margin-top:2px;" id="arena-levelup-bonus">🎁 Bonus: +25 🍎 Fruit Coin!</div>
+    </div>
+
+    <!-- Arena Bottom Controls -->
+    <div class="slash-action-btns">
+        <div class="slash-hint" id="arena-hint-text">⚔️ SWIPE OR TAP TO SLICE THE BIG FRUIT!</div>
+        
+        <!-- Next Fruit Button (appears after slicing) -->
+        <div id="arena-next-wrap" style="display:none;width:100%;max-width:280px;">
+            <button class="btn btn-gold" id="arena-next-btn" onclick="window.nextArenaFruit()" style="margin:0;width:100%;box-shadow:0 5px 0 #99730a;">🍉 NEXT FRUIT</button>
+        </div>
+
+        <!-- No Tokens Warning & Refill Action -->
+        <div id="arena-notokens-wrap" style="display:none;width:100%;max-width:280px;text-align:center;">
+            <div style="font-size:12px;color:#ff8888;font-weight:800;margin-bottom:8px;">⚠️ Out of Game Tokens!</div>
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-teal" style="flex:1;padding:10px 0;font-size:13px;margin:0;" onclick="window.closeSlashArena();window.showModal('shop-modal');">🛍️ SHOP</button>
+                <button class="btn btn-gold" style="flex:1;padding:10px 0;font-size:13px;margin:0;" onclick="window.closeSlashArena();window.showModal('ads-modal');">📺 WATCH AD</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LEVEL PROGRESSION MODAL -->
+<div class="overlay ptr" id="level-modal">
+    <div class="modal">
+        <div class="mh mh-gold">🏆 Fruit Master Levels</div>
+        <div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px;">
+            Slice fruits to level up! Max Level: <strong>15</strong>. Each level unlocks milestone bonus 🍎 FC rewards!
+        </div>
+        
+        <div style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.3);border-radius:14px;padding:12px;margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;color:#fff;margin-bottom:6px;">
+                <span>Current: <strong style="color:#00e5ff;" id="level-modal-cur-title">Novice Slicer (Lv. 1)</strong></span>
+                <span id="level-modal-slices-stat">0 Slices</span>
+            </div>
+            <div class="level-bar-bg" style="width:100%;height:8px;">
+                <div class="level-bar-fill" id="level-modal-fill" style="width:0%;"></div>
+            </div>
+            <div style="font-size:11px;color:#88d;margin-top:5px;text-align:right;" id="level-modal-next-stat">10 slices to next level</div>
+        </div>
+
+        <div id="level-list-container" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px;"></div>
+
+        <button class="btn btn-grey" style="margin-top:12px;" onclick="window.hideModal('level-modal')">CLOSE</button>
     </div>
 </div>
 
@@ -490,46 +603,46 @@
     </div>
 </div>
 
-<!-- Shop - Tokens / Leaderboard / Promo -->
-<div class="overlay ptr" id="profile-modal">
+<!-- Shop - Gold→Diamond exchange -->
+<div class="overlay ptr" id="shop-modal">
     <div class="modal">
-        <div class="mh mh-gold">👤 Profile</div>
+        <div class="mh mh-gold">🛍️ Shop</div>
         <div class="shop-tabs">
-            <div class="shop-tab active ptr" onclick="window.switchProfileTab('details')" id="tab-details">👤 Profile</div>
-            <div class="shop-tab ptr" onclick="window.switchProfileTab('leaderboard')" id="tab-leaderboard">🏆 Leaderboard</div>
-            <div class="shop-tab ptr" onclick="window.switchProfileTab('promo')" id="tab-promo">🎟️ Promo</div>
+            <div class="shop-tab active ptr" onclick="window.switchShopTab('tokens')" id="tab-tokens">🎮 Tokens</div>
+            <div class="shop-tab ptr" onclick="window.switchShopTab('exchange')" id="tab-exchange">🍎 Convert</div>
+            <div class="shop-tab ptr" onclick="window.switchShopTab('promo')" id="tab-promo">🎟️ Promo</div>
         </div>
-        <div class="shop-panel active" id="shop-panel-details">
-            <div style="text-align:center;margin-bottom:12px;">
-                <div style="font-size:48px;line-height:1;margin-bottom:4px;" id="profile-avatar">👤</div>
-                <div style="font-family:'Luckiest Guy',cursive;font-size:18px;color:#ffcc00;" id="profile-username">@unknown</div>
-                <div style="display:inline-block;margin-top:6px;padding:4px 14px;border-radius:20px;background:linear-gradient(180deg,#ffe040,#ff8c00);color:#3d2000;font-family:'Luckiest Guy',cursive;font-size:14px;" id="profile-level-badge">Level 1</div>
-                <div style="background:rgba(255,255,255,0.08);border-radius:8px;height:10px;margin:10px 0 4px;overflow:hidden;">
-                    <div id="profile-xp-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#ffe040,#ff8c00);transition:width 0.4s;"></div>
-                </div>
-                <div style="font-size:11px;color:#aaa;" id="profile-xp-label">0 XP</div>
-            </div>
-            <div class="mrow"><span class="mrow-label">🍎 Fruit Coin</span><span class="mrow-val" id="profile-fc">0</span></div>
-            <div class="mrow"><span class="mrow-label">📺 Ads Watched</span><span class="mrow-val" id="profile-ads">0</span></div>
-            <div class="mrow"><span class="mrow-label">🔪 Slash Wins (week)</span><span class="mrow-val" id="profile-wins">0</span></div>
-            <div class="mrow"><span class="mrow-label">🔗 Referrals</span><span class="mrow-val" id="profile-refs">0</span></div>
+        <div class="shop-panel active" id="shop-panel-tokens">
+            <div id="shop-item-list"></div>
             <div class="freebox-card" id="freebox-card" onclick="window.claimFreebox()">
                 <div class="freebox-icon">🎁</div>
                 <div class="freebox-info">
-                    <div class="freebox-title">Free Fruit Coin Box</div>
-                    <div class="freebox-sub" id="freebox-sub">Claim once every 24h · 100–500 🍎 FC</div>
+                    <div class="freebox-title">Free Gold Box</div>
+                    <div class="freebox-sub" id="freebox-sub">Claim once every 24h · 100–500 🪙 Gold</div>
                 </div>
                 <button class="task-btn" id="freebox-btn" style="background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;">Claim</button>
             </div>
         </div>
-        <div class="shop-panel" id="shop-panel-leaderboard">
+        <div class="shop-panel" id="shop-panel-exchange">
             <div class="gold-exchange-info">
-                <div class="gei-rate" id="lb-prize-pool">🏆 10,000 FC Weekly Prize Pool</div>
-                <div class="gei-label">Top Slasher — resets every Monday</div>
-                <div style="font-size:11px;color:#f90;margin-top:4px;" id="lb-my-rank">Your rank: —</div>
+                <div class="gei-rate">10 🪙 Gold = 1 🍎 FC</div>
+                <div class="gei-label">Gold → Fruit Coin Conversion Rate</div>
+                <div style="font-size:11px;color:#f90;margin-top:4px;">Min: 20,000 Gold · Max: 2,000,000 Gold per conversion</div>
             </div>
-            <div id="lb-list" style="max-height:260px;overflow-y:auto;margin:10px 0;"></div>
-            <div class="info-text">Ranked by Slash-the-Fruit wins this week · Top 10 share the pool by rank</div>
+            <div class="exchange-input-wrap">
+                <label>Quick Select (Gold amount to convert):</label>
+                <div class="exchange-presets">
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(20000)">20K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(100000)">100K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(500000)">500K 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(1000000)">1M 🪙</div>
+                    <div class="exchange-preset-btn ptr" onclick="window.setExchangeGold(2000000)">2M 🪙</div>
+                </div>
+                <div class="exchange-result-preview" id="exchange-preview">Select Gold amount to see Fruit Coin reward</div>
+                <div class="shop-daily-info">My Gold: <strong style="color:#ffcc00;" id="shop-my-gold">0</strong> 🪙 &nbsp;|&nbsp; My Fruit Coin: <strong style="color:#4af;" id="shop-my-diamond">0</strong> 🍎</div>
+                <button class="btn btn-blue" id="exchange-confirm-btn" onclick="window.confirmExchange()" disabled>🍎 Convert Now</button>
+            </div>
+            <div class="info-text">Fruit Coin is withdrawable · Conversion cannot be undone</div>
         </div>
         <div class="shop-panel" id="shop-panel-promo">
             <div style="text-align:center;font-size:40px;margin:6px 0;">🎟️</div>
@@ -539,7 +652,7 @@
             <button class="btn btn-gold" id="promo-redeem-btn" onclick="window.redeemPromo()">🎁 REDEEM CODE</button>
             <div id="promo-result-text" style="text-align:center;font-size:13px;font-weight:800;margin-top:10px;"></div>
         </div>
-        <button class="btn btn-grey" onclick="window.hideModal('profile-modal')">CLOSE</button>
+        <button class="btn btn-grey" onclick="window.hideModal('shop-modal')">CLOSE</button>
     </div>
 </div>
 
@@ -549,23 +662,35 @@
         <div class="mh mh-gold">💳 Withdraw</div>
         <div class="mrow">
             <span class="mrow-label">My Fruit Coin</span>
-            <span class="mrow-val">🍎 <span id="w-gems">0</span> <span style="color:#4af;font-size:13px;">(≈ $<span id="w-gems-usdt">0.00</span>)</span></span>
+            <span class="mrow-val">🍎 <span id="w-gems">0</span> <span style="color:#00e5ff;font-size:13px;font-weight:900;">(≈ $<span id="w-gems-usdt">0.00</span> USDT)</span></span>
         </div>
         <div id="withdraw-req-box" class="withdraw-req">
             ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> + Join our <strong>Official Channel &amp; Community</strong><br>
             <span id="withdraw-req-status">Tasks: 0/5</span>
         </div>
-        <div class="info-text" style="margin-bottom:6px;">Minimum withdrawal: <strong style="color:#ffcc00;">5,000</strong> Fruit Coin · A <strong style="color:#ff8888;">15% fee</strong> applies · 1 withdrawal per day</div>
+        <div class="info-text" style="margin-bottom:6px;">
+            Rate: <strong style="color:#ffcc00;">50,000 FC = $1.00 USDT</strong><br>
+            Minimum withdrawal: <strong style="color:#7dff00;">2,500 FC ($0.05 USDT)</strong> · <span style="color:#ff8888;">5% fee applies</span>
+        </div>
+
         <select id="w-method" onchange="window.updateWithdrawPreview()">
             <option value="binance">Binance UID (USDT)</option>
-            <option value="tonkeeper">TonKeeper Address (USDT)</option>
+            <option value="tonkeeper">TonKeeper Address (USDT on TON)</option>
         </select>
+
         <div style="position:relative;">
-            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount (min 5,000)" min="5000" oninput="window.updateWithdrawPreview()">
+            <div class="quick-amounts">
+                <div class="quick-amt-btn" onclick="window.setWithdrawAmount(2500)">2.5K ($0.05)</div>
+                <div class="quick-amt-btn" onclick="window.setWithdrawAmount(5000)">5K ($0.10)</div>
+                <div class="quick-amt-btn" onclick="window.setWithdrawAmount(25000)">25K ($0.50)</div>
+                <div class="quick-amt-btn" onclick="window.setWithdrawAmount(50000)">50K ($1.00)</div>
+                <div class="quick-amt-btn" style="flex:100%;" onclick="window.setWithdrawMax()">MAX BALANCE</div>
+            </div>
+            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount (min 2,500)" min="2500" oninput="window.updateWithdrawPreview()">
             <!-- Animated preview -->
-            <div id="w-convert-preview" style="display:none;background:linear-gradient(135deg,rgba(255,200,0,0.12),rgba(255,100,0,0.08));border:2px solid rgba(255,180,0,0.4);border-radius:12px;padding:10px 14px;margin-top:4px;text-align:center;animation:previewPop 0.3s ease;">
-                <div style="font-size:11px;color:#aaa;margin-bottom:4px;">After 15% fee, you will receive approximately:</div>
-                <div id="w-convert-value" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#ffcc00;text-shadow:0 2px 8px rgba(255,200,0,0.4);"></div>
+            <div id="w-convert-preview" style="display:none;background:linear-gradient(135deg,rgba(0,229,255,0.12),rgba(125,255,0,0.08));border:2px solid rgba(0,229,255,0.4);border-radius:12px;padding:10px 14px;margin-top:4px;text-align:center;animation:previewPop 0.3s ease;">
+                <div style="font-size:11px;color:#aaa;margin-bottom:4px;">After 5% fee, you will receive approximately:</div>
+                <div id="w-convert-value" style="font-family:'Luckiest Guy',cursive;font-size:28px;color:#7dff00;text-shadow:0 2px 8px rgba(125,255,0,0.4);"></div>
                 <div id="w-convert-label" style="font-size:11px;color:#aaa;margin-top:2px;"></div>
             </div>
         </div>
@@ -599,8 +724,7 @@
         <div style="font-size:12px;color:#aaa;background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;margin-bottom:10px;text-align:left;">
             <strong style="color:#ffcc00;">Normal Refer:</strong> Instantly get 🎮 1 Game Token.<br><br>
             <strong style="color:#4af;">Valid Refer:</strong> When your friend completes 5 tasks + watches 20 ads, you get 🍎 200 Fruit Coin + 🎮 3 extra Game Tokens!<br><br>
-            <strong style="color:#7dff00;">Total per complete refer:</strong> 🍎 200 Fruit Coin + 🎮 4 Game Tokens<br><br>
-            <strong style="color:#ff66aa;">Weekly Refer Reward:</strong> Slash the Fruit at least <span id="refer-weekly-required">150</span> times this week to unlock a bonus for every referral you have — <span id="refer-weekly-progress">0/150 slashes this week</span>.
+            <strong style="color:#7dff00;">Total per complete refer:</strong> 🍎 200 Fruit Coin + 🎮 4 Game Tokens
         </div>
         <div style="font-size:13px;color:#aaa;margin-bottom:6px;">Your Refer Link:</div>
         <div class="refer-link ptr" id="refer-link" onclick="window.copyRefer()">Loading...</div>
@@ -634,10 +758,10 @@
     <div class="modal">
         <div class="mh mh-red">📺 Earn with Ads</div>
         
-        <!-- Adsgram Special (Fixed 30 Fruit Coin) -->
+        <!-- Adsgram Special (Fixed 300 Gold) -->
         <div class="ads-section" style="border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.06);">
             <div class="ads-row">
-                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+30 🍎 FC)<br><span id="adsgram-left">10/10 remaining</span></div>
+                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+300 🪙 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn special" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
@@ -645,7 +769,7 @@
         <!-- Adsgram Daily -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+20 🍎 FC)<br><span id="adsgram-daily-left">10/10 remaining</span></div>
+                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+200 🪙 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-daily-btn" onclick="window.watchAdsgramDailyAd()">▶ Watch</button>
             </div>
         </div>
@@ -653,7 +777,7 @@
         <!-- GigaPub -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+20 🍎 FC)<br><span id="gigapub-left">20/20 remaining</span></div>
+                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+200 🪙 Gold)<br><span id="gigapub-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn" id="gigapub-btn" onclick="window.watchGigaPubAd()">▶ Watch</button>
             </div>
         </div>
@@ -661,7 +785,7 @@
         <!-- Monetag -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+15 🍎 FC)<br><span id="monetag-left">20/20 remaining</span></div>
+                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+200 🪙 Gold)<br><span id="monetag-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
             </div>
         </div>
@@ -681,11 +805,12 @@
         </div>
         <div class="task-tabs" id="task-tabs">
             <div class="task-tab active" data-cat="daily" onclick="window.switchTaskTab('daily')">🔥 Daily</div>
+            <div class="task-tab" data-cat="social" onclick="window.switchTaskTab('social')">💬 Social</div>
             <div class="task-tab" data-cat="exclusive" onclick="window.switchTaskTab('exclusive')">💎 Exclusive</div>
             <div class="task-tab" data-cat="partner" onclick="window.switchTaskTab('partner')">🤝 Partner</div>
         </div>
         <div id="task-list"><div style="text-align:center;color:#aaa;padding:20px;">Loading tasks...</div></div>
-        <div class="info-text">Complete tasks to earn Fruit Coin!</div>
+        <div class="info-text">Complete tasks to earn Gold & Fruit Coin!</div>
         <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
     </div>
 </div>
@@ -698,17 +823,28 @@
 
 <div id="token-toast"></div>
 
-<!-- Join-gate overlay: must join official channels before playing -->
-<div id="join-gate-overlay">
-  <div class="blocked-card">
-    <div class="blocked-icon" id="join-gate-icon">📢</div>
-    <div class="blocked-title">Join to Continue</div>
-    <div class="blocked-desc">Join our official channels to unlock Fruit Cut — takes 10 seconds!</div>
-    <div id="join-gate-list"></div>
-    <button class="blocked-retry-btn" id="join-gate-verify-btn" onclick="window.verifyJoinGate()">✅ I've Joined — Verify</button>
-  </div>
+<!-- Support floating button -->
+<div id="support-float" onclick="window.openSupport()">
+    💬
+    <span class="support-label">Support</span>
 </div>
 
+<!-- Support Modal -->
+<div id="support-modal-overlay" class="ptr">
+    <div class="modal" style="max-width:340px;">
+        <div style="text-align:center;font-size:48px;margin-bottom:8px;">🎮</div>
+        <div class="mh mh-cyan" style="font-size:22px;">Customer Support</div>
+        <div style="background:rgba(0,136,204,0.15);border:1px solid rgba(0,136,204,0.35);border-radius:12px;padding:14px;margin-bottom:14px;font-size:13px;color:#cce;line-height:1.7;text-align:center;">
+            You can <strong style="color:#ffcc00;">buy tasks</strong> and get support for any issue.<br>
+            Message the admin — reply guaranteed when online!<br><br>
+            <strong style="color:#4af;">Admin: @fruitcutSu</strong>
+        </div>
+        <button class="btn btn-blue" onclick="window.openTgSupport()" style="font-size:16px;">
+            ✈️ Message Admin on Telegram
+        </button>
+        <button class="btn btn-grey" onclick="document.getElementById('support-modal-overlay').style.display='none'">CLOSE</button>
+    </div>
+</div>
 
 <!-- MAIN SCRIPT -->
 <script>
@@ -717,16 +853,15 @@
 
     let currentUser = null;
     window.G = {
-        gems: 0, tokens: 3, referCode: '', referCount: 0,
+        coins: 0, gems: 0, tokens: 3, referCode: '', referCount: 0,
         sound: true, vib: true, tokenRefill: 0, adsDayStamp: '',
         adsgramCount: 0, adsgramDailyCount: 0, gigapubCount: 0, monetagCount: 0,
         completedTasks: [], gamesPlayed: 0,
         referDiamonds: 0,
-        weeklySlashes: 0,
+        shopDiamondExchanged: 0,
         referredBy: null, validReferRewardGiven: false,
         username: '', lastFreeBoxAt: null,
-        totalAdsWatched: 0,
-        level: 1, xp: 0, xpIntoLevel: 0, xpForNextLevel: 50, isMax: false
+        level: 1, levelProgress: null, totalSlices: 0
     };
 
     function showToast(msg) {
@@ -748,10 +883,13 @@
             });
             const result = await response.json();
             if(result.success && result.user) {
-                // Map backend's { fruitCoin, ... } onto our frontend variable
-                // names (gems) instead of blind Object.assign, which would
-                // silently create wrong keys.
+                if(result.user.gold      !== undefined) window.G.coins = result.user.gold;
                 if(result.user.fruitCoin !== undefined) window.G.gems  = result.user.fruitCoin;
+                if(result.user.tokens    !== undefined) window.G.tokens = result.user.tokens;
+                if(result.user.gameTokens!== undefined) window.G.tokens = result.user.gameTokens;
+                if(result.user.level     !== undefined) window.G.level = result.user.level;
+                if(result.user.levelProgress !== undefined) window.G.levelProgress = result.user.levelProgress;
+                if(result.user.totalSlices   !== undefined) window.G.totalSlices = result.user.totalSlices;
                 if(result.user.referralCount !== undefined) window.G.referCount = result.user.referralCount;
                 if(result.user.referralFruitCoinEarned !== undefined) window.G.referDiamonds = result.user.referralFruitCoinEarned;
                 window.updateUI();
@@ -764,28 +902,65 @@
     }
 
     window.updateUI = function() {
-        document.getElementById('ui-slashes').textContent = window.G.weeklySlashes || 0;
-        document.getElementById('ui-gems').textContent = window.G.gems;
-        document.getElementById('ui-tokens').textContent = window.G.tokens;
-        document.getElementById('w-gems').textContent = window.G.gems;
+        let gems = window.G.gems || 0;
+        let usdtVal = (gems * 0.00002).toFixed(4);
+
+        let uiCoins = document.getElementById('ui-coins');
+        if(uiCoins) uiCoins.textContent = (window.G.coins || 0).toLocaleString();
+
+        let uiGems = document.getElementById('ui-gems');
+        if(uiGems) uiGems.textContent = gems.toLocaleString();
+
+        let uiUsdtBadge = document.getElementById('ui-usdt-badge');
+        if(uiUsdtBadge) uiUsdtBadge.textContent = `≈ $${usdtVal} USDT`;
+
+        let uiTokens = document.getElementById('ui-tokens');
+        if(uiTokens) uiTokens.textContent = window.G.tokens ?? 3;
+
+        let arenaTokens = document.getElementById('arena-tokens-val');
+        if(arenaTokens) arenaTokens.textContent = window.G.tokens ?? 3;
+
+        let wGems = document.getElementById('w-gems');
+        if(wGems) wGems.textContent = gems.toLocaleString();
+
         let wGemsUsdt = document.getElementById('w-gems-usdt');
-        if(wGemsUsdt) wGemsUsdt.textContent = ((window.G.gems || 0) * 0.00004).toFixed(2);
-        document.getElementById('snd-toggle').textContent = window.G.sound ? '🔊' : '🔇';
-        document.getElementById('vib-toggle').textContent = window.G.vib ? '📳' : '🔕';
-        document.getElementById('refer-count-display').textContent = window.G.referCount || 0;
+        if(wGemsUsdt) wGemsUsdt.textContent = usdtVal;
+
+        // Level UI sync
+        let curLevel = window.G.level || 1;
+        let lvlTitle = document.getElementById('ui-level-title');
+        if(lvlTitle) lvlTitle.textContent = `LV. ${curLevel}`;
+
+        let lvlFruit = document.getElementById('ui-level-fruit');
+        let lvlFill = document.getElementById('ui-level-fill');
+        let arenaLvlNum = document.getElementById('arena-level-num');
+        let arenaLvlName = document.getElementById('arena-level-name');
+        let arenaLvlFruit = document.getElementById('arena-level-fruit');
+
+        if(window.G.levelProgress){
+            let lp = window.G.levelProgress;
+            if(lvlFruit) lvlFruit.textContent = lp.fruit || '🍎';
+            if(lvlFill) lvlFill.style.width = (lp.progressPercent || 0) + '%';
+            if(arenaLvlNum) arenaLvlNum.textContent = lp.level;
+            if(arenaLvlName) arenaLvlName.textContent = lp.name;
+            if(arenaLvlFruit) arenaLvlFruit.textContent = lp.fruit || '🍎';
+        }
+
+        let sndEl = document.getElementById('snd-toggle');
+        if(sndEl) sndEl.textContent = window.G.sound ? '🔊' : '🔇';
+        let vibEl = document.getElementById('vib-toggle');
+        if(vibEl) vibEl.textContent = window.G.vib ? '📳' : '🔕';
+        let refEl = document.getElementById('refer-count-display');
+        if(refEl) refEl.textContent = window.G.referCount || 0;
         let rd = document.getElementById('refer-diamonds-display');
         if(rd) rd.textContent = window.G.referDiamonds || 0;
-        let rwReq = window.G.weeklySlashesRequired || 150;
-        let rwProg = document.getElementById('refer-weekly-progress');
-        if(rwProg) rwProg.textContent = `${window.G.weeklySlashes || 0}/${rwReq} slashes this week`;
-        let rwReqEl = document.getElementById('refer-weekly-required');
-        if(rwReqEl) rwReqEl.textContent = rwReq;
+        let sg = document.getElementById('shop-my-gold');
         let sd = document.getElementById('shop-my-diamond');
+        if(sg) sg.textContent = window.G.coins;
         if(sd) sd.textContent = window.G.gems;
         updateWithdrawReqUI();
-        // Sync shop UI if open
-        if(document.getElementById('profile-modal') && document.getElementById('profile-modal').style.display === 'flex'){
-            updateProfileUI();
+        if(document.getElementById('shop-modal') && document.getElementById('shop-modal').style.display === 'flex'){
+            updateShopUI();
         }
     };
 
@@ -984,6 +1159,7 @@
 
         if (res && res.success) {
             if(res.user){
+                window.G.coins      = res.user.gold          ?? window.G.coins;
                 window.G.gems        = res.user.fruitCoin      ?? window.G.gems;
                 window.G.referCount = res.user.referralCount  ?? window.G.referCount;
                 window.G.referDiamonds = res.user.referralFruitCoinEarned ?? window.G.referDiamonds;
@@ -993,12 +1169,6 @@
                 window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
                 window.G.lastFreeBoxAt = res.user.lastFreeBoxAt ?? window.G.lastFreeBoxAt;
                 window.G.lastSlashAt = res.user.lastSlashAt ?? window.G.lastSlashAt;
-                window.G.totalAdsWatched = res.user.totalAdsWatched ?? window.G.totalAdsWatched;
-                window.G.level = res.user.level ?? window.G.level;
-                window.G.xp = res.user.xp ?? window.G.xp;
-                window.G.xpIntoLevel = res.user.xpIntoLevel ?? window.G.xpIntoLevel;
-                window.G.xpForNextLevel = res.user.xpForNextLevel ?? window.G.xpForNextLevel;
-                window.G.isMax = res.user.isMax ?? window.G.isMax;
             }
             if(res.pendingGift) window.showGiftModal(res.pendingGift);
 
@@ -1034,16 +1204,6 @@
             // than locking out real users over a transient server error.
 
             revealMenu();
-
-            // Weekly slash count (drives the top-bar "Weekly Slashes" badge
-            // and the 150-slash weekly-referral-reward eligibility display).
-            apiCall('/api/slash', { action: 'status' }).then(sres => {
-                if(sres && sres.success){
-                    window.G.weeklySlashes = sres.weeklyWins || 0;
-                    window.G.weeklySlashesRequired = sres.minSlashWinsForWeeklyReferral || 150;
-                    window.updateUI();
-                }
-            }).catch(()=>{});
 
         } else {
             // All retries failed — show retry button
@@ -1131,10 +1291,12 @@
         }
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
-        if(id==='profile-modal'){ updateProfileUI(); }
-        if(id==='slash-modal'){ window.openSlashGame(); }
+        if(id==='shop-modal'){ updateShopUI(); }
+        if(id==='level-modal'){ window.renderLevelModal(); }
+        if(id==='slash-modal' || id==='slash-arena'){ window.openSlashArena(); }
         if(id==='wallet-modal'){
             updateWithdrawReqUI();
+            window.updateWithdrawPreview();
             // Reset history panel on open
             let list = document.getElementById('wd-history-list');
             let tog  = document.getElementById('wd-hist-toggle');
@@ -1146,14 +1308,45 @@
     window.hideModal = function(id){
         document.getElementById(id).style.display='none';
         if(id==='ads-modal'){ playSound('menu'); }
-        if(id==='slash-modal'){
-            slashModalOpen = false;
-            if(slashCountdownTimer){ clearInterval(slashCountdownTimer); slashCountdownTimer = null; }
-            playSound('menu');
-        }
+        if(id==='slash-arena'){ window.closeSlashArena(); }
     };
 
     window.showTokenInfo = function(){ showToast('Tokens: 1 token = 1 game. Max 10. Refills +1 every 6 hours!'); };
+
+    const SHOP_ITEMS_CLIENT = [
+        { id: 'token_1',     icon: '🎮', title: '1 Game Token',     cost: 120  },
+        { id: 'token_2',     icon: '🎮', title: '2 Game Token',     cost: 200  },
+        { id: 'token_5',     icon: '🎮', title: '5 Game Token',     cost: 450,  badge: 'POPULAR' },
+    ];
+
+    function renderShopItems(){
+        let c = document.getElementById('shop-item-list');
+        if(!c) return;
+        c.innerHTML = SHOP_ITEMS_CLIENT.map(it => `
+            <div class="shop-item-card">
+                ${it.badge ? `<span class="shop-item-badge">${it.badge}</span>` : ''}
+                <div class="shop-item-icon">${it.icon}</div>
+                <div class="shop-item-info">
+                    <div class="shop-item-title">${it.title}</div>
+                    <div class="shop-item-price">🪙 ${it.cost.toLocaleString()} Gold</div>
+                </div>
+                <button class="task-btn" id="shop-buy-${it.id}" onclick="window.buyShopItem('${it.id}')">Buy</button>
+            </div>`).join('');
+    }
+
+    window.buyShopItem = async function(itemId){
+        let btn = document.getElementById('shop-buy-' + itemId);
+        if(btn) { btn.disabled = true; btn.textContent = '...'; }
+        const res = await apiCall('/api/game_claim', { action: 'buy_shop_item', itemId });
+        if(btn) { btn.disabled = false; btn.textContent = 'Buy'; }
+        if(res.success){
+            if(res.user.gameTokens    !== undefined) window.G.tokens        = res.user.gameTokens;
+            showToast(`✅ Purchased: ${res.label}`);
+            window.updateUI();
+        } else {
+            showToast(res.error === 'not_enough_gold' ? '❌ Not enough Gold!' : '❌ Purchase failed, try again.');
+        }
+    };
 
     function freeboxNextAtMs(){
         if(!window.G.lastFreeBoxAt) return 0;
@@ -1169,10 +1362,10 @@
         if(remain > 0){
             btn.disabled = true; btn.textContent = 'Locked';
             let h = Math.floor(remain/3600000), m = Math.floor((remain%3600000)/60000);
-            sub.textContent = `Come back in ${h}h ${m}m for 100–500 🍎 FC`;
+            sub.textContent = `Come back in ${h}h ${m}m for 100–500 🪙 Gold`;
         } else {
             btn.disabled = false; btn.textContent = 'Claim';
-            sub.textContent = 'Claim once every 24h · 100–500 🍎 FC';
+            sub.textContent = 'Claim once every 24h · 100–500 🪙 Gold';
         }
     }
 
@@ -1200,7 +1393,7 @@
         btn.textContent = '...';
         const res = await apiCall('/api/game_claim', { action: 'claim_freebox', sessionId: sessionRes.sessionId });
         if(res.success){
-            showToast(`🎁 Free Box: +${res.reward} 🍎 Fruit Coin!`);
+            showToast(`🎁 Free Box: +${res.reward} 🪙 Gold!`);
             window.G.lastFreeBoxAt = new Date().toISOString();
             window.updateUI();
         } else if(res.error === 'freebox_on_cooldown'){
@@ -1213,6 +1406,42 @@
         }
         updateFreeboxUI();
     };
+
+    let pendingExchangeGold = 0;
+    window.setExchangeGold = function(gold){
+        if(gold < 20000){ showToast('Minimum 20,000 Gold!'); return; }
+        if(gold > 2000000){ showToast('Maximum 2,000,000 Gold per conversion!'); return; }
+        pendingExchangeGold = gold;
+        let fc = Math.floor(gold / 10);
+        let preview = document.getElementById('exchange-preview');
+        let btn = document.getElementById('exchange-confirm-btn');
+        if(preview) preview.textContent = `${gold.toLocaleString()} Gold → ${fc.toLocaleString()} Fruit Coin`;
+        if(btn) btn.disabled = false;
+    };
+
+    window.confirmExchange = async function(){
+        if(!pendingExchangeGold) return;
+        if(pendingExchangeGold < 20000){ showToast('Minimum 20,000 Gold!'); return; }
+        if(pendingExchangeGold > 2000000){ showToast('Maximum 2,000,000 Gold!'); return; }
+        if(window.G.coins < pendingExchangeGold){ showToast('Not enough Gold!'); return; }
+        // Fix 3: Show ad before exchange
+        await showGameplayAd();
+        document.getElementById('ad-loader').style.display='flex';
+        const res = await apiCall('/api/convert', { goldAmount: pendingExchangeGold });
+        document.getElementById('ad-loader').style.display='none';
+        if(res.success) {
+            let fc = Math.floor(pendingExchangeGold / 10);
+            showToast(`+${fc.toLocaleString()} Fruit Coin received!`);
+            pendingExchangeGold = 0;
+            document.getElementById('exchange-preview').textContent = 'Select Gold amount to see Fruit Coin reward';
+            document.getElementById('exchange-confirm-btn').disabled = true;
+            updateShopUI();
+        } else {
+            showToast('Error: ' + (res.error || 'Failed'));
+        }
+    };
+
+    window.setExchangeQty = window.setExchangeGold;
 
     window.redeemPromo = async function(){
         let input = document.getElementById('promo-code-input');
@@ -1236,10 +1465,13 @@
 
         if(res.success){
             resultEl.style.color = '#8f8';
-            resultEl.textContent = `✅ Redeemed! +${res.rewardFc.toLocaleString()} 🍎 Fruit Coin`;
-            showToast(`🎉 Promo redeemed: +${res.rewardFc.toLocaleString()} Fruit Coin`);
+            let parts = [];
+            if(res.rewardGold) parts.push(`🪙 ${res.rewardGold.toLocaleString()} Gold`);
+            if(res.rewardFc) parts.push(`🍎 ${res.rewardFc.toLocaleString()} Fruit Coin`);
+            resultEl.textContent = `✅ Redeemed! +${parts.join(' + ')}`;
+            showToast(`🎉 Promo redeemed: ${parts.join(' + ')}`);
             input.value = '';
-            updateProfileUI();
+            updateShopUI();
 
             // Reward is already credited at this point — this ad is purely
             // for revenue, so any failure/skip here can never cost the user
@@ -1261,49 +1493,20 @@
         }
     };
 
-    window.switchProfileTab = function(tab){
+    window.switchShopTab = function(tab){
         document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.shop-panel').forEach(p => p.classList.remove('active'));
         document.getElementById('tab-' + tab).classList.add('active');
         document.getElementById('shop-panel-' + tab).classList.add('active');
-        if(tab === 'leaderboard') window.loadLeaderboard();
     };
 
-    window.loadLeaderboard = async function(){
-        let list = document.getElementById('lb-list');
-        let rankEl = document.getElementById('lb-my-rank');
-        let poolEl = document.getElementById('lb-prize-pool');
-        if(list) list.innerHTML = '<div class="info-text">Loading...</div>';
-        const res = await apiCall('/api/slash', { action: 'leaderboard' });
-        if(!res || !res.success){ if(list) list.innerHTML = '<div class="info-text">Could not load leaderboard.</div>'; return; }
-        if(poolEl) poolEl.textContent = `🏆 ${res.prizePoolFc.toLocaleString()} FC Weekly Prize Pool`;
-        if(rankEl) rankEl.textContent = res.me.rank ? `Your rank: #${res.me.rank} · ${res.me.wins} wins this week` : `Your rank: unranked · ${res.me.wins} wins this week`;
-        if(list){
-            if(!res.top.length){
-                list.innerHTML = '<div class="info-text">No slashes recorded yet this week — be the first!</div>';
-            } else {
-                list.innerHTML = res.top.map(t => `
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.05);border-radius:10px;margin-bottom:6px;">
-                        <span>#${t.rank} ${t.rank<=3?['🥇','🥈','🥉'][t.rank-1]:''} @${t.username||'Player'}</span>
-                        <span style="color:#ffcc00;font-weight:800;">${t.wins} 🔪</span>
-                    </div>`).join('');
-            }
-        }
-    };
+    function updateShopUI(){
+        let sg = document.getElementById('shop-my-gold');
+        let sd = document.getElementById('shop-my-diamond');
+        if(sg) sg.textContent = window.G.coins;
+        if(sd) sd.textContent = window.G.gems;
 
-    function updateProfileUI(){
-        document.getElementById('profile-username').textContent = window.G.username ? '@' + window.G.username : (currentUser?.first_name || 'Player');
-        document.getElementById('profile-level-badge').textContent = `Level ${window.G.level || 1}${window.G.isMax ? ' (MAX)' : ''}`;
-        let pct = window.G.isMax ? 100 : Math.min(100, Math.round(100 * (window.G.xpIntoLevel||0) / Math.max(1, window.G.xpForNextLevel||1)));
-        document.getElementById('profile-xp-fill').style.width = pct + '%';
-        document.getElementById('profile-xp-label').textContent = window.G.isMax
-            ? `${window.G.xp||0} XP · Max Level`
-            : `${window.G.xpIntoLevel||0} / ${window.G.xpForNextLevel||0} XP to next level`;
-        document.getElementById('profile-fc').textContent = (window.G.gems||0).toLocaleString();
-        document.getElementById('profile-ads').textContent = window.G.totalAdsWatched||0;
-        document.getElementById('profile-wins').textContent = window.G.weeklySlashes||0;
-        document.getElementById('profile-refs').textContent = window.G.referCount||0;
-
+        renderShopItems();
         updateFreeboxUI();
     }
 
@@ -1322,15 +1525,15 @@
     };
 
     function updateAdsUI(){
-        let agLeft  = 10 - (window.G.adsgramCount||0);
-        let agDLeft = 10 - (window.G.adsgramDailyCount||0);
-        let gpLeft  = 20 - (window.G.gigapubCount||0);
-        let mtLeft  = 20 - (window.G.monetagCount||0);
+        let agLeft  = 5  - (window.G.adsgramCount||0);
+        let agDLeft = 5  - (window.G.adsgramDailyCount||0);
+        let gpLeft  = 10 - (window.G.gigapubCount||0);
+        let mtLeft  = 10 - (window.G.monetagCount||0);
 
-        document.getElementById('adsgram-left').textContent      = `${Math.max(0,agLeft)}/10 remaining`;
-        document.getElementById('adsgram-daily-left').textContent = `${Math.max(0,agDLeft)}/10 remaining`;
-        document.getElementById('gigapub-left').textContent      = `${Math.max(0,gpLeft)}/20 remaining`;
-        document.getElementById('monetag-left').textContent      = `${Math.max(0,mtLeft)}/20 remaining`;
+        document.getElementById('adsgram-left').textContent      = `${Math.max(0,agLeft)}/5 remaining`;
+        document.getElementById('adsgram-daily-left').textContent = `${Math.max(0,agDLeft)}/5 remaining`;
+        document.getElementById('gigapub-left').textContent      = `${Math.max(0,gpLeft)}/10 remaining`;
+        document.getElementById('monetag-left').textContent      = `${Math.max(0,mtLeft)}/10 remaining`;
 
         document.getElementById('adsgram-btn').disabled       = agLeft  <= 0;
         document.getElementById('adsgram-daily-btn').disabled = agDLeft <= 0;
@@ -1379,7 +1582,7 @@
     );
     // GigaPub — no artificial force-resolve. The old 15s timer used to
     // report "success" back to the UI no matter what GigaPub's own promise
-    // did, which made failures invisible. Since the actual Fruit Coin reward for
+    // did, which made failures invisible. Since the actual gold reward for
     // GigaPub comes from THEIR server-to-server postback (not this promise
     // at all — see processAdReward below), there's no reason to lie about
     // the outcome here: an honest failure just means "ad didn't show,
@@ -1390,7 +1593,7 @@
 
     // ── One place for every ad-flow error code → user-facing message ────
     // Covers backend reasons (lib/adSession.js claimAdSession, lib/adReward.js
-    // creditFcForAd, api/ads.js) AND client-side SDK wrapper rejections
+    // creditGoldForAd, api/ads.js) AND client-side SDK wrapper rejections
     // (waitForAdSdk / showXxxAd above), so no call site has to guess text.
     const AD_ERROR_MESSAGES = {
         // client-side (SDK wrappers)
@@ -1404,7 +1607,7 @@
         expired:                '⚠️ Ad session expired. Please tap Watch again.',
         too_fast:               '⚠️ Ad closed too quickly.',
         race_lost:              '⚠️ Please try again.',
-        // server-side (lib/adReward.js creditFcForAd)
+        // server-side (lib/adReward.js creditGoldForAd)
         user_not_found:         '⚠️ Account sync issue — please reopen the app and try again.',
         invalid_params:         '⚠️ Something went wrong. Please try again.',
         daily_limit_reached:    'Daily limit reached!',
@@ -1412,10 +1615,14 @@
     };
     function adErrorText(code){ return AD_ERROR_MESSAGES[code] || '⚠️ Reward failed, try again.'; }
 
-    // Every network now enforces the SAME 10s minimum before a reward can be
-    // claimed, matching the server-side check in lib/adSession.js — applies
-    // uniformly even to Adsgram (which has its own click-through guarantee),
-    // per the current spec.
+    // Adsgram's SDK requires the user to click the ad creative within its
+    // own ~15s window and only resolves successfully once that happens —
+    // that's enforced by Adsgram itself. A genuine click-through can
+    // legitimately resolve in just a couple of seconds, so we must NOT
+    // impose our own multi-second minimum for it (that was the bug —
+    // real completions were being flagged as "skipped too early").
+    // GigaPub and Monetag have no click requirement — they're purely
+    // time-based, so we enforce a real 5s minimum for those.
     async function runAdAndVerifyTime(btnId, adFunc, network) {
         if(window._isAdRunning){ showToast('⚠️ An ad is already playing.'); return false; }
         const btn = document.getElementById(btnId);
@@ -1425,7 +1632,7 @@
         const originalText = btn.textContent;
 
         const isClickBased = (network === 'adsgram' || network === 'adsgramDaily');
-        const minDuration = 10000;
+        const minDuration = isClickBased ? 0 : 5000;
         const startTime = Date.now();
 
         let timer = null;
@@ -1500,7 +1707,7 @@
         // completely independent of anything this client says. So we
         // don't call our own session/claim endpoint for gigapub at all —
         // just play the ad, and let the postback (+ next balance sync)
-        // handle the actual Fruit Coin credit a few seconds later.
+        // handle the actual gold credit a few seconds later.
         if(actionName === 'gigapub'){
             const ok = await runAdAndVerifyTime(btnId, adFunc, actionName);
             if(!ok) return;
@@ -1522,7 +1729,7 @@
         const ok = await runAdAndVerifyTime(btnId, adFunc, actionName);
         if(!ok) return; // Ad skipped — no reward, session just expires unused
 
-        const fcBefore = window.G.gems;
+        const goldBefore = window.G.coins;
 
         // STEP 3 — claim using the session id. If the server marks a
         // failure `retryable: true` (see api/ads.js + lib/adSession.js's
@@ -1540,7 +1747,7 @@
         }
 
         if(res.success){
-            const reward = (typeof window.G.gems === 'number') ? (window.G.gems - fcBefore) : getRewardAmount();
+            const reward = (typeof window.G.coins === 'number') ? (window.G.coins - goldBefore) : getRewardAmount();
             window.G[actionName + 'Count'] = (window.G[actionName + 'Count'] || 0) + 1;
             updateAdsUI();
             showToast(successMsg.replace('{R}', reward > 0 ? reward : getRewardAmount()));
@@ -1549,10 +1756,10 @@
         }
     }
 
-    window.watchAdsgramAd      = () => processAdReward('adsgram',      10, window.G.adsgramCount,      'adsgram-btn',       () => 30, `+{R} Fruit Coin! (Adsgram Special)`);
-    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 10, window.G.adsgramDailyCount, 'adsgram-daily-btn', () => 20, `+{R} Fruit Coin! (Adsgram Daily)`);
-    window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      'gigapub-btn',       () => 20, `+{R} Fruit Coin! (GigaPub)`);
-    window.watchMonetagAd      = () => processAdReward('monetag',      20, window.G.monetagCount,      'monetag-btn',       () => 15, `+{R} Fruit Coin! (Monetag)`);
+    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      'adsgram-btn',       () => 300, `+{R} Gold! (Adsgram Special)`);
+    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, 'adsgram-daily-btn', () => 200, `+{R} Gold! (Adsgram Daily)`);
+    window.watchGigaPubAd      = () => processAdReward('gigapub',      10, window.G.gigapubCount,      'gigapub-btn',       () => 200, `+{R} Gold! (GigaPub)`);
+    window.watchMonetagAd      = () => processAdReward('monetag',      10, window.G.monetagCount,      'monetag-btn',       () => 200, `+{R} Gold! (Monetag)`);
 
     let allTasks = [];      // cache from server for the current modal session
     let activeTaskTab = 'daily';
@@ -1589,11 +1796,44 @@
 
     function renderTaskList(){
         let c = document.getElementById('task-list');
-        let inCat = allTasks.filter(t => (t.category||'daily') === activeTaskTab);
+        let inCat = allTasks.filter(t => (t.category||'social') === activeTaskTab);
         let cards = inCat.map(buildTaskCard).filter(Boolean).join('');
 
-        c.innerHTML = cards;
-        if(!cards){
+        let pinned = '';
+        if(activeTaskTab === 'social'){
+            // Permanent official links, pinned at the top of Social.
+            pinned = `
+                <div class="task-section-header" style="background:linear-gradient(90deg,rgba(0,150,136,0.3),transparent);border-left:3px solid #00bcd4;">
+                    📌 Official Community — Join & Stay Updated
+                </div>
+                <div class="task-card channel-task" style="border-color:rgba(0,188,212,0.5);background:linear-gradient(135deg,rgba(0,188,212,0.12),rgba(0,100,120,0.08));">
+                    <div class="task-icon">📢</div>
+                    <div class="task-info">
+                        <span style="font-size:11px;font-weight:900;color:#7de;">🔗 No Reward — Always Available</span>
+                        <div class="task-name">Fruit Cut — Official Channel</div>
+                        <div style="font-size:11px;color:#999;margin-top:2px;">📣 News · Updates · Announcements</div>
+                    </div>
+                    <button class="task-btn" style="background:linear-gradient(180deg,#00bcd4,#006070);box-shadow:0 3px 0 #004050;"
+                        onclick="tg?.openLink ? tg.openLink('https://t.me/fruit_cut_offcial') : window.open('https://t.me/fruit_cut_offcial','_blank')">
+                        Join
+                    </button>
+                </div>
+                <div class="task-card channel-task" style="border-color:rgba(76,175,80,0.5);background:linear-gradient(135deg,rgba(76,175,80,0.12),rgba(27,94,32,0.08));">
+                    <div class="task-icon">👥</div>
+                    <div class="task-info">
+                        <span style="font-size:11px;font-weight:900;color:#81c784;">🔗 No Reward — Always Available</span>
+                        <div class="task-name">Fruit Cut — Community Group</div>
+                        <div style="font-size:11px;color:#999;margin-top:2px;">💬 Chat · Help · Community</div>
+                    </div>
+                    <button class="task-btn" style="background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;"
+                        onclick="tg?.openLink ? tg.openLink('https://t.me/fruit_cut_group') : window.open('https://t.me/fruit_cut_group','_blank')">
+                        Join
+                    </button>
+                </div>`;
+        }
+
+        c.innerHTML = pinned + cards;
+        if(!cards && activeTaskTab !== 'social'){
             c.innerHTML += `<div style="text-align:center;color:#aaa;padding:16px 0;">More ${activeTaskTab} tasks coming soon! Stay tuned 🎯</div>`;
         }
 
@@ -1672,17 +1912,22 @@
             res = await response.json();
             // Manually update G without triggering full UI re-render
             if(res.success && res.user){
-                window.G.gems           = res.user.fruitCoin      ?? window.G.gems;
+                window.G.coins          = res.user.coins          ?? window.G.coins;
+                window.G.gems           = res.user.gems           ?? window.G.gems;
                 window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
-                // Update only the Fruit Coin display, not the whole UI
+                // Update only coin/gem display, not the whole UI
+                let coinEl = document.getElementById('ui-coins');
                 let gemEl  = document.getElementById('ui-gems');
+                if(coinEl) coinEl.textContent = window.G.coins;
                 if(gemEl)  gemEl.textContent  = window.G.gems;
             }
         } catch(e){ res = { success: false, error: 'Network error' }; }
 
         if(res && res.success){
-            let fcReward = res.fcReward || 0;
-            let msg  = `✅ Task Complete! +${fcReward} 🍎 Fruit Coin!`;
+            let gold = res.coinsReward || 200;
+            let gems = res.gemsReward  || 0;
+            let msg  = `✅ Task Complete! +${gold} Gold!`;
+            if(gems > 0) msg += ` +${gems} 🍎`;
             showToast(msg);
 
             // Mark button done
@@ -1716,12 +1961,28 @@
         }
     };
 
-    // Withdraw conversion rates — 25,000 Fruit Coin = $1 (1 🍎 = $0.00004)
+    // Withdraw conversion rates — 50,000 Fruit Coin = $1 (1 🍎 = $0.00002 USDT)
     const WITHDRAW_RATES = {
-        binance:   { rate: 0.00004, unit: 'USDT', symbol: '$', perFruitCoin: '25,000 🍎 = $1' },
-        tonkeeper: { rate: 0.00004, unit: 'USDT', symbol: '$', perFruitCoin: '25,000 🍎 = $1' }
+        binance:   { rate: 0.00002, unit: 'USDT', symbol: '$', perFruitCoin: '50,000 🍎 = $1' },
+        tonkeeper: { rate: 0.00002, unit: 'USDT', symbol: '$', perFruitCoin: '50,000 🍎 = $1' }
     };
-    const WITHDRAW_FEE_RATE = 0.15; // 15% — must match FEE_RATE in api/withdraw.js
+    const WITHDRAW_FEE_RATE = 0.05; // 5% — must match FEE_RATE in api/withdraw.js
+
+    window.setWithdrawAmount = function(amt){
+        let input = document.getElementById('w-amount');
+        if(input){
+            input.value = amt;
+            window.updateWithdrawPreview();
+        }
+    };
+
+    window.setWithdrawMax = function(){
+        let input = document.getElementById('w-amount');
+        if(input){
+            input.value = window.G.gems || 0;
+            window.updateWithdrawPreview();
+        }
+    };
 
     window.updateWithdrawPreview = function(){
         let method = document.getElementById('w-method')?.value || 'binance';
@@ -1734,11 +1995,10 @@
             let r = WITHDRAW_RATES[method] || WITHDRAW_RATES.binance;
             let fee = Math.round(amount * WITHDRAW_FEE_RATE);
             let net = amount - fee;
-            let converted = (net * r.rate).toFixed(5);
+            let converted = (net * r.rate).toFixed(4);
             preview.style.display = 'block';
             valEl.textContent = `${r.symbol}${converted} ${r.unit}`;
-            labelEl.textContent = `${amount} Fruit Coin − ${fee} (15% fee) = ${net} 🍎 → ${r.unit}`;
-            // Restart animation
+            labelEl.textContent = `${amount.toLocaleString()} FC − ${fee.toLocaleString()} (5% fee) = ${net.toLocaleString()} 🍎 → $${converted} ${r.unit}`;
             preview.style.animation = 'none'; preview.offsetHeight;
             preview.style.animation = 'previewPop 0.3s ease';
         } else {
@@ -1748,11 +2008,6 @@
 
     window.doWithdraw = async function(){
         let btn = document.getElementById('btn-withdraw');
-        // Re-entrancy guard FIRST — if a request is already in flight,
-        // a second/third rapid tap does nothing at all. The server-side
-        // atomic daily-limit check (api/withdraw.js) is the real
-        // guarantee against double-withdrawal, but this stops even the
-        // second network request from ever being sent.
         if(btn.disabled) return;
 
         let tasks = (window.G.completedTasks||[]).length;
@@ -1764,18 +2019,17 @@
         let addr   = document.getElementById('w-address').value.trim();
         let amount = parseInt(document.getElementById('w-amount').value)||0;
         if(!addr)            return showToast('Enter address!');
-        if(amount < 5000)    return showToast('Minimum withdrawal is 5,000 Fruit Coin!');
+        if(amount < 2500)    return showToast('Minimum withdrawal is 2,500 Fruit Coin ($0.05)!');
         if(window.G.gems < amount) return showToast('Not enough Fruit Coin!');
 
         btn.disabled = true; btn.textContent = "Processing...";
         const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
         btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
         if(res.success){
-            showToast(`✅ Withdrawal requested! You'll receive ${res.convertedAmount} ${res.unit || 'USDT'} after the 15% fee.`);
+            showToast(`✅ Withdrawal requested! You'll receive ${res.convertedAmount} ${res.unit || 'USDT'} after the 5% fee.`);
             document.getElementById('w-amount').value  = '';
             document.getElementById('w-address').value = '';
             document.getElementById('w-convert-preview').style.display = 'none';
-            // Auto-show history after submit
             window.loadWdHistory(true);
         } else {
             showToast('Error: ' + (res.error || 'Server Error'));
@@ -1784,8 +2038,8 @@
 
     // ── Withdraw History ──────────────────────────────────────────────
     const WD_RATES = {
-        binance:   { sym:'$', unit:'USDT', rate:0.00004, label:'Binance UID' },
-        tonkeeper: { sym:'$', unit:'USDT', rate:0.00004, label:'TonKeeper (USDT)' },
+        binance:   { sym:'$', unit:'USDT', rate:0.00002, label:'Binance UID' },
+        tonkeeper: { sym:'$', unit:'USDT', rate:0.00002, label:'TonKeeper (USDT)' },
     };
 
     window.toggleWdHistory = function(){
@@ -1859,6 +2113,17 @@
         }
     };
 
+    // Support functions
+    window.openSupport = function(){
+        document.getElementById('support-modal-overlay').style.display = 'flex';
+    };
+    window.openTgSupport = function(){
+        let url = 'https://t.me/fruitcutSu';
+        if(tg?.openTelegramLink) tg.openTelegramLink(url);
+        else window.open(url, '_blank');
+        document.getElementById('support-modal-overlay').style.display = 'none';
+    };
+
     // ── Sound system (shared across menu music, ad flows, and the
     // One Slash game) ─────────────────────────────────────────────
     const SOUNDS = {};
@@ -1873,7 +2138,7 @@
     window.toggleSound = function(){ window.G.sound = !window.G.sound; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); if(!window.G.sound) stopSound('menu'); else if(!slashModalOpen) playSound('menu'); window.updateUI(); };
     window.toggleVib = function(){ window.G.vib=!window.G.vib; localStorage.setItem('fc_prefs', JSON.stringify({sound:window.G.sound, vib:window.G.vib})); window.updateUI(); };
 
-    // Gameplay interstitial ad (used by promo-code redemption)
+    // Gameplay interstitial ad (used by the Gold→Fruit Coin exchange flow)
     // Only Adsgram + GigaPub — Monetag is for Ads section only
     async function showGameplayAd(){
         const adProviders = [showAdsgramDailyAd, showGigaPubAd];
@@ -1919,157 +2184,518 @@
     if(tg){ tg.onEvent && tg.onEvent('activated', function(){ if(!slashModalOpen && window.G.sound) setTimeout(()=>playSound('menu'),300); }); }
 
     /* =========================================================
-       🔪 ONE SLASH GAME
-       A single big fruit appears — tap it until it's destroyed, then
-       claim a random reward. Cooldown (1 per hour) and the reward
-       amount are BOTH decided server-side (api/slash.js) — the hit
-       counter here is purely visual feel, it has no economic effect.
-       Reward pays straight into Fruit Coin (see lib/slashGame.js +
-       settings.fcToUsdt) — this also feeds the weekly "Top Slasher"
-       leaderboard and the weekly-referral-reward eligibility count.
+       🏆 15-LEVEL PROGRESSION SYSTEM (CLIENT)
     ========================================================= */
-    let slashModalOpen = false;
-    let slashHits = 0, slashHitTarget = 10, slashBusy = false;
-    let slashCountdownTimer = null;
+    const LEVELS_DATA = [
+        { level: 1,  name: 'Novice Slicer',       requiredSlices: 0,    rewardFc: 0,    fruit: '🍎' },
+        { level: 2,  name: 'Fruit Peeler',        requiredSlices: 10,   rewardFc: 25,   fruit: '🍊' },
+        { level: 3,  name: 'Juice Maker',         requiredSlices: 25,   rewardFc: 50,   fruit: '🍋' },
+        { level: 4,  name: 'Kitchen Apprentice',  requiredSlices: 50,   rewardFc: 75,   fruit: '🍇' },
+        { level: 5,  name: 'Fruit Carver',        requiredSlices: 80,   rewardFc: 100,  fruit: '🍓' },
+        { level: 6,  name: 'Fast Blade',          requiredSlices: 120,  rewardFc: 150,  fruit: '🍑' },
+        { level: 7,  name: 'Samurai Novice',      requiredSlices: 170,  rewardFc: 200,  fruit: '🍒' },
+        { level: 8,  name: 'Combo Striker',       requiredSlices: 230,  rewardFc: 250,  fruit: '🥝' },
+        { level: 9,  name: 'Ninja Warrior',       requiredSlices: 300,  rewardFc: 300,  fruit: '🍍' },
+        { level: 10, name: 'Master Slicer',       requiredSlices: 400,  rewardFc: 400,  fruit: '🥥' },
+        { level: 11, name: 'Dojo Master',         requiredSlices: 550,  rewardFc: 500,  fruit: '🍉' },
+        { level: 12, name: 'Shadow Blade',        requiredSlices: 750,  rewardFc: 650,  fruit: '🥭' },
+        { level: 13, name: 'Fruit Titan',         requiredSlices: 1000, rewardFc: 800,  fruit: '🍈' },
+        { level: 14, name: 'Legend Slicer',       requiredSlices: 1300, rewardFc: 1000, fruit: '⭐' },
+        { level: 15, name: 'Grandmaster God',     requiredSlices: 1700, rewardFc: 2000, fruit: '👑' },
+    ];
 
-    function formatCountdown(ms){
-        if(ms <= 0) return '00:00:00';
-        let totalSec = Math.floor(ms/1000);
-        let h = String(Math.floor(totalSec/3600)).padStart(2,'0');
-        let m = String(Math.floor((totalSec%3600)/60)).padStart(2,'0');
-        let s = String(totalSec%60).padStart(2,'0');
-        return `${h}:${m}:${s}`;
-    }
+    window.renderLevelModal = function(){
+        let container = document.getElementById('level-list-container');
+        if(!container) return;
+        let curLevel = window.G.level || 1;
+        let slices = window.G.totalSlices || 0;
+        let lp = window.G.levelProgress;
 
-    function showSlashCooldown(nextAvailableAt){
-        document.getElementById('slash-play-view').style.display = 'none';
-        document.getElementById('slash-gate-view').style.display = 'none';
-        document.getElementById('slash-reward-view').style.display = 'none';
-        document.getElementById('slash-cooldown-view').style.display = 'block';
-        if(slashCountdownTimer) clearInterval(slashCountdownTimer);
-        let target = new Date(nextAvailableAt).getTime();
-        let tick = () => {
-            let remaining = target - Date.now();
-            document.getElementById('slash-cooldown-timer').textContent = formatCountdown(remaining);
-            if(remaining <= 0){ clearInterval(slashCountdownTimer); slashCountdownTimer = null; }
-        };
-        tick();
-        slashCountdownTimer = setInterval(tick, 1000);
-    }
+        let curTitle = document.getElementById('level-modal-cur-title');
+        let slicesStat = document.getElementById('level-modal-slices-stat');
+        let nextStat = document.getElementById('level-modal-next-stat');
+        let fill = document.getElementById('level-modal-fill');
 
-    function showSlashPlay(){
-        document.getElementById('slash-cooldown-view').style.display = 'none';
-        document.getElementById('slash-gate-view').style.display = 'none';
-        document.getElementById('slash-reward-view').style.display = 'none';
-        document.getElementById('slash-play-view').style.display = 'block';
-        if(slashCountdownTimer){ clearInterval(slashCountdownTimer); slashCountdownTimer = null; }
-        slashHits = 0;
-        slashHitTarget = 8 + Math.floor(Math.random()*11); // 8..18 taps, "big fruit" feel
-        slashBusy = false;
-        const fruitEmojis = ['🍉','🍓','🍊','🍍','🍎'];
-        document.getElementById('slash-fruit').textContent = fruitEmojis[Math.floor(Math.random()*fruitEmojis.length)];
-        document.getElementById('slash-fruit').style.transform = 'scale(1)';
-        document.getElementById('slash-hit-count').textContent = '0';
-        document.getElementById('slash-hit-target').textContent = slashHitTarget;
-        document.getElementById('slash-hp-fill').style.width = '100%';
-    }
-
-    window.openSlashGame = async function(){
-        slashModalOpen = true;
-        stopSound('menu');
-        const res = await apiCall('/api/slash', { action: 'status' });
-        if(res.success && res.onCooldown){
-            showSlashCooldown(res.nextAvailableAt);
-        } else {
-            showSlashPlay();
-        }
-    };
-
-    let slashGateSessionId = null, slashGateStartedAt = 0;
-
-    window.slashHitFruit = async function(){
-        if(slashBusy) return;
-        slashHits++;
-        let fruitEl = document.getElementById('slash-fruit');
-        fruitEl.style.transform = `scale(${Math.max(0.6, 1 - slashHits/slashHitTarget*0.4)})`;
-        playSound('slice');
-        if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-        document.getElementById('slash-hit-count').textContent = slashHits;
-        document.getElementById('slash-hp-fill').style.width = Math.max(0, 100 - (slashHits/slashHitTarget)*100) + '%';
-
-        if(slashHits >= slashHitTarget){
-            slashBusy = true;
-            fruitEl.style.transform = 'scale(0)';
-
-            // Fruit destroyed — before the reward can be claimed, the
-            // player must watch one ad (GigaPub or Adsgram). Get a
-            // single-use gate session first.
-            const gateRes = await apiCall('/api/slash', { action: 'gate_session' });
-            if(!gateRes || !gateRes.success){
-                showToast('❌ Something went wrong, try again.');
-                slashBusy = false;
-                window.hideModal('slash-modal');
-                return;
+        if(lp){
+            if(curTitle) curTitle.textContent = `${lp.name} (Lv. ${lp.level})`;
+            if(slicesStat) slicesStat.textContent = `${slices} Slices`;
+            if(fill) fill.style.width = `${lp.progressPercent || 0}%`;
+            if(nextStat){
+                nextStat.textContent = lp.isMaxLevel ? '🎉 Maximum Level Reached!' : `${lp.slicesToNext} slices to ${lp.nextLevelName} (Lv. ${lp.nextLevel})`;
             }
-            slashGateSessionId = gateRes.sessionId;
-            slashGateStartedAt = Date.now();
-            document.getElementById('slash-play-view').style.display = 'none';
-            document.getElementById('slash-gate-view').style.display = 'block';
         }
+
+        container.innerHTML = LEVELS_DATA.map(lvl => {
+            let isCur = lvl.level === curLevel;
+            let isDone = lvl.level < curLevel;
+            let cls = isCur ? 'current' : (isDone ? 'completed' : '');
+            let statusBadge = isCur 
+                ? '<span style="font-size:10px;color:#00e5ff;font-weight:900;background:rgba(0,229,255,0.2);padding:3px 8px;border-radius:8px;">ACTIVE</span>' 
+                : (isDone ? '<span style="font-size:10px;color:#4caf50;font-weight:900;">✅ DONE</span>' : `<span style="font-size:10px;color:#aaa;">Need ${lvl.requiredSlices} Slices</span>`);
+
+            return `
+                <div class="level-item-card ${cls}">
+                    <div class="level-icon-badge">${lvl.fruit}</div>
+                    <div style="flex:1;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div style="font-size:13px;font-weight:900;color:#fff;">Lv. ${lvl.level} - ${lvl.name}</div>
+                            ${statusBadge}
+                        </div>
+                        <div style="font-size:11px;color:#ffcc00;margin-top:2px;">
+                            ${lvl.rewardFc > 0 ? `🎁 Bonus: +${lvl.rewardFc} 🍎 Fruit Coin` : 'Starting Level'}
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
     };
 
-    window.slashWatchGateAd = async function(){
-        const btn = document.getElementById('slash-gate-btn');
-        if(btn){ btn.disabled = true; btn.textContent = '📺 Loading...'; }
+    /* =========================================================
+       🍉 HIGH-GRAPHICS FRUIT CUT ARENA & BLADE ENGINE
+    ========================================================= */
+    const HD_FRUITS = [
+        {
+            id: 'watermelon',
+            name: 'Watermelon',
+            juiceColor: '#ff2d55',
+            svg: `
+                <svg viewBox="0 0 200 200" width="180" height="180" style="filter:drop-shadow(0 10px 20px rgba(0,0,0,0.5));">
+                    <defs>
+                        <radialGradient id="wm_skin" cx="40%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#3ddc84" />
+                            <stop offset="70%" stop-color="#1b5e20" />
+                            <stop offset="100%" stop-color="#0a2a0e" />
+                        </radialGradient>
+                        <radialGradient id="wm_flesh" cx="45%" cy="40%" r="60%">
+                            <stop offset="0%" stop-color="#ff5277" />
+                            <stop offset="70%" stop-color="#e91e63" />
+                            <stop offset="100%" stop-color="#ad1457" />
+                        </radialGradient>
+                    </defs>
+                    <!-- Outer rind -->
+                    <circle cx="100" cy="100" r="90" fill="url(#wm_skin)" stroke="#81c784" stroke-width="3" />
+                    <!-- Stripes -->
+                    <path d="M 30,50 Q 100,20 170,50 Q 100,35 30,50 Z" fill="#0d3b12" opacity="0.6" />
+                    <path d="M 20,100 Q 100,85 180,100 Q 100,95 20,100 Z" fill="#0d3b12" opacity="0.6" />
+                    <path d="M 30,150 Q 100,165 170,150 Q 100,155 30,150 Z" fill="#0d3b12" opacity="0.6" />
+                    <!-- Inner flesh window for 3D depth -->
+                    <circle cx="100" cy="100" r="76" fill="#f1f8e9" opacity="0.9" />
+                    <circle cx="100" cy="100" r="70" fill="url(#wm_flesh)" />
+                    <!-- Seeds -->
+                    <ellipse cx="75" cy="70" rx="4" ry="7" transform="rotate(-20 75 70)" fill="#1a0000" />
+                    <ellipse cx="125" cy="70" rx="4" ry="7" transform="rotate(20 125 70)" fill="#1a0000" />
+                    <ellipse cx="70" cy="120" rx="4" ry="7" transform="rotate(25 70 120)" fill="#1a0000" />
+                    <ellipse cx="130" cy="120" rx="4" ry="7" transform="rotate(-25 130 120)" fill="#1a0000" />
+                    <ellipse cx="100" cy="95" rx="4" ry="7" fill="#1a0000" />
+                    <ellipse cx="100" cy="140" rx="4" ry="7" fill="#1a0000" />
+                    <!-- Specular highlight -->
+                    <ellipse cx="65" cy="50" rx="16" ry="8" transform="rotate(-30 65 50)" fill="#ffffff" opacity="0.45" />
+                </svg>`
+        },
+        {
+            id: 'pineapple',
+            name: 'Golden Pineapple',
+            juiceColor: '#ffc107',
+            svg: `
+                <svg viewBox="0 0 200 200" width="180" height="180" style="filter:drop-shadow(0 10px 20px rgba(0,0,0,0.5));">
+                    <defs>
+                        <linearGradient id="pa_body" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffe082" />
+                            <stop offset="50%" stop-color="#ffb300" />
+                            <stop offset="100%" stop-color="#ff6f00" />
+                        </linearGradient>
+                        <linearGradient id="pa_leaves" x1="0%" y1="100%" x2="0%" y2="0%">
+                            <stop offset="0%" stop-color="#2e7d32" />
+                            <stop offset="100%" stop-color="#76ff03" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Crown Leaves -->
+                    <path d="M 100,10 Q 75,50 85,85 Q 100,45 100,10 Z" fill="url(#pa_leaves)" />
+                    <path d="M 100,15 Q 125,50 115,85 Q 100,45 100,15 Z" fill="url(#pa_leaves)" />
+                    <path d="M 100,5 Q 60,35 70,80 Q 90,45 100,5 Z" fill="url(#pa_leaves)" opacity="0.8" />
+                    <path d="M 100,5 Q 140,35 130,80 Q 110,45 100,5 Z" fill="url(#pa_leaves)" opacity="0.8" />
+                    <!-- Body -->
+                    <ellipse cx="100" cy="125" rx="65" ry="72" fill="url(#pa_body)" stroke="#e65100" stroke-width="2" />
+                    <!-- Diamond Scales -->
+                    <path d="M 60,100 L 100,80 L 140,100 L 100,120 Z" fill="none" stroke="#e65100" stroke-width="3" />
+                    <path d="M 50,135 L 100,115 L 150,135 L 100,155 Z" fill="none" stroke="#e65100" stroke-width="3" />
+                    <path d="M 65,165 L 100,148 L 135,165 L 100,182 Z" fill="none" stroke="#e65100" stroke-width="3" />
+                    <!-- Specular highlight -->
+                    <ellipse cx="75" cy="95" rx="14" ry="7" transform="rotate(-25 75 95)" fill="#fff" opacity="0.4" />
+                </svg>`
+        },
+        {
+            id: 'orange',
+            name: 'Juicy Orange',
+            juiceColor: '#ff9800',
+            svg: `
+                <svg viewBox="0 0 200 200" width="180" height="180" style="filter:drop-shadow(0 10px 20px rgba(0,0,0,0.5));">
+                    <defs>
+                        <radialGradient id="og_grad" cx="40%" cy="35%" r="65%">
+                            <stop offset="0%" stop-color="#ffe082" />
+                            <stop offset="40%" stop-color="#ff9800" />
+                            <stop offset="100%" stop-color="#e65100" />
+                        </radialGradient>
+                    </defs>
+                    <circle cx="100" cy="105" r="82" fill="url(#og_grad)" />
+                    <!-- Leaf on top -->
+                    <path d="M 100,25 Q 130,10 145,25 Q 130,45 100,30 Z" fill="#4caf50" stroke="#2e7d32" stroke-width="2" />
+                    <circle cx="100" cy="27" r="4" fill="#5d4037" />
+                    <!-- Citrus segments hint -->
+                    <circle cx="100" cy="105" r="70" fill="none" stroke="rgba(255,255,255,0.25)" stroke-dasharray="8 6" stroke-width="2" />
+                    <!-- Specular shine -->
+                    <ellipse cx="70" cy="65" rx="18" ry="9" transform="rotate(-35 70 65)" fill="#fff" opacity="0.5" />
+                </svg>`
+        },
+        {
+            id: 'strawberry',
+            name: 'Sweet Strawberry',
+            juiceColor: '#ff1744',
+            svg: `
+                <svg viewBox="0 0 200 200" width="180" height="180" style="filter:drop-shadow(0 10px 20px rgba(0,0,0,0.5));">
+                    <defs>
+                        <radialGradient id="sb_grad" cx="40%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#ff5252" />
+                            <stop offset="60%" stop-color="#d50000" />
+                            <stop offset="100%" stop-color="#880e4f" />
+                        </radialGradient>
+                    </defs>
+                    <!-- Berry Heart Shape -->
+                    <path d="M 100,185 C 40,140 25,75 55,45 C 80,20 95,45 100,50 C 105,45 120,20 145,45 C 175,75 160,140 100,185 Z" fill="url(#sb_grad)" />
+                    <!-- Green Calyx Top -->
+                    <path d="M 100,50 L 80,25 L 95,38 L 100,15 L 105,38 L 120,25 Z" fill="#76ff03" stroke="#2e7d32" stroke-width="2" />
+                    <!-- Yellow Seeds -->
+                    <circle cx="70" cy="75" r="3" fill="#ffee58" /><circle cx="130" cy="75" r="3" fill="#ffee58" />
+                    <circle cx="95" cy="90" r="3" fill="#ffee58" /><circle cx="65" cy="115" r="3" fill="#ffee58" />
+                    <circle cx="135" cy="115" r="3" fill="#ffee58" /><circle cx="100" cy="130" r="3" fill="#ffee58" />
+                    <circle cx="85" cy="155" r="3" fill="#ffee58" /><circle cx="115" cy="155" r="3" fill="#ffee58" />
+                    <!-- Highlight -->
+                    <ellipse cx="65" cy="55" rx="14" ry="7" transform="rotate(-30 65 55)" fill="#fff" opacity="0.45" />
+                </svg>`
+        },
+        {
+            id: 'dragonfruit',
+            name: 'Dragonfruit',
+            juiceColor: '#e040fb',
+            svg: `
+                <svg viewBox="0 0 200 200" width="180" height="180" style="filter:drop-shadow(0 10px 20px rgba(0,0,0,0.5));">
+                    <defs>
+                        <linearGradient id="df_body" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ff4081" />
+                            <stop offset="60%" stop-color="#c51162" />
+                            <stop offset="100%" stop-color="#4a148c" />
+                        </linearGradient>
+                    </defs>
+                    <ellipse cx="100" cy="110" rx="70" ry="80" fill="url(#df_body)" />
+                    <!-- Green dragon flame tips -->
+                    <path d="M 60,60 Q 40,40 50,20 Q 65,45 75,65 Z" fill="#76ff03" stroke="#2e7d32" stroke-width="1.5" />
+                    <path d="M 140,60 Q 160,40 150,20 Q 135,45 125,65 Z" fill="#76ff03" stroke="#2e7d32" stroke-width="1.5" />
+                    <path d="M 100,45 Q 100,15 105,10 Q 110,25 105,45 Z" fill="#76ff03" stroke="#2e7d32" stroke-width="1.5" />
+                    <!-- Speckled scales -->
+                    <path d="M 40,110 Q 25,100 35,90 Q 45,100 48,115 Z" fill="#76ff03" />
+                    <path d="M 160,110 Q 175,100 165,90 Q 155,100 152,115 Z" fill="#76ff03" />
+                    <circle cx="100" cy="110" r="54" fill="#fafafa" stroke="#e040fb" stroke-width="4" />
+                    <!-- Kiwi-like black seeds inside white pulp -->
+                    <circle cx="85" cy="95" r="2.5" fill="#111" /><circle cx="115" cy="95" r="2.5" fill="#111" />
+                    <circle cx="75" cy="115" r="2.5" fill="#111" /><circle cx="125" cy="115" r="2.5" fill="#111" />
+                    <circle cx="90" cy="130" r="2.5" fill="#111" /><circle cx="110" cy="130" r="2.5" fill="#111" />
+                    <circle cx="100" cy="110" r="2.5" fill="#111" />
+                </svg>`
+        }
+    ];
 
-        const adProviders = [showGigaPubAd, showAdsgramDailyAd];
-        const adFunc = adProviders[Math.floor(Math.random() * adProviders.length)];
-        document.getElementById('ad-loader').style.display = 'flex';
+    let currentArenaFruit = null;
+    let arenaBusy = false;
+    let arenaActive = false;
+
+    // Blade trail animation points
+    let bladePoints = [];
+    let bladeCanvas = null, bladeCtx = null;
+    let isPointerDown = false;
+    let bladeAnimFrame = null;
+
+    // Fallback Web Audio synth in case audio files fail
+    function playFallbackSliceSound(){
         try {
-            await adFunc();
-        } catch(e){
-            document.getElementById('ad-loader').style.display = 'none';
-            if(btn){ btn.disabled = false; btn.textContent = '▶ Watch Ad & Claim'; }
-            showToast(adErrorText(e && e.message));
-            return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.16);
+        } catch(e){}
+    }
+
+    function initBladeCanvas(){
+        bladeCanvas = document.getElementById('blade-canvas');
+        if(!bladeCanvas) return;
+        bladeCtx = bladeCanvas.getContext('2d');
+        resizeBladeCanvas();
+
+        window.addEventListener('resize', resizeBladeCanvas);
+
+        // Touch and mouse pointer tracking
+        const addPt = (x, y) => {
+            bladePoints.push({ x, y, time: Date.now() });
+            checkFruitSliceHit(x, y);
+        };
+
+        bladeCanvas.addEventListener('pointerdown', (e) => {
+            isPointerDown = true;
+            bladePoints = [];
+            const rect = bladeCanvas.getBoundingClientRect();
+            addPt(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        bladeCanvas.addEventListener('pointermove', (e) => {
+            if(!isPointerDown && e.pointerType === 'mouse') return;
+            const rect = bladeCanvas.getBoundingClientRect();
+            addPt(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        const endPointer = () => { isPointerDown = false; };
+        bladeCanvas.addEventListener('pointerup', endPointer);
+        bladeCanvas.addEventListener('pointercancel', endPointer);
+        bladeCanvas.addEventListener('pointerleave', endPointer);
+
+        // Click / tap fallback on fruit
+        document.getElementById('arena-fruit-target').addEventListener('click', () => {
+            if(!arenaBusy) triggerFruitSliceEffect();
+        });
+
+        startBladeRenderLoop();
+    }
+
+    function resizeBladeCanvas(){
+        if(!bladeCanvas) return;
+        bladeCanvas.width = window.innerWidth;
+        bladeCanvas.height = window.innerHeight;
+    }
+
+    function startBladeRenderLoop(){
+        if(bladeAnimFrame) cancelAnimationFrame(bladeAnimFrame);
+        function renderBlade(){
+            if(bladeCtx && bladeCanvas){
+                bladeCtx.clearRect(0, 0, bladeCanvas.width, bladeCanvas.height);
+                const now = Date.now();
+                bladePoints = bladePoints.filter(p => now - p.time < 220);
+
+                if(bladePoints.length > 1){
+                    bladeCtx.save();
+                    bladeCtx.lineCap = 'round';
+                    bladeCtx.lineJoin = 'round';
+
+                    // Glowing outer blade beam
+                    bladeCtx.shadowColor = '#00e5ff';
+                    bladeCtx.shadowBlur = 18;
+                    bladeCtx.strokeStyle = 'rgba(0, 229, 255, 0.6)';
+                    bladeCtx.lineWidth = 14;
+
+                    bladeCtx.beginPath();
+                    bladeCtx.moveTo(bladePoints[0].x, bladePoints[0].y);
+                    for(let i = 1; i < bladePoints.length; i++){
+                        bladeCtx.lineTo(bladePoints[i].x, bladePoints[i].y);
+                    }
+                    bladeCtx.stroke();
+
+                    // Hot bright white-cyan laser core
+                    bladeCtx.shadowBlur = 0;
+                    bladeCtx.strokeStyle = '#ffffff';
+                    bladeCtx.lineWidth = 5;
+                    bladeCtx.stroke();
+
+                    bladeCtx.restore();
+                }
+            }
+            if(arenaActive) bladeAnimFrame = requestAnimationFrame(renderBlade);
         }
-        document.getElementById('ad-loader').style.display = 'none';
+        bladeAnimFrame = requestAnimationFrame(renderBlade);
+    }
 
-        // Server enforces a 10s minimum watch time on this gate session —
-        // wait out whatever's left so the claim isn't rejected as too_fast.
-        const elapsed = Date.now() - slashGateStartedAt;
-        if(elapsed < 10000){
-            if(btn) btn.textContent = '⏳ Verifying...';
-            await new Promise(r => setTimeout(r, 10000 - elapsed));
+    function checkFruitSliceHit(x, y){
+        if(arenaBusy) return;
+        const target = document.getElementById('arena-fruit-target');
+        if(!target) return;
+        const rect = target.getBoundingClientRect();
+        // Inner hit box
+        const hitMargin = 30;
+        if(x >= rect.left + hitMargin && x <= rect.right - hitMargin &&
+           y >= rect.top + hitMargin && y <= rect.bottom - hitMargin){
+            triggerFruitSliceEffect();
         }
+    }
 
-        const res = await apiCall('/api/slash', { action: 'claim', sessionId: slashGateSessionId });
-        if(btn){ btn.disabled = false; btn.textContent = '▶ Watch Ad & Claim'; }
+    function spawnArenaFruit(){
+        arenaBusy = false;
+        document.getElementById('arena-reward-burst').classList.remove('show');
+        document.getElementById('arena-levelup-banner').style.display = 'none';
+        document.getElementById('arena-next-wrap').style.display = 'none';
+        document.getElementById('arena-notokens-wrap').style.display = 'none';
+        document.getElementById('arena-hint-text').style.display = 'block';
 
-        if(res.success){
-            playSound('win');
-            if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            window.G.lastSlashAt = new Date().toISOString();
-            window.G.weeklySlashes = (window.G.weeklySlashes || 0) + 1;
-            window.updateUI();
-            document.getElementById('slash-gate-view').style.display = 'none';
-            document.getElementById('slash-reward-view').style.display = 'block';
-            document.getElementById('slash-reward-amount').textContent = res.fcReward;
-        } else if(res.error === 'ad_not_verified'){
-            showToast('⚠️ Ad not verified, tap Watch again.');
-        } else {
-            showToast(res.error === 'on_cooldown' ? '⏳ Already slashed this hour!' : '❌ Something went wrong, try again.');
-            if(res.nextAvailableAt) showSlashCooldown(res.nextAvailableAt);
-            else window.hideModal('slash-modal');
-        }
-    };
+        const leftPiece = document.getElementById('fruit-left-piece');
+        const rightPiece = document.getElementById('fruit-right-piece');
+        leftPiece.classList.remove('left-cut');
+        rightPiece.classList.remove('right-cut');
 
-    document.getElementById('slash-fruit').addEventListener('click', window.slashHitFruit);
-    document.getElementById('slash-fruit').addEventListener('touchstart', function(e){ e.preventDefault(); window.slashHitFruit(); }, {passive:false});
+        // Pick random fruit from library
+        currentArenaFruit = HD_FRUITS[Math.floor(Math.random() * HD_FRUITS.length)];
+
+        // Render halves with clip-path
+        leftPiece.style.clipPath = 'polygon(0 0, 50% 0, 50% 100%, 0 100%)';
+        rightPiece.style.clipPath = 'polygon(50% 0, 100% 0, 100% 100%, 50% 100%)';
+
+        leftPiece.innerHTML = currentArenaFruit.svg;
+        rightPiece.innerHTML = currentArenaFruit.svg;
+    }
 
     window.tryStartGame = function(){
-        window.showModal('slash-modal');
+        window.openSlashArena();
     };
+
+    window.openSlashArena = function(){
+        arenaActive = true;
+        document.getElementById('slash-arena').style.display = 'flex';
+        stopSound('menu');
+        if(!bladeCanvas) initBladeCanvas();
+        else resizeBladeCanvas();
+        window.updateUI();
+
+        if((window.G.tokens || 0) < 1){
+            document.getElementById('arena-hint-text').style.display = 'none';
+            document.getElementById('arena-notokens-wrap').style.display = 'block';
+        } else {
+            spawnArenaFruit();
+        }
+    };
+
+    window.closeSlashArena = function(){
+        arenaActive = false;
+        document.getElementById('slash-arena').style.display = 'none';
+        if(window.G.sound) playSound('menu');
+        window.updateUI();
+    };
+
+    window.nextArenaFruit = function(){
+        if((window.G.tokens || 0) < 1){
+            document.getElementById('arena-next-wrap').style.display = 'none';
+            document.getElementById('arena-notokens-wrap').style.display = 'block';
+            return;
+        }
+        spawnArenaFruit();
+    };
+
+    async function triggerFruitSliceEffect(){
+        if(arenaBusy) return;
+
+        if((window.G.tokens || 0) < 1){
+            showToast('⚠️ No Game Tokens! Watch an Ad or visit Shop.');
+            document.getElementById('arena-hint-text').style.display = 'none';
+            document.getElementById('arena-notokens-wrap').style.display = 'block';
+            return;
+        }
+
+        arenaBusy = true;
+        document.getElementById('arena-hint-text').style.display = 'none';
+
+        // 1. Audio & Haptics
+        playSound('slice');
+        playFallbackSliceSound();
+        if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+
+        // 2. Fruit Cut Pieces Splitting Animation
+        document.getElementById('fruit-left-piece').classList.add('left-cut');
+        document.getElementById('fruit-right-piece').classList.add('right-cut');
+
+        // 3. Dynamic Juice Particle Splashes
+        createJuiceSplashParticles(currentArenaFruit ? currentArenaFruit.juiceColor : '#ff2d55');
+
+        // 4. Backend Claim
+        const res = await apiCall('/api/slash', { action: 'claim' });
+
+        if(res.success){
+            // Play win celebration
+            playSound('win');
+            if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            // Show Reward Burst
+            const rewardEl = document.getElementById('arena-reward-amount');
+            const usdtEl = document.getElementById('arena-reward-usdt');
+            if(rewardEl) rewardEl.textContent = res.reward;
+            if(usdtEl) usdtEl.textContent = `≈ $${(res.reward * 0.00002).toFixed(4)} USDT`;
+            document.getElementById('arena-reward-burst').classList.add('show');
+
+            // Level Up Celebration
+            if(res.isLevelUp){
+                const banner = document.getElementById('arena-levelup-banner');
+                const lvlText = document.getElementById('arena-levelup-text');
+                const bonusText = document.getElementById('arena-levelup-bonus');
+                if(banner && lvlText){
+                    lvlText.textContent = `Level ${res.newLevel}!`;
+                    if(bonusText) bonusText.textContent = res.levelReward > 0 ? `🎁 Bonus: +${res.levelReward} 🍎 Fruit Coin!` : 'Awesome Job!';
+                    banner.style.display = 'block';
+                }
+            }
+
+            // Sync user state
+            if(res.user){
+                if(res.user.tokens !== undefined) window.G.tokens = res.user.tokens;
+                if(res.user.fruitCoin !== undefined) window.G.gems = res.user.fruitCoin;
+                if(res.user.level !== undefined) window.G.level = res.user.level;
+                if(res.user.levelProgress !== undefined) window.G.levelProgress = res.user.levelProgress;
+            }
+            window.updateUI();
+
+            // Next button or out of tokens
+            setTimeout(() => {
+                if((window.G.tokens || 0) >= 1){
+                    document.getElementById('arena-next-wrap').style.display = 'block';
+                } else {
+                    document.getElementById('arena-notokens-wrap').style.display = 'block';
+                }
+            }, 700);
+
+        } else {
+            showToast(res.message || '⚠️ Could not claim slice reward. Try again.');
+            if(res.error === 'no_tokens'){
+                document.getElementById('arena-notokens-wrap').style.display = 'block';
+            } else {
+                spawnArenaFruit();
+            }
+        }
+    }
+
+    function createJuiceSplashParticles(color){
+        const stage = document.querySelector('.slash-fruit-stage');
+        if(!stage) return;
+        const count = 26;
+        for(let i = 0; i < count; i++){
+            const p = document.createElement('div');
+            p.className = 'juice-particle';
+            const size = 8 + Math.random() * 16;
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 70 + Math.random() * 120;
+            const dx = Math.cos(angle) * dist + 'px';
+            const dy = Math.sin(angle) * dist + 'px';
+
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+            p.style.backgroundColor = color;
+            p.style.setProperty('--dx', dx);
+            p.style.setProperty('--dy', dy);
+            p.style.left = 'calc(50% - ' + (size/2) + 'px)';
+            p.style.top = 'calc(50% - ' + (size/2) + 'px)';
+            p.style.boxShadow = `0 0 10px ${color}`;
+
+            stage.appendChild(p);
+            setTimeout(() => p.remove(), 600);
+        }
+    }
 
     // ── 🎁 Gift box (admin "Send Gift") ──────────────────────────────
 

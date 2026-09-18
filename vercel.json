@@ -5,12 +5,6 @@
       "maxDuration": 10
     }
   },
-  "crons": [
-    {
-      "path": "/api/slash?cron=weekly",
-      "schedule": "5 0 * * 1"
-    }
-  ],
   "headers": [
     {
       "source": "/index.html",

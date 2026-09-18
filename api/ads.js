@@ -7,14 +7,14 @@
 //     -> { success: true, sessionId }
 //
 //   { action: 'adsgram'|'adsgramDaily'|'gigapub'|'monetag', sessionId }
-//     -> { success: true, user: { fruitCoin: <newFruitCoinValue> } }   (claims the reward)
+//     -> { success: true, user: { coins: <newGoldValue> } }   (claims the reward)
 //
 // telegramId is NEVER trusted from the request body — always taken from
 // the verified Telegram initData header.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { createAdSession, claimAdSession, countClaimedToday, revertAdSession } = require('../lib/adSession');
-const { creditFcForAd } = require('../lib/adReward');
+const { creditGoldForAd } = require('../lib/adReward');
 const { getSettings } = require('../lib/settings');
 
 const VALID_NETWORKS = ['adsgram', 'adsgramDaily', 'gigapub', 'monetag'];
@@ -64,7 +64,7 @@ module.exports = async (req, res) => {
       }
 
       const settings = await getSettings();
-      const amount = (settings.adRewardFc && settings.adRewardFc[action]) || 100;
+      const amount = (settings.adRewardGold && settings.adRewardGold[action]) || 100;
 
       // CRITICAL FIX: the daily cap used to only be checked back in
       // request_session, based on a count of already-CLAIMED sessions.
@@ -72,15 +72,15 @@ module.exports = async (req, res) => {
       // sessions first (countClaimedToday was still 0, so that check kept
       // passing) and then claiming them all back-to-back — this credit
       // step never rechecked the cap at all. Passing dailyLimitMax here
-      // makes creditFcForAd enforce it atomically at the only point
-      // that actually matters: the moment Fruit Coin is paid out.
+      // makes creditGoldForAd enforce it atomically at the only point
+      // that actually matters: the moment gold is paid out.
       const dailyLimitMax = (settings.adDailyLimits && settings.adDailyLimits[action]) || 999;
-      const result = await creditFcForAd(telegramId, amount, action, `session_${sessionId}`, dailyLimitMax);
+      const result = await creditGoldForAd(telegramId, amount, action, `session_${sessionId}`, dailyLimitMax);
 
       if (!result.success) {
         console.warn(`[ads] credit failed: telegramId=${telegramId} network=${action} sessionId=${sessionId} reason=${result.reason}`);
 
-        // A duplicate/idempotency hit means Fruit Coin was already credited by an
+        // A duplicate/idempotency hit means gold was already credited by an
         // earlier request for this exact session — never reopen that one,
         // it's not a real failure. A daily-limit hit means the cap is
         // genuinely reached for today — reopening it would just let the
@@ -101,9 +101,9 @@ module.exports = async (req, res) => {
         });
       }
 
-      // apiCall() on the frontend reads result.user.fruitCoin (same field name
+      // apiCall() on the frontend reads result.user.gold (same field name
       // used by api/auth.js) to auto-update the on-screen balance.
-      return res.status(200).json({ success: true, user: { fruitCoin: result.newFruitCoin } });
+      return res.status(200).json({ success: true, user: { gold: result.newGold } });
     }
 
     return res.status(400).json({ success: false, message: 'unknown action' });

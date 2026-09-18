@@ -1,17 +1,21 @@
 // api/convert.js
 // POST /api/convert
+// Body: { goldAmount: number }
 // Header: x-telegram-init-data (verified, same pattern as api/auth.js)
 //
-// GOLD REMOVED (2026-09): this endpoint used to also handle Gold -> Fruit
-// Coin conversion (the default/no-action branch). That branch is gone —
-// there is no Gold anymore, so there's nothing to convert. The endpoint
-// name is kept (frontend already calls '/api/convert') but it now only
-// handles promo code redemption.
+// Converts Gold -> Fruit Coin using the rate stored in settings.goldToFc
+// (currently 100,000 Gold = 10,000 FC, i.e. 10 Gold = 1 FC).
+// The server recalculates the FC amount itself — it never trusts an FC
+// amount sent from the client.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
-const { getCollection, idVariants } = require('../lib/db');
+const { getCollection, findUserByTelegramId, idVariants } = require('../lib/db');
+const { getSettings } = require('../lib/settings');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { redeemPromoCode, revertPromoRedeem } = require('../lib/promo');
+
+const MIN_GOLD_PER_CONVERT = 20000;
+const MAX_GOLD_PER_CONVERT = 2000000;
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -43,11 +47,6 @@ module.exports = async (req, res) => {
         return res.status(200).json({ success: false, error: result.reason });
       }
 
-      // GOLD REMOVED: promo codes could carry a separate Gold reward
-      // (result.rewardGold) alongside an FC reward — both now simply land
-      // in Fruit Coin.
-      const totalFc = (result.rewardFc || 0) + (result.rewardGold || 0);
-
       // IMPORTANT: telegramId can be stored as either a string or a number
       // depending on how the user doc was created — always match both forms
       // via idVariants(), same as every other endpoint in this project.
@@ -59,7 +58,7 @@ module.exports = async (req, res) => {
       const updatedUser = await usersCol.findOneAndUpdate(
         { telegramId: { $in: idVariants(telegramId) } },
         {
-          $inc: { fruitCoin: totalFc },
+          $inc: { fruitCoin: result.rewardFc || 0, gold: result.rewardGold || 0 },
           $set: { lastActive: new Date() },
         },
         { returnDocument: 'after' }
@@ -76,21 +75,77 @@ module.exports = async (req, res) => {
       await txCol.insertOne({
         telegramId,
         type: TRANSACTION_TYPES.PROMO_REWARD,
-        amount: totalFc,
+        amount: result.rewardFc || 0,
         balanceAfter: updatedUser.fruitCoin,
-        meta: { code: result.code },
+        meta: { code: result.code, rewardGold: result.rewardGold || 0 },
         createdAt: new Date(),
       });
 
       return res.status(200).json({
         success: true,
-        rewardFc: totalFc,
-        user: { fruitCoin: updatedUser.fruitCoin },
+        rewardFc: result.rewardFc || 0,
+        rewardGold: result.rewardGold || 0,
+        user: { fruitCoin: updatedUser.fruitCoin, gold: updatedUser.gold },
       });
     }
 
-    // No other actions exist anymore now that Gold->FC conversion is gone.
-    return res.status(400).json({ success: false, message: 'unknown_action' });
+    // ── Default action: Gold -> Fruit Coin conversion (unchanged) ──────
+    const { goldAmount } = body;
+
+    const gold = parseInt(goldAmount, 10);
+    if (!gold || gold < MIN_GOLD_PER_CONVERT) {
+      return res.status(400).json({ success: false, message: `Minimum ${MIN_GOLD_PER_CONVERT.toLocaleString()} Gold` });
+    }
+    if (gold > MAX_GOLD_PER_CONVERT) {
+      return res.status(400).json({ success: false, message: `Maximum ${MAX_GOLD_PER_CONVERT.toLocaleString()} Gold per conversion` });
+    }
+
+    const settings = await getSettings();
+    const rate = settings.goldToFc || { goldAmount: 100000, fcAmount: 10000 };
+
+    const usersCol = await getCollection('users');
+    const user = await findUserByTelegramId(usersCol, telegramId);
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.banned) return res.status(403).json({ success: false, message: 'Account suspended' });
+    if (user.gold < gold) return res.status(400).json({ success: false, message: 'Not enough Gold' });
+
+    // Server-side calculation — floor to avoid fractional FC.
+    const fcGained = Math.floor((gold * rate.fcAmount) / rate.goldAmount);
+    if (fcGained <= 0) {
+      return res.status(400).json({ success: false, message: 'Amount too small to convert' });
+    }
+
+    // NOTE: MongoDB driver v6+ returns the matched document directly from
+    // findOneAndUpdate (not wrapped in { value: doc } like older versions).
+    const updatedUser = await usersCol.findOneAndUpdate(
+      { _id: user._id, gold: { $gte: gold } }, // re-check balance atomically to avoid race conditions
+      { $inc: { gold: -gold, fruitCoin: fcGained }, $set: { lastActive: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    if (!updatedUser) {
+      return res.status(400).json({ success: false, message: 'Not enough Gold (balance changed)' });
+    }
+
+    const txCol = await getCollection('transactions');
+    await txCol.insertOne({
+      telegramId,
+      type: TRANSACTION_TYPES.GOLD_TO_FC_CONVERT,
+      amount: fcGained,
+      balanceAfter: updatedUser.fruitCoin,
+      meta: { goldSpent: gold },
+      createdAt: new Date(),
+    });
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        telegramId: updatedUser.telegramId,
+        gold: updatedUser.gold,
+        fruitCoin: updatedUser.fruitCoin,
+      },
+    });
   } catch (err) {
     console.error('convert error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });

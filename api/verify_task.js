@@ -42,10 +42,8 @@ async function isMemberOf(chatId, telegramId) {
 // ── GET: list active tasks, grouped by category ──────────────────────
 async function handleList(req, res) {
   const tasksCol = await getCollection('tasks');
-  // 'social' category/tab was removed from the app — never surface any
-  // task still sitting in the DB under that old category.
   const tasks = await tasksCol
-    .find({ active: true, category: { $ne: 'social' } })
+    .find({ active: true })
     .sort({ createdAt: -1 })
     .toArray();
 
@@ -55,7 +53,7 @@ async function handleList(req, res) {
     id: String(t._id),
     title: t.title,
     description: t.description || '',
-    category: t.category || 'daily', // daily | exclusive | partner
+    category: t.category || 'social', // daily | social | exclusive | partner
     type: t.type,                     // 'api' | 'nonapi'
     icon: t.icon || (t.type === 'api' ? '📢' : '⚡'),
     url: t.url || '',
@@ -118,16 +116,14 @@ module.exports = async (req, res) => {
       }
     }
 
-    // GOLD REMOVED (2026-09): task.reward and task.rewardFc used to pay
-    // Gold and Fruit Coin separately. Both now land in Fruit Coin, so they
-    // are simply added together into one FC credit.
-    const fcReward = (task.reward || 0) + (task.rewardFc || 0);
+    const coinsReward = task.reward || 0;
+    const gemsReward = task.rewardFc || 0;
 
     // Driver v6+: findOneAndUpdate returns the document directly, not { value }.
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id, completedTasks: { $ne: taskId } }, // re-check atomically (race guard)
       {
-        $inc: { fruitCoin: fcReward },
+        $inc: { gold: coinsReward, fruitCoin: gemsReward },
         $addToSet: { completedTasks: taskId },
         $set: { lastActive: new Date() },
       },
@@ -144,17 +140,19 @@ module.exports = async (req, res) => {
     await txCol.insertOne({
       telegramId,
       type: 'task_reward',
-      amount: fcReward,
-      balanceAfter: updatedUser.fruitCoin,
+      amount: coinsReward,
+      balanceAfter: updatedUser.gold,
       meta: { taskId, taskType: task.type, title: task.title },
       createdAt: new Date(),
     });
 
     return res.status(200).json({
       success: true,
-      fcReward,
+      coinsReward,
+      gemsReward,
       user: {
-        fruitCoin: updatedUser.fruitCoin,
+        coins: updatedUser.gold,
+        gems: updatedUser.fruitCoin,
         completedTasks: updatedUser.completedTasks,
       },
     });

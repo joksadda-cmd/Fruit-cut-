@@ -18,9 +18,9 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
-const { computeLevel } = require('../lib/level');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { computeRegen, applyRegen, MAX_TOKENS } = require('../lib/tokens');
+const { getLevelProgress } = require('../lib/levelSystem');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
@@ -93,12 +93,15 @@ module.exports = async (req, res) => {
       const newUser = {
         telegramId,
         username,
+        gold: 0,
         fruitCoin: 0,
         gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
         lastTokenRegenAt: new Date(),
         lastFreeBoxAt: null,
         lastSlashAt: null,
-        totalSlashWins: 0,
+        slashEarningsUsd: 0,
+        totalSlices: 0,
+        level: 1,
         completedTasks: [],
         totalAdsWatched: 0,
         validReferralGiven: false,
@@ -141,8 +144,8 @@ module.exports = async (req, res) => {
           await txCol.insertOne({
             telegramId: referrer.telegramId,
             type: TRANSACTION_TYPES.REFERRAL_REWARD,
-            amount: 0, // no FC in the instant reward — just tokens (logged in meta)
-            balanceAfter: updated ? updated.fruitCoin : referrer.fruitCoin,
+            amount: 0, // no gold/FC in the instant reward — just tokens (logged in meta)
+            balanceAfter: updated ? updated.gold : referrer.gold,
             meta: { gameTokens: 1, referredTelegramId: telegramId },
             createdAt: new Date(),
           });
@@ -182,12 +185,15 @@ module.exports = async (req, res) => {
       { sort: { createdAt: 1 } }
     );
 
+    const levelProg = getLevelProgress(user.totalSlices || 0);
+
     return res.status(200).json({
       success: true,
       status: 'ok',
       user: {
         telegramId: user.telegramId,
         username: user.username,
+        gold: user.gold,
         fruitCoin: user.fruitCoin,
         gameTokens: user.gameTokens ?? 3,
         maxTokens: MAX_TOKENS,
@@ -196,9 +202,10 @@ module.exports = async (req, res) => {
         lastSlashAt: user.lastSlashAt ?? null,
         completedTasks: user.completedTasks ?? [],
         referralCount: user.referralCount,
-        totalAdsWatched: user.totalAdsWatched || 0,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
-        ...computeLevel(user),
+        level: levelProg.level,
+        levelProgress: levelProg,
+        totalSlices: user.totalSlices || 0,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }

@@ -24,6 +24,7 @@ const BOT_USERNAME = 'Fruit_cut_bot';       // update if your bot's @username di
 const MINI_APP_SHORTNAME = 'PlayTo_Earn';   // update if your Mini App short name differs
 const MINI_APP_URL = `https://t.me/${BOT_USERNAME}/${MINI_APP_SHORTNAME}`;
 const WELCOME_PHOTO_URL = 'https://kommodo.ai/i/7iIBW2Wur84muWNjlOYl';
+const PAYMENT_CHANNEL = '@fruit_cut_payment'; // bot must be an ADMIN of this channel to post here
 
 // ── Daily Growth stats ──────────────────────────────────────────
 // "Today" is measured in Dhaka time (UTC+6, no DST), not server/UTC time
@@ -54,6 +55,14 @@ async function ensureJoinedAtIndex(usersCol) {
   }
 }
 
+// Hides the middle of an address for the public payment-channel post
+// (e.g. "TXn9...k82Q"), while the user themselves still gets it in full
+// in their own private notification.
+function maskAddress(address) {
+  const a = String(address || '');
+  if (a.length <= 8) return a[0] + '***' + a[a.length - 1];
+  return a.slice(0, 4) + '••••' + a.slice(-4);
+}
 
 // Per-admin multi-step input state.
 //
@@ -212,15 +221,16 @@ module.exports = async function handler(req, res) {
         const totalUsers = await users.countDocuments({});
         const bannedUsers = await users.countDocuments({ banned: true });
         const agg = await users
-          .aggregate([{ $group: { _id: null, fc: { $sum: '$fruitCoin' } } }])
+          .aggregate([{ $group: { _id: null, gold: { $sum: '$gold' }, fc: { $sum: '$fruitCoin' } } }])
           .toArray();
-        const totals = agg[0] || { fc: 0 };
+        const totals = agg[0] || { gold: 0, fc: 0 };
         await edit(
           chatId,
           msgId,
           `📊 <b>Dashboard</b>\n\n` +
             `👥 Total users: <b>${totalUsers}</b>\n` +
             `🚫 Banned: <b>${bannedUsers}</b>\n` +
+            `🪙 Gold in circulation: <b>${totals.gold.toLocaleString()}</b>\n` +
             `🍎 Fruit Coin in circulation: <b>${totals.fc.toLocaleString()}</b>`,
           { reply_markup: backKb }
         );
@@ -429,6 +439,15 @@ module.exports = async function handler(req, res) {
         }
 
         if (approve) {
+          // Post to the public payment channel with a masked address
+          await send(
+            PAYMENT_CHANNEL,
+            `✅ <b>Withdrawal Completed</b>\n\n` +
+              `👤 User: @${w.username || 'unknown'} (ID: <code>${w.telegramId}</code>)\n` +
+              `💵 Amount: <b>${w.convertedAmount} ${w.unit}</b>\n` +
+              `📍 Address: <code>${maskAddress(w.address)}</code>`
+          ).catch((e) => console.error('payment channel post failed:', e));
+
           // Notify the user privately with the FULL address
           await send(
             w.telegramId,
@@ -437,7 +456,7 @@ module.exports = async function handler(req, res) {
             { reply_markup: { inline_keyboard: [[{ text: '🎮 Open Mini App', url: MINI_APP_URL }]] } }
           ).catch((e) => console.error('user notify failed:', e));
 
-          await edit(chatId, msgId, `✅ Approved — user notified.`, { reply_markup: backKb });
+          await edit(chatId, msgId, `✅ Approved — posted to payment channel & user notified.`, { reply_markup: backKb });
         } else {
           // Refund the Fruit Coin back to the user
           await users.updateOne({ telegramId: w.telegramId }, { $inc: { fruitCoin: w.amount } });
@@ -492,7 +511,7 @@ module.exports = async function handler(req, res) {
         await edit(chatId, msgId, '📋 <b>Add Task — Step 1/5</b>\n\nChoose a category:', {
           reply_markup: {
             inline_keyboard: [
-              [{ text: '🔥 Daily', callback_data: 'task_cat_daily' }],
+              [{ text: '🔥 Daily', callback_data: 'task_cat_daily' }, { text: '💬 Social', callback_data: 'task_cat_social' }],
               [{ text: '💎 Exclusive', callback_data: 'task_cat_exclusive' }, { text: '🤝 Partner', callback_data: 'task_cat_partner' }],
               [{ text: '◀️ Cancel', callback_data: 'a_menu' }],
             ],
@@ -529,7 +548,7 @@ module.exports = async function handler(req, res) {
           active: true,
           createdAt: new Date(),
         });
-        await edit(chatId, msgId, `✅ <b>Task created!</b>\n\n📋 ${s0.title}\n🍎 ${s0.reward} Fruit Coin` + (s0.rewardFc ? ` + 🍎 ${s0.rewardFc} Fruit Coin` : ''), { reply_markup: backKb });
+        await edit(chatId, msgId, `✅ <b>Task created!</b>\n\n📋 ${s0.title}\n🪙 ${s0.reward} Gold` + (s0.rewardFc ? ` + 🍎 ${s0.rewardFc} Fruit Coin` : ''), { reply_markup: backKb });
       } else if (data === 'task_confirm_cancel') {
         await clearAdminState(fromId);
         await edit(chatId, msgId, '❌ Task creation cancelled.', { reply_markup: backKb });
@@ -537,7 +556,7 @@ module.exports = async function handler(req, res) {
         await edit(chatId, msgId, '🎟️ <b>Promo Codes</b>\n\nEach code is valid for exactly <b>24 hours</b> from creation, then it auto-expires and can no longer be claimed.', { reply_markup: promoMenuKb });
       } else if (data === 'a_promo_gen') {
         await setAdminState(fromId, { step: 'promo_gold' });
-        await edit(chatId, msgId, '🎟️ <b>Generate Promo Code — Step 1/3</b>\n\nHow much <b>Fruit Coin</b> should this code give? (enter <code>0</code> for none):', { reply_markup: backKb });
+        await edit(chatId, msgId, '🎟️ <b>Generate Promo Code — Step 1/3</b>\n\nHow much <b>Gold</b> should this code give? (enter <code>0</code> for none):', { reply_markup: backKb });
       } else if (data === 'a_promo_list') {
         const codes = await listActivePromoCodes(10);
         let text_ = '📜 <b>Active Promo Codes</b>\n\n';
@@ -549,7 +568,7 @@ module.exports = async function handler(req, res) {
             const minsLeft = Math.max(0, Math.round((new Date(c.expiresAt).getTime() - now) / 60000));
             const usesText = c.maxUses > 0 ? `${c.usedCount}/${c.maxUses}` : `${c.usedCount}/∞`;
             const rewardParts = [];
-            if (c.rewardGold) rewardParts.push(`🍎 ${c.rewardGold.toLocaleString()} FC`);
+            if (c.rewardGold) rewardParts.push(`🪙 ${c.rewardGold.toLocaleString()} Gold`);
             if (c.rewardFc) rewardParts.push(`🍎 ${c.rewardFc.toLocaleString()} FC`);
             text_ += `<code>${c.code}</code> — ${rewardParts.join(' + ') || '0'}\nUsed: ${usesText} · Expires in ${minsLeft}m\n\n`;
           });
@@ -562,7 +581,7 @@ module.exports = async function handler(req, res) {
         const created = await createPromoCode({ rewardFc: s0.rewardFc, rewardGold: s0.rewardGold, maxUses: s0.maxUses, createdBy: fromId });
         const usesText = created.maxUses > 0 ? `${created.maxUses} user(s)` : 'Unlimited (until it expires)';
         const rewardParts = [];
-        if (created.rewardGold) rewardParts.push(`🍎 <b>${created.rewardGold.toLocaleString()} Fruit Coin</b>`);
+        if (created.rewardGold) rewardParts.push(`🪙 <b>${created.rewardGold.toLocaleString()} Gold</b>`);
         if (created.rewardFc) rewardParts.push(`🍎 <b>${created.rewardFc.toLocaleString()} Fruit Coin</b>`);
         await edit(
           chatId, msgId,
@@ -604,7 +623,7 @@ module.exports = async function handler(req, res) {
           chatId,
           WELCOME_PHOTO_URL,
           `🍉 <b>Welcome to Fruit Cut!</b>\n\n` +
-            `Slice fruits, earn Fruit Coin, and cash out real rewards!\n\n` +
+            `Slice fruits, earn Gold, and cash out real rewards!\n\n` +
             `Invite friends to earn bonus Game Tokens instantly. 🚀`,
           {
             reply_markup: {
@@ -691,7 +710,7 @@ module.exports = async function handler(req, res) {
             chatId,
             `👤 <b>@${user.username || 'unknown'}</b>\n` +
               `ID: <code>${user.telegramId}</code>\n` +
-              `🍎 Fruit Coin: <b>${user.fruitCoin || 0}</b>\n` +
+              `🪙 Gold: <b>${user.gold || 0}</b>\n` +
               `🍎 Fruit Coin: <b>${user.fruitCoin || 0}</b>\n` +
               `🎮 Game Tokens: <b>${user.gameTokens ?? 3}</b>\n` +
               `📺 Total Ads Watched: <b>${user.totalAdsWatched || 0}</b>\n` +
@@ -802,13 +821,13 @@ module.exports = async function handler(req, res) {
       if (s && s.step === 'task_chatid') {
         const chatIdVal = text.startsWith('@') ? text : `@${text}`;
         await setAdminState(fromId, { ...s, step: 'task_reward', chatId: chatIdVal });
-        await send(chatId, `📋 Channel: ✅ <code>${chatIdVal}</code>\n\n<b>Step 4/5</b> — How much <b>Fruit Coin</b> reward?`);
+        await send(chatId, `📋 Channel: ✅ <code>${chatIdVal}</code>\n\n<b>Step 4/5</b> — How much <b>Gold</b> reward?`);
         return res.status(200).json({ ok: true });
       }
 
       if (s && s.step === 'task_url') {
         await setAdminState(fromId, { ...s, step: 'task_reward', url: text });
-        await send(chatId, `📋 Link: ✅ ${text}\n\n<b>Step 4/5</b> — How much <b>Fruit Coin</b> reward?`);
+        await send(chatId, `📋 Link: ✅ ${text}\n\n<b>Step 4/5</b> — How much <b>Gold</b> reward?`);
         return res.status(200).json({ ok: true });
       }
 
@@ -819,7 +838,7 @@ module.exports = async function handler(req, res) {
           return res.status(200).json({ ok: true });
         }
         await setAdminState(fromId, { ...s, step: 'task_rewardfc', reward });
-        await send(chatId, `🍎 Fruit Coin reward: ✅ <b>${reward}</b>\n\n<b>Step 5/5</b> — Any extra <b>Fruit Coin</b> bonus? (enter a number, or <code>0</code> for none):`);
+        await send(chatId, `🪙 Gold reward: ✅ <b>${reward}</b>\n\n<b>Step 5/5</b> — Any <b>Fruit Coin</b> bonus? (enter a number, or <code>0</code> for none):`);
         return res.status(200).json({ ok: true });
       }
 
@@ -837,7 +856,7 @@ module.exports = async function handler(req, res) {
           `Category: <b>${s1.category}</b>\n` +
           `Type: <b>${s1.type === 'api' ? 'Telegram Channel/Group (verified)' : 'Website/Other (trust-based)'}</b>\n` +
           (s1.chatId ? `Channel: <code>${s1.chatId}</code>\n` : `Link: ${s1.url || 'none'}\n`) +
-          `Reward: <b>${s1.reward} Fruit Coin</b>` + (s1.rewardFc ? ` + <b>${s1.rewardFc} Fruit Coin</b>` : '') + `\n\n` +
+          `Reward: <b>${s1.reward} Gold</b>` + (s1.rewardFc ? ` + <b>${s1.rewardFc} Fruit Coin</b>` : '') + `\n\n` +
           (s1.type === 'api' ? `⚠️ Make sure this bot is an admin in that channel/group, or verification will always fail!\n\n` : '');
         await send(chatId, preview, {
           reply_markup: { inline_keyboard: [[{ text: '✅ Confirm & Save', callback_data: 'task_confirm_save' }], [{ text: '❌ Cancel', callback_data: 'task_confirm_cancel' }]] },
@@ -845,7 +864,7 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
-      // ── Generate Promo Code — fruit coin (x2 fields, legacy names) → max uses → confirm ──
+      // ── Generate Promo Code — gold → fruit coin → max uses → confirm ──
       if (s && s.step === 'promo_gold') {
         const gold = parseInt(text, 10);
         if (isNaN(gold) || gold < 0) {
@@ -853,7 +872,7 @@ module.exports = async function handler(req, res) {
           return res.status(200).json({ ok: true });
         }
         await setAdminState(fromId, { step: 'promo_fc', rewardGold: gold });
-        await send(chatId, `🍎 Fruit Coin: ✅ <b>${gold.toLocaleString()}</b>\n\n<b>Step 2/3</b> — Any extra <b>Fruit Coin</b> bonus? (enter <code>0</code> for none):`);
+        await send(chatId, `🪙 Gold: ✅ <b>${gold.toLocaleString()}</b>\n\n<b>Step 2/3</b> — How much <b>Fruit Coin</b> should this code give? (enter <code>0</code> for none):`);
         return res.status(200).json({ ok: true });
       }
 
@@ -864,7 +883,7 @@ module.exports = async function handler(req, res) {
           return res.status(200).json({ ok: true });
         }
         if (fc <= 0 && !(s.rewardGold > 0)) {
-          await send(chatId, '❌ The code needs at least some Fruit Coin reward. Enter a positive number:');
+          await send(chatId, '❌ The code needs at least some Gold or Fruit Coin reward. Enter a positive number:');
           return res.status(200).json({ ok: true });
         }
         await setAdminState(fromId, { ...s, step: 'promo_maxuses', rewardFc: fc });
@@ -881,7 +900,7 @@ module.exports = async function handler(req, res) {
         await setAdminState(fromId, { ...s, step: 'promo_confirm', maxUses });
         const usesText = maxUses > 0 ? `${maxUses} user(s)` : 'Unlimited (until it expires)';
         const rewardParts = [];
-        if (s.rewardGold) rewardParts.push(`🍎 <b>${s.rewardGold.toLocaleString()} Fruit Coin</b>`);
+        if (s.rewardGold) rewardParts.push(`🪙 <b>${s.rewardGold.toLocaleString()} Gold</b>`);
         if (s.rewardFc) rewardParts.push(`🍎 <b>${s.rewardFc.toLocaleString()} Fruit Coin</b>`);
         await send(
           chatId,

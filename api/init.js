@@ -12,7 +12,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { applyRegen, MAX_TOKENS } = require('../lib/tokens');
-const { computeLevel } = require('../lib/level');
+const { getLevelProgress } = require('../lib/levelSystem');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -60,20 +60,24 @@ module.exports = async (req, res) => {
       { sort: { createdAt: 1 } }
     );
 
+    const levelProg = getLevelProgress(user.totalSlices || 0);
+
     return res.status(200).json({
       success: true,
       status: 'ok',
       user: {
+        coins: user.gold,               // frontend's window.G.coins field
         fruitCoin: user.fruitCoin,
         tokens: user.gameTokens ?? 3,   // frontend's window.G.tokens field
         maxTokens: MAX_TOKENS,
         nextTokenAt: regen.nextTokenAt,
         referralCount: user.referralCount,
-        totalAdsWatched: user.totalAdsWatched || 0,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
-        ...computeLevel(user),
+        level: levelProg.level,
+        levelProgress: levelProg,
+        totalSlices: user.totalSlices || 0,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
