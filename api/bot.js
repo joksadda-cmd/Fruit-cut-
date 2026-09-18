@@ -508,12 +508,11 @@ module.exports = async function handler(req, res) {
         await edit(chatId, msgId, text_, { reply_markup: { inline_keyboard: rows } });
       } else if (data === 'a_addtask') {
         await setAdminState(fromId, { step: 'task_category' });
-        await edit(chatId, msgId, '📋 <b>Add Task — Step 1/5</b>\n\nChoose a category:', {
+        await edit(chatId, msgId, '📋 <b>Add Task — Step 1/4</b>\n\nChoose a category:', {
           reply_markup: {
             inline_keyboard: [
-              [{ text: '🔥 Daily', callback_data: 'task_cat_daily' }, { text: '💬 Social', callback_data: 'task_cat_social' }],
-              [{ text: '💎 Exclusive', callback_data: 'task_cat_exclusive' }, { text: '🤝 Partner', callback_data: 'task_cat_partner' }],
-              [{ text: '◀️ Cancel', callback_data: 'a_menu' }],
+              [{ text: '🔥 Daily', callback_data: 'task_cat_daily' }, { text: '💎 Exclusive', callback_data: 'task_cat_exclusive' }],
+              [{ text: '🤝 Partner', callback_data: 'task_cat_partner' }, { text: '◀️ Cancel', callback_data: 'a_menu' }],
             ],
           },
         });
@@ -530,12 +529,13 @@ module.exports = async function handler(req, res) {
         const s0 = await getAdminState(fromId);
         if (!s0 || s0.step !== 'task_type') return res.status(200).json({ ok: true });
         await setAdminState(fromId, { ...s0, step: 'task_url', type: 'nonapi' });
-        await edit(chatId, msgId, `📋 Type: ✅ <b>Website / Other Bot / Social (trust-based)</b>\n\nSend the <b>link</b> to open for this task:`, { reply_markup: backKb });
+        await edit(chatId, msgId, `📋 Type: ✅ <b>Website / Other Bot (trust-based)</b>\n\nSend the <b>link</b> to open for this task:`, { reply_markup: backKb });
       } else if (data === 'task_confirm_save') {
         const s0 = await getAdminState(fromId);
         if (!s0 || s0.step !== 'task_confirm') return res.status(200).json({ ok: true });
         await clearAdminState(fromId);
         const tasksCol = await getCollection('tasks');
+        const fcReward = s0.rewardFc || s0.reward || 0;
         await tasksCol.insertOne({
           title: s0.title,
           category: s0.category,
@@ -543,12 +543,12 @@ module.exports = async function handler(req, res) {
           chatId: s0.chatId || null,
           url: s0.url || (s0.chatId ? `https://t.me/${String(s0.chatId).replace('@', '')}` : ''),
           icon: s0.type === 'api' ? '📢' : '⚡',
-          reward: s0.reward,
-          rewardFc: s0.rewardFc || 0,
+          reward: fcReward,
+          rewardFc: fcReward,
           active: true,
           createdAt: new Date(),
         });
-        await edit(chatId, msgId, `✅ <b>Task created!</b>\n\n📋 ${s0.title}\n🪙 ${s0.reward} Gold` + (s0.rewardFc ? ` + 🍎 ${s0.rewardFc} Fruit Coin` : ''), { reply_markup: backKb });
+        await edit(chatId, msgId, `✅ <b>Task created!</b>\n\n📋 ${s0.title}\n🍎 <b>${fcReward} Fruit Coin</b>`, { reply_markup: backKb });
       } else if (data === 'task_confirm_cancel') {
         await clearAdminState(fromId);
         await edit(chatId, msgId, '❌ Task creation cancelled.', { reply_markup: backKb });
@@ -822,34 +822,23 @@ module.exports = async function handler(req, res) {
       if (s && s.step === 'task_chatid') {
         const chatIdVal = text.startsWith('@') ? text : `@${text}`;
         await setAdminState(fromId, { ...s, step: 'task_reward', chatId: chatIdVal });
-        await send(chatId, `📋 Channel: ✅ <code>${chatIdVal}</code>\n\n<b>Step 4/5</b> — How much <b>Gold</b> reward?`);
+        await send(chatId, `📋 Channel: ✅ <code>${chatIdVal}</code>\n\n<b>Step 4/4</b> — How much <b>Fruit Coin (FC)</b> reward?`);
         return res.status(200).json({ ok: true });
       }
 
       if (s && s.step === 'task_url') {
         await setAdminState(fromId, { ...s, step: 'task_reward', url: text });
-        await send(chatId, `📋 Link: ✅ ${text}\n\n<b>Step 4/5</b> — How much <b>Gold</b> reward?`);
+        await send(chatId, `📋 Link: ✅ ${text}\n\n<b>Step 4/4</b> — How much <b>Fruit Coin (FC)</b> reward?`);
         return res.status(200).json({ ok: true });
       }
 
       if (s && s.step === 'task_reward') {
-        const reward = parseInt(text, 10);
-        if (!reward || isNaN(reward) || reward <= 0) {
+        const rewardFc = parseInt(text, 10);
+        if (!rewardFc || isNaN(rewardFc) || rewardFc <= 0) {
           await send(chatId, '❌ Enter a valid positive number:');
           return res.status(200).json({ ok: true });
         }
-        await setAdminState(fromId, { ...s, step: 'task_rewardfc', reward });
-        await send(chatId, `🪙 Gold reward: ✅ <b>${reward}</b>\n\n<b>Step 5/5</b> — Any <b>Fruit Coin</b> bonus? (enter a number, or <code>0</code> for none):`);
-        return res.status(200).json({ ok: true });
-      }
-
-      if (s && s.step === 'task_rewardfc') {
-        const rewardFc = parseInt(text, 10);
-        if (isNaN(rewardFc) || rewardFc < 0) {
-          await send(chatId, '❌ Enter a valid number (0 or more):');
-          return res.status(200).json({ ok: true });
-        }
-        const s1 = { ...s, step: 'task_confirm', rewardFc };
+        const s1 = { ...s, step: 'task_confirm', rewardFc, reward: rewardFc };
         await setAdminState(fromId, s1);
         const preview =
           `📋 <b>Task Preview</b>\n\n` +
@@ -857,7 +846,7 @@ module.exports = async function handler(req, res) {
           `Category: <b>${s1.category}</b>\n` +
           `Type: <b>${s1.type === 'api' ? 'Telegram Channel/Group (verified)' : 'Website/Other (trust-based)'}</b>\n` +
           (s1.chatId ? `Channel: <code>${s1.chatId}</code>\n` : `Link: ${s1.url || 'none'}\n`) +
-          `Reward: <b>${s1.reward} Gold</b>` + (s1.rewardFc ? ` + <b>${s1.rewardFc} Fruit Coin</b>` : '') + `\n\n` +
+          `Reward: <b>🍎 ${s1.rewardFc} Fruit Coin</b>\n\n` +
           (s1.type === 'api' ? `⚠️ Make sure this bot is an admin in that channel/group, or verification will always fail!\n\n` : '');
         await send(chatId, preview, {
           reply_markup: { inline_keyboard: [[{ text: '✅ Confirm & Save', callback_data: 'task_confirm_save' }], [{ text: '❌ Cancel', callback_data: 'task_confirm_cancel' }]] },

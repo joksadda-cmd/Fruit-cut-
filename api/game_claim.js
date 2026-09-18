@@ -7,7 +7,7 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { ObjectId } = require('mongodb');
 
-const DAILY_GIFT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec: every 12hr)
 
 // ── Admin-sent gift claim ──────────────────────────────────────────
 async function handleClaimGift(req, res, user) {
@@ -70,8 +70,8 @@ async function handleClaimDailyGift(req, res, user) {
   const now = new Date();
   const cutoff = new Date(now.getTime() - DAILY_GIFT_COOLDOWN_MS);
 
-  // Server-side random reward: 10 to 40 FC
-  const reward = Math.floor(Math.random() * (40 - 10 + 1)) + 10;
+  // Server-side random reward: 20 to 70 FC (user spec: 20-70 FC randomly)
+  const reward = Math.floor(Math.random() * (70 - 20 + 1)) + 20;
 
   const usersCol = await getCollection('users');
   const updatedUser = await usersCol.findOneAndUpdate(
@@ -97,7 +97,7 @@ async function handleClaimDailyGift(req, res, user) {
     return res.status(200).json({
       success: false,
       error: 'gift_on_cooldown',
-      message: 'Daily gift already claimed today! Come back tomorrow.',
+      message: 'Treasure box is on 12-hour cooldown! Available soon.',
       nextDailyGiftAt,
     });
   }

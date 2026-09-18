@@ -17,9 +17,9 @@
     <!-- hit "SDK not ready yet" before the script even finished. Static -->
     <!-- loading trades a slightly heavier initial page load for SDKs    -->
     <!-- that are reliably warm by the time anyone reaches the Ads panel.-->
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    <script src="https://ad.gigapub.tech/script?id=6350"></script>
-    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505'></script>
+    <script src="https://sad.adsgram.ai/js/sad.min.js" defer></script>
+    <script src="https://ad.gigapub.tech/script?id=6350" defer></script>
+    <script src='//libtl.com/sdk.js' data-zone='10893505' data-sdk='show_10893505' defer></script>
     <script>
         window._isAdRunning = false;
     </script>
@@ -431,6 +431,117 @@
         .gift-claim-btn { animation:heroPulse 1.8s ease-in-out infinite; }
         .promo-box-section { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px;margin-bottom:10px; }
 
+        /* 3D Big Interactive Treasure Box in Home Center */
+        .hero-treasure-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 6px 0 10px;
+            padding: 8px 14px;
+            cursor: pointer;
+            user-select: none;
+            z-index: 10;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .treasure-stage {
+            position: relative;
+            width: 130px;
+            height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .treasure-halo {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.45) 0%, rgba(255, 140, 0, 0.2) 50%, transparent 70%);
+            animation: treasureHaloPulse 2.2s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes treasureHaloPulse {
+            from { transform: scale(0.85); opacity: 0.6; }
+            to { transform: scale(1.3); opacity: 1; }
+        }
+        .treasure-rays {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0deg 30deg, rgba(255, 220, 0, 0.25) 30deg 60deg, transparent 60deg 90deg, rgba(255, 220, 0, 0.25) 90deg 120deg, transparent 120deg 150deg, rgba(255, 220, 0, 0.25) 150deg 180deg, transparent 180deg 210deg, rgba(255, 220, 0, 0.25) 210deg 240deg, transparent 240deg 270deg, rgba(255, 220, 0, 0.25) 270deg 300deg, transparent 300deg 330deg, rgba(255, 220, 0, 0.25) 330deg 360deg);
+            animation: treasureRaysSpin 12s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes treasureRaysSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .treasure-chest-emoji {
+            font-size: 72px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)) drop-shadow(0 0 16px rgba(255,204,0,0.6));
+            animation: treasureFloat 2.6s ease-in-out infinite;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 2;
+        }
+        @keyframes treasureFloat {
+            0%, 100% { transform: translateY(0) scale(1) rotate(-2deg); }
+            50% { transform: translateY(-8px) scale(1.06) rotate(2deg); }
+        }
+        .treasure-chest-emoji.opening {
+            animation: treasureBurst 0.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+        }
+        @keyframes treasureBurst {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.3) rotate(6deg); filter: brightness(2) drop-shadow(0 0 30px #ffcc00); }
+            100% { transform: scale(1.05) rotate(0); filter: brightness(1.2); }
+        }
+        .treasure-tag-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(255, 204, 0, 0.2), rgba(255, 100, 0, 0.15));
+            border: 1px solid rgba(255, 204, 0, 0.45);
+            border-radius: 12px;
+            padding: 4px 12px;
+            margin-top: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        .treasure-title-text {
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 13px;
+            color: #ffcc00;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .treasure-timer-btn {
+            margin-top: 6px;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-family: 'Luckiest Guy', cursive;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .treasure-timer-btn.ready {
+            background: linear-gradient(180deg, #ffe040, #ff8c00);
+            color: #000;
+            box-shadow: 0 4px 0 #cc6600, 0 0 16px rgba(255,204,0,0.5);
+            animation: heroPulse 1.8s ease-in-out infinite;
+        }
+        .treasure-timer-btn.cooldown {
+            background: rgba(255,255,255,0.1);
+            color: #8be0ee;
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: none;
+        }
+
         /* Leaderboard Modal Items */
         .lb-item { display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:8px 12px; }
         .lb-item.current-user { background:rgba(0,229,255,0.12);border-color:#00e5ff;box-shadow:0 0 12px rgba(0,229,255,0.25); }
@@ -542,6 +653,23 @@
             <span class="hero-title-cut">CUT</span>
         </div>
         <div class="hero-subtitle">✨ SLICE MANIA ✨</div>
+    </div>
+
+    <!-- 3D Big Interactive Treasure Box (Every 12h: 20-70 FC) -->
+    <div class="hero-treasure-container ptr" id="hero-treasure-container" onclick="window.handleTreasureBoxClick()">
+        <div class="treasure-stage">
+            <div class="treasure-halo" id="treasure-halo"></div>
+            <div class="treasure-rays" id="treasure-rays"></div>
+            <div class="treasure-chest-emoji" id="hero-treasure-emoji">🎁</div>
+        </div>
+        <div class="treasure-tag-badge">
+            <span>✨</span>
+            <span class="treasure-title-text">12H TREASURE BOX</span>
+            <span>✨</span>
+        </div>
+        <button class="treasure-timer-btn ready ptr" id="hero-treasure-timer-btn">
+            🎁 OPEN BOX (20–70 FC)
+        </button>
     </div>
 
     <!-- Center Hero Blade & Big Action Button -->
@@ -717,23 +845,6 @@
                 </div>
             </div>
             <button class="btn btn-gold" style="width:auto;padding:6px 10px;font-size:11px;margin:0;white-space:nowrap;" onclick="window.hideModal('profile-modal');window.showModal('level-modal');">LEVELS 🏆</button>
-        </div>
-
-        <!-- 3D Daily Gift Box (10 to 40 FC randomly) -->
-        <div class="daily-gift-card">
-            <div class="gift-box-stage">
-                <div class="gift-box-halo"></div>
-                <div class="gift-box-icon" id="gift-box-anim" onclick="window.claimDailyGiftWithAd()">🎁</div>
-            </div>
-            <div style="font-family:'Luckiest Guy',cursive;font-size:19px;color:#ffcc00;letter-spacing:1px;">DAILY MYSTERY GIFT</div>
-            <div style="font-size:11px;color:#b0e0ea;margin:4px 0 10px;">Claim <strong>10 to 40 FC</strong> randomly once every 24 hours!</div>
-            
-            <button class="btn btn-gold gift-claim-btn" id="daily-gift-claim-btn" onclick="window.claimDailyGiftWithAd()">
-                🎁 OPEN GIFT (WATCH AD)
-            </button>
-            <button class="btn btn-grey" id="daily-gift-cooldown-btn" style="display:none;margin-top:4px;" disabled>
-                ⏳ Next in: <span id="daily-gift-timer">24h 00m</span>
-            </button>
         </div>
 
         <!-- Promo Code Box -->
@@ -924,34 +1035,34 @@
     <div class="modal">
         <div class="mh mh-red">📺 Earn with Ads</div>
         
-        <!-- Adsgram Special (Fixed 300 Gold) -->
+        <!-- Adsgram Special (+25 FC) -->
         <div class="ads-section" style="border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.06);">
             <div class="ads-row">
-                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+300 🪙 Gold)<br><span id="adsgram-left">5/5 remaining</span></div>
+                <div class="ads-info">⚡ <strong style="color:#ff8c00;">Adsgram Special</strong> (+25 🍎 FC)<br><span id="adsgram-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn special" id="adsgram-btn" onclick="window.watchAdsgramAd()">▶ Watch</button>
             </div>
         </div>
         
-        <!-- Adsgram Daily -->
+        <!-- Adsgram Daily (+20 FC) -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+200 🪙 Gold)<br><span id="adsgram-daily-left">5/5 remaining</span></div>
+                <div class="ads-info">🎬 <strong>Adsgram Daily</strong> (+20 🍎 FC)<br><span id="adsgram-daily-left">10/10 remaining</span></div>
                 <button class="watch-ad-btn" id="adsgram-daily-btn" onclick="window.watchAdsgramDailyAd()">▶ Watch</button>
             </div>
         </div>
         
-        <!-- GigaPub -->
+        <!-- GigaPub (+15 FC) -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+200 🪙 Gold)<br><span id="gigapub-left">10/10 remaining</span></div>
+                <div class="ads-info">🌐 <strong>GigaPub Ads</strong> (+15 🍎 FC)<br><span id="gigapub-left">20/20 remaining</span></div>
                 <button class="watch-ad-btn" id="gigapub-btn" onclick="window.watchGigaPubAd()">▶ Watch</button>
             </div>
         </div>
         
-        <!-- Monetag -->
+        <!-- Monetag (+10 FC) -->
         <div class="ads-section">
             <div class="ads-row">
-                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+200 🪙 Gold)<br><span id="monetag-left">10/10 remaining</span></div>
+                <div class="ads-info">💰 <strong>Monetag Ads</strong> (+10 🍎 FC)<br><span id="monetag-left">20/20 remaining</span></div>
                 <button class="watch-ad-btn" id="monetag-btn" onclick="window.watchMonetagAd()">▶ Watch</button>
             </div>
         </div>
@@ -971,12 +1082,11 @@
         </div>
         <div class="task-tabs" id="task-tabs">
             <div class="task-tab active" data-cat="daily" onclick="window.switchTaskTab('daily')">🔥 Daily</div>
-            <div class="task-tab" data-cat="social" onclick="window.switchTaskTab('social')">💬 Social</div>
             <div class="task-tab" data-cat="exclusive" onclick="window.switchTaskTab('exclusive')">💎 Exclusive</div>
             <div class="task-tab" data-cat="partner" onclick="window.switchTaskTab('partner')">🤝 Partner</div>
         </div>
         <div id="task-list"><div style="text-align:center;color:#aaa;padding:20px;">Loading tasks...</div></div>
-        <div class="info-text">Complete tasks to earn Gold & Fruit Coin!</div>
+        <div class="info-text">Complete tasks to earn Fruit Coin!</div>
         <button class="btn btn-grey" onclick="window.hideModal('task-modal')">CLOSE</button>
     </div>
 </div>
@@ -1756,15 +1866,15 @@
     };
 
     function updateAdsUI(){
-        let agLeft  = 5  - (window.G.adsgramCount||0);
-        let agDLeft = 5  - (window.G.adsgramDailyCount||0);
-        let gpLeft  = 10 - (window.G.gigapubCount||0);
-        let mtLeft  = 10 - (window.G.monetagCount||0);
+        let agLeft  = 10 - (window.G.adsgramCount||0);
+        let agDLeft = 10 - (window.G.adsgramDailyCount||0);
+        let gpLeft  = 20 - (window.G.gigapubCount||0);
+        let mtLeft  = 20 - (window.G.monetagCount||0);
 
-        document.getElementById('adsgram-left').textContent      = `${Math.max(0,agLeft)}/5 remaining`;
-        document.getElementById('adsgram-daily-left').textContent = `${Math.max(0,agDLeft)}/5 remaining`;
-        document.getElementById('gigapub-left').textContent      = `${Math.max(0,gpLeft)}/10 remaining`;
-        document.getElementById('monetag-left').textContent      = `${Math.max(0,mtLeft)}/10 remaining`;
+        document.getElementById('adsgram-left').textContent       = `${Math.max(0,agLeft)}/10 remaining`;
+        document.getElementById('adsgram-daily-left').textContent = `${Math.max(0,agDLeft)}/10 remaining`;
+        document.getElementById('gigapub-left').textContent       = `${Math.max(0,gpLeft)}/20 remaining`;
+        document.getElementById('monetag-left').textContent       = `${Math.max(0,mtLeft)}/20 remaining`;
 
         document.getElementById('adsgram-btn').disabled       = agLeft  <= 0;
         document.getElementById('adsgram-daily-btn').disabled = agDLeft <= 0;
@@ -1960,13 +2070,9 @@
         const ok = await runAdAndVerifyTime(btnId, adFunc, actionName);
         if(!ok) return; // Ad skipped — no reward, session just expires unused
 
-        const goldBefore = window.G.coins;
+        const fcBefore = window.G.gems || 0;
 
-        // STEP 3 — claim using the session id. If the server marks a
-        // failure `retryable: true` (see api/ads.js + lib/adSession.js's
-        // revertAdSession), the session was reopened server-side — the
-        // user genuinely watched the ad, so silently retry the exact same
-        // claim once before giving up, instead of making them re-watch it.
+        // STEP 3 — claim using the session id.
         async function attemptClaim(){
             return apiCall('/api/ads', { action: actionName, sessionId });
         }
@@ -1978,7 +2084,7 @@
         }
 
         if(res.success){
-            const reward = (typeof window.G.coins === 'number') ? (window.G.coins - goldBefore) : getRewardAmount();
+            const reward = (typeof window.G.gems === 'number' && window.G.gems > fcBefore) ? (window.G.gems - fcBefore) : getRewardAmount();
             window.G[actionName + 'Count'] = (window.G[actionName + 'Count'] || 0) + 1;
             updateAdsUI();
             showToast(successMsg.replace('{R}', reward > 0 ? reward : getRewardAmount()));
@@ -1987,10 +2093,10 @@
         }
     }
 
-    window.watchAdsgramAd      = () => processAdReward('adsgram',      5,  window.G.adsgramCount,      'adsgram-btn',       () => 300, `+{R} Gold! (Adsgram Special)`);
-    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 5,  window.G.adsgramDailyCount, 'adsgram-daily-btn', () => 200, `+{R} Gold! (Adsgram Daily)`);
-    window.watchGigaPubAd      = () => processAdReward('gigapub',      10, window.G.gigapubCount,      'gigapub-btn',       () => 200, `+{R} Gold! (GigaPub)`);
-    window.watchMonetagAd      = () => processAdReward('monetag',      10, window.G.monetagCount,      'monetag-btn',       () => 200, `+{R} Gold! (Monetag)`);
+    window.watchAdsgramAd      = () => processAdReward('adsgram',      10, window.G.adsgramCount,      'adsgram-btn',       () => 25, `+{R} 🍎 FC! (Adsgram Special)`);
+    window.watchAdsgramDailyAd = () => processAdReward('adsgramDaily', 10, window.G.adsgramDailyCount, 'adsgram-daily-btn', () => 20, `+{R} 🍎 FC! (Adsgram Daily)`);
+    window.watchGigaPubAd      = () => processAdReward('gigapub',      20, window.G.gigapubCount,      'gigapub-btn',       () => 15, `+{R} 🍎 FC! (GigaPub)`);
+    window.watchMonetagAd      = () => processAdReward('monetag',      20, window.G.monetagCount,      'monetag-btn',       () => 10, `+{R} 🍎 FC! (Monetag)`);
 
     let allTasks = [];      // cache from server for the current modal session
     let activeTaskTab = 'daily';
@@ -2012,7 +2118,8 @@
         let cardClass = isApi ? 'channel-task' : 'simple-task';
         let btnClass  = isApi ? 'background:linear-gradient(180deg,#ff8c00,#e65100);box-shadow:0 3px 0 #8b3000;' : 'background:linear-gradient(180deg,#ff8c00,#e65100);box-shadow:0 3px 0 #8b3000;';
         let btnLabel  = isApi ? 'Join' : 'Go';
-        let rewardStr = `🪙 +${t.reward}` + (t.rewardFc ? ` 🍎+${t.rewardFc}` : '');
+        let rewardFc  = t.rewardFc || t.reward || 0;
+        let rewardStr = `🍎 +${rewardFc} FC`;
         return `
             <div class="task-card ${cardClass}" id="task-card-${t.id}">
                 <div class="task-icon">${t.icon||'📋'}</div>
@@ -2027,45 +2134,12 @@
 
     function renderTaskList(){
         let c = document.getElementById('task-list');
-        let inCat = allTasks.filter(t => (t.category||'social') === activeTaskTab);
+        let inCat = allTasks.filter(t => (t.category||'daily') === activeTaskTab);
         let cards = inCat.map(buildTaskCard).filter(Boolean).join('');
 
-        let pinned = '';
-        if(activeTaskTab === 'social'){
-            // Permanent official links, pinned at the top of Social.
-            pinned = `
-                <div class="task-section-header" style="background:linear-gradient(90deg,rgba(0,150,136,0.3),transparent);border-left:3px solid #00bcd4;">
-                    📌 Official Community — Join & Stay Updated
-                </div>
-                <div class="task-card channel-task" style="border-color:rgba(0,188,212,0.5);background:linear-gradient(135deg,rgba(0,188,212,0.12),rgba(0,100,120,0.08));">
-                    <div class="task-icon">📢</div>
-                    <div class="task-info">
-                        <span style="font-size:11px;font-weight:900;color:#7de;">🔗 No Reward — Always Available</span>
-                        <div class="task-name">Fruit Cut — Official Channel</div>
-                        <div style="font-size:11px;color:#999;margin-top:2px;">📣 News · Updates · Announcements</div>
-                    </div>
-                    <button class="task-btn" style="background:linear-gradient(180deg,#00bcd4,#006070);box-shadow:0 3px 0 #004050;"
-                        onclick="tg?.openLink ? tg.openLink('https://t.me/fruit_cut_offcial') : window.open('https://t.me/fruit_cut_offcial','_blank')">
-                        Join
-                    </button>
-                </div>
-                <div class="task-card channel-task" style="border-color:rgba(76,175,80,0.5);background:linear-gradient(135deg,rgba(76,175,80,0.12),rgba(27,94,32,0.08));">
-                    <div class="task-icon">👥</div>
-                    <div class="task-info">
-                        <span style="font-size:11px;font-weight:900;color:#81c784;">🔗 No Reward — Always Available</span>
-                        <div class="task-name">Fruit Cut — Community Group</div>
-                        <div style="font-size:11px;color:#999;margin-top:2px;">💬 Chat · Help · Community</div>
-                    </div>
-                    <button class="task-btn" style="background:linear-gradient(180deg,#4caf50,#2e7d32);box-shadow:0 3px 0 #1b5e20;"
-                        onclick="tg?.openLink ? tg.openLink('https://t.me/fruit_cut_group') : window.open('https://t.me/fruit_cut_group','_blank')">
-                        Join
-                    </button>
-                </div>`;
-        }
-
-        c.innerHTML = pinned + cards;
-        if(!cards && activeTaskTab !== 'social'){
-            c.innerHTML += `<div style="text-align:center;color:#aaa;padding:16px 0;">More ${activeTaskTab} tasks coming soon! Stay tuned 🎯</div>`;
+        c.innerHTML = cards;
+        if(!cards){
+            c.innerHTML = `<div style="text-align:center;color:#aaa;padding:24px 0;">More ${activeTaskTab} tasks coming soon! Stay tuned 🎯</div>`;
         }
 
         // Progress bar: completed vs total tasks across ALL categories.
@@ -2079,9 +2153,7 @@
         let c = document.getElementById('task-list');
         c.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;">Loading tasks...</div>';
         try {
-            // Task listing lives in /api/verify_task (GET) — not a separate
-            // /api/tasks endpoint, since Vercel's Hobby plan caps this
-            // project at exactly 12 Serverless Functions.
+            // Task listing lives in /api/verify_task (GET)
             const response = await fetch('/api/verify_task', { method: 'GET', signal: AbortSignal.timeout(8000) });
             const data = await response.json();
             allTasks = (data && data.success && Array.isArray(data.tasks)) ? data.tasks : [];
@@ -2126,7 +2198,6 @@
 
         if(btn){ btn.disabled = true; btn.textContent = 'Checking...'; }
 
-        // Call API directly — do NOT use apiCall() which triggers updateUI() and re-renders DOM
         let res = { success: false };
         try {
             const response = await fetch('/api/verify_task', {
@@ -2141,24 +2212,19 @@
                 })
             });
             res = await response.json();
-            // Manually update G without triggering full UI re-render
             if(res.success && res.user){
-                window.G.coins          = res.user.coins          ?? window.G.coins;
-                window.G.gems           = res.user.gems           ?? window.G.gems;
+                if(res.user.fruitCoin !== undefined) window.G.gems = res.user.fruitCoin;
+                else if(res.user.gems !== undefined) window.G.gems = res.user.gems;
                 window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
-                // Update only coin/gem display, not the whole UI
-                let coinEl = document.getElementById('ui-coins');
                 let gemEl  = document.getElementById('ui-gems');
-                if(coinEl) coinEl.textContent = window.G.coins;
                 if(gemEl)  gemEl.textContent  = window.G.gems;
+                window.updateUI();
             }
         } catch(e){ res = { success: false, error: 'Network error' }; }
 
         if(res && res.success){
-            let gold = res.coinsReward || 200;
-            let gems = res.gemsReward  || 0;
-            let msg  = `✅ Task Complete! +${gold} Gold!`;
-            if(gems > 0) msg += ` +${gems} 🍎`;
+            let fc = res.rewardFc || res.gemsReward || res.coinsReward || 0;
+            let msg = `✅ Task Complete! +${fc} 🍎 Fruit Coin!`;
             showToast(msg);
 
             // Mark button done
@@ -3061,9 +3127,9 @@
         }
     })();
 
-    // Blank screen guard: যদি 30s এর মধ্যে loader না সরে → retry button দেখাও
-    window.onload = function(){
-        const BLANK_SCREEN_TIMEOUT = 30000;
+    // Blank screen guard: fast boot on DOMContentLoaded
+    function startAppWhenReady(){
+        const BLANK_SCREEN_TIMEOUT = 25000;
         const blankGuard = setTimeout(function(){
             const loader = document.getElementById('fullscreen-loader');
             if(loader && loader.style.display !== 'none'){
@@ -3089,7 +3155,13 @@
         }).catch(function(){
             clearTimeout(blankGuard);
         });
-    };
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startAppWhenReady);
+    } else {
+        startAppWhenReady();
+    }
 
     
     /* ── Play & Slash Initiation ── */
@@ -3133,7 +3205,7 @@
 
     /* ── Cooldown & Timer Systems ── */
     const SLASH_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-    const DAILY_GIFT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec)
 
     function updateSlashCooldownUI(){
         const playBtn = document.getElementById('hero-play-btn');
@@ -3158,24 +3230,38 @@
     }
 
     function updateDailyGiftCooldownUI(){
-        const claimBtn = document.getElementById('daily-gift-claim-btn');
-        const cdBtn = document.getElementById('daily-gift-cooldown-btn');
-        const timerText = document.getElementById('daily-gift-timer');
-        if(!claimBtn || !cdBtn) return;
-
         const lastTime = window.G.lastDailyGiftAt ? new Date(window.G.lastDailyGiftAt).getTime() : 0;
         const elapsed = Date.now() - lastTime;
+        const chestBtn = document.getElementById('hero-treasure-timer-btn');
+        const chestEmoji = document.getElementById('hero-treasure-emoji');
+        const chestRays = document.getElementById('treasure-rays');
+        const chestHalo = document.getElementById('treasure-halo');
 
         if(lastTime > 0 && elapsed < DAILY_GIFT_COOLDOWN_MS){
             const remain = DAILY_GIFT_COOLDOWN_MS - elapsed;
             const h = Math.floor(remain / 3600000);
             const m = Math.floor((remain % 3600000) / 60000);
-            if(timerText) timerText.textContent = `${h}h ${m}m`;
-            claimBtn.style.display = 'none';
-            cdBtn.style.display = 'block';
+            const s = Math.floor((remain % 60000) / 1000);
+            const timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            if(chestBtn){
+                chestBtn.className = 'treasure-timer-btn cooldown ptr';
+                chestBtn.innerHTML = `⏳ NEXT BOX: ${timeStr}`;
+            }
+            if(chestEmoji){
+                chestEmoji.style.filter = 'drop-shadow(0 6px 12px rgba(0,0,0,0.5)) opacity(0.85)';
+            }
+            if(chestRays) chestRays.style.display = 'none';
+            if(chestHalo) chestHalo.style.opacity = '0.3';
         } else {
-            claimBtn.style.display = 'block';
-            cdBtn.style.display = 'none';
+            if(chestBtn){
+                chestBtn.className = 'treasure-timer-btn ready ptr';
+                chestBtn.innerHTML = '🎁 OPEN BOX (20–70 FC)';
+            }
+            if(chestEmoji){
+                chestEmoji.style.filter = 'drop-shadow(0 10px 20px rgba(0,0,0,0.5)) drop-shadow(0 0 16px rgba(255,204,0,0.75))';
+            }
+            if(chestRays) chestRays.style.display = 'block';
+            if(chestHalo) chestHalo.style.opacity = '1';
         }
     }
 
@@ -3214,42 +3300,65 @@
         return true;
     }
 
-    /* ── Daily Gift Claim with Ad ── */
+    /* ── 12-Hour Treasure Box Click & Claim with Ad (20 to 70 FC) ── */
+    window.handleTreasureBoxClick = function(){
+        const lastTime = window.G.lastDailyGiftAt ? new Date(window.G.lastDailyGiftAt).getTime() : 0;
+        const elapsed = Date.now() - lastTime;
+        if(lastTime > 0 && elapsed < DAILY_GIFT_COOLDOWN_MS){
+            const remain = DAILY_GIFT_COOLDOWN_MS - elapsed;
+            const h = Math.floor(remain / 3600000);
+            const m = Math.floor((remain % 3600000) / 60000);
+            const s = Math.floor((remain % 60000) / 1000);
+            showToast(`⏳ 12h Treasure Box! Available in ${h}h ${m}m ${s}s`);
+            return;
+        }
+        window.claimDailyGiftWithAd();
+    };
+
     window.claimDailyGiftWithAd = async function(){
         const lastTime = window.G.lastDailyGiftAt ? new Date(window.G.lastDailyGiftAt).getTime() : 0;
         const elapsed = Date.now() - lastTime;
         if(lastTime > 0 && elapsed < DAILY_GIFT_COOLDOWN_MS){
-            showToast('⏳ Daily gift already claimed today! Come back tomorrow.');
+            const remain = DAILY_GIFT_COOLDOWN_MS - elapsed;
+            const h = Math.floor(remain / 3600000);
+            const m = Math.floor((remain % 3600000) / 60000);
+            showToast(`⏳ 12h Treasure Box! Next in ${h}h ${m}m`);
             return;
         }
 
-        const btn = document.getElementById('daily-gift-claim-btn');
-        if(btn){ btn.disabled = true; btn.textContent = 'Watching Ad...'; }
+        const chestBtn = document.getElementById('hero-treasure-timer-btn');
+        const chestEmoji = document.getElementById('hero-treasure-emoji');
+        if(chestBtn){ chestBtn.disabled = true; chestBtn.textContent = 'Watching Ad...'; }
+        if(chestEmoji) chestEmoji.classList.add('opening');
 
         try {
             await playRandomRewardedAd();
         } catch(e){}
 
-        if(btn){ btn.textContent = 'Claiming...'; }
+        if(chestBtn){ chestBtn.textContent = 'Opening Box...'; }
         const res = await apiCall('/api/game_claim', { action: 'claim_daily_gift' });
-        if(btn){ btn.disabled = false; btn.textContent = '🎁 OPEN GIFT (WATCH AD)'; }
+        if(chestBtn){ chestBtn.disabled = false; }
 
         if(res.success){
             playSound('win');
             if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            showToast(`🎁 Awesome! You received +${res.reward} 🍎 Fruit Coin!`);
+            showToast(`🎁 Awesome! Treasure Box gave you +${res.reward} 🍎 Fruit Coin!`);
             window.G.lastDailyGiftAt = new Date().toISOString();
             if(res.user && res.user.fruitCoin !== undefined){
                 window.G.gems = res.user.fruitCoin;
             }
             window.updateUI();
+            setTimeout(() => {
+                if(chestEmoji) chestEmoji.classList.remove('opening');
+            }, 1200);
         } else {
-            showToast(res.message || '⚠️ Could not claim gift. Try again later.');
+            if(chestEmoji) chestEmoji.classList.remove('opening');
+            showToast(res.message || '⚠️ Could not open box. Try again later.');
             updateDailyGiftCooldownUI();
         }
     };
 
-    /* ── Leaderboard Loading ── */
+    /* ── Leaderboard Loading with Telegram Profile Avatars ── */
     window.loadLeaderboard = async function(){
         const listEl = document.getElementById('leaderboard-list');
         if(!listEl) return;
@@ -3260,7 +3369,10 @@
             listEl.innerHTML = res.leaderboard.map(item => {
                 let rankIcon = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : '#' + item.rank;
                 let isMe = item.isCurrentUser ? 'current-user' : '';
-                let avatarContent = item.photoUrl ? `<img src="${item.photoUrl}" style="width:100%;height:100%;object-fit:cover;" />` : '👤';
+                let initial = (item.username || 'P').replace('@','').charAt(0).toUpperCase() || 'P';
+                let avatarContent = item.photoUrl
+                    ? `<img src="${item.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.parentElement.innerHTML='<span style=\\'font-weight:900;color:#ffcc00;font-size:14px;\\'>${initial}</span>';" />`
+                    : `<span style="font-weight:900;color:#00e5ff;font-size:14px;">${initial}</span>`;
                 return `
                     <div class="lb-item ${isMe}">
                         <div class="lb-rank">${rankIcon}</div>
