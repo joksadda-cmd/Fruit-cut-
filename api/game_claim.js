@@ -70,8 +70,8 @@ async function handleClaimDailyGift(req, res, user) {
   const now = new Date();
   const cutoff = new Date(now.getTime() - DAILY_GIFT_COOLDOWN_MS);
 
-  // Server-side random reward: 20 to 70 FC (user spec: 20-70 FC randomly)
-  const reward = Math.floor(Math.random() * (70 - 20 + 1)) + 20;
+  // Server-side random reward: 20 to 30 FC (user spec: 20-30 FC)
+  const reward = Math.floor(Math.random() * (30 - 20 + 1)) + 20;
 
   const usersCol = await getCollection('users');
   const updatedUser = await usersCol.findOneAndUpdate(
@@ -119,9 +119,32 @@ async function handleClaimDailyGift(req, res, user) {
   });
 }
 
+async function resolveTelegramPhoto(telegramId, botToken) {
+  if (!telegramId || !botToken) return null;
+  try {
+    const r1 = await fetch(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${telegramId}&limit=1`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    const d1 = await r1.json();
+    if (d1.ok && d1.result && d1.result.photos && d1.result.photos.length > 0) {
+      const sizes = d1.result.photos[0];
+      const fileId = sizes[0].file_id;
+      const r2 = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      const d2 = await r2.json();
+      if (d2.ok && d2.result && d2.result.file_path) {
+        return `https://api.telegram.org/file/bot${botToken}/${d2.result.file_path}`;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 // ── Top 20 Leaderboard ─────────────────────────────────────────────
 async function handleLeaderboard(req, res, user) {
   const usersCol = await getCollection('users');
+  const botToken = process.env.BOT_TOKEN;
   const topUsers = await usersCol
     .find({ banned: { $ne: true } })
     .sort({ fruitCoin: -1 })
@@ -136,20 +159,32 @@ async function handleLeaderboard(req, res, user) {
     })
     .toArray();
 
-  const formatted = topUsers.map((u, index) => {
-    const rawId = String(u.telegramId || '');
-    const maskedId = rawId.length > 5 ? rawId.slice(0, 3) + '***' + rawId.slice(-2) : rawId;
-    return {
-      rank: index + 1,
-      username: u.username || `Player_${maskedId}`,
-      maskedId,
-      photoUrl: u.photoUrl || null,
-      fruitCoin: u.fruitCoin || 0,
-      level: u.level || 1,
-      totalSlices: u.totalSlices || 0,
-      isCurrentUser: String(u.telegramId) === String(user.telegramId),
-    };
-  });
+  const formatted = await Promise.all(
+    topUsers.map(async (u, index) => {
+      const rawId = String(u.telegramId || '');
+      const maskedId = rawId.length > 5 ? rawId.slice(0, 3) + '***' + rawId.slice(-2) : rawId;
+      let photoUrl = u.photoUrl || null;
+
+      // Automatically fetch from Telegram Bot API if missing in DB
+      if (!photoUrl && botToken && u.telegramId) {
+        photoUrl = await resolveTelegramPhoto(u.telegramId, botToken);
+        if (photoUrl) {
+          usersCol.updateOne({ _id: u._id }, { $set: { photoUrl } }).catch(() => {});
+        }
+      }
+
+      return {
+        rank: index + 1,
+        username: u.username || `Player_${maskedId}`,
+        maskedId,
+        photoUrl: photoUrl || null,
+        fruitCoin: u.fruitCoin || 0,
+        level: u.level || 1,
+        totalSlices: u.totalSlices || 0,
+        isCurrentUser: String(u.telegramId) === String(user.telegramId),
+      };
+    })
+  );
 
   return res.status(200).json({
     success: true,

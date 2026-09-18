@@ -432,14 +432,15 @@
         .promo-box-section { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px;margin-bottom:10px; }
 
         /* 3D Big Interactive Treasure Box in Home Center */
+        /* 3D Big Interactive Treasure Box in Home Center */
         .hero-treasure-container {
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 6px 0 10px;
-            padding: 8px 14px;
+            margin: 0 0 6px;
+            padding: 0;
             cursor: pointer;
             user-select: none;
             z-index: 10;
@@ -447,31 +448,31 @@
         }
         .treasure-stage {
             position: relative;
-            width: 130px;
-            height: 110px;
+            width: 230px;
+            height: 165px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .treasure-halo {
             position: absolute;
-            width: 140px;
-            height: 140px;
+            width: 210px;
+            height: 210px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 215, 0, 0.45) 0%, rgba(255, 140, 0, 0.2) 50%, transparent 70%);
-            animation: treasureHaloPulse 2.2s ease-in-out infinite alternate;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.5) 0%, rgba(255, 140, 0, 0.25) 50%, transparent 70%);
+            animation: treasureHaloPulse 2.4s ease-in-out infinite alternate;
             pointer-events: none;
         }
         @keyframes treasureHaloPulse {
             from { transform: scale(0.85); opacity: 0.6; }
-            to { transform: scale(1.3); opacity: 1; }
+            to { transform: scale(1.25); opacity: 1; }
         }
         .treasure-rays {
             position: absolute;
-            width: 150px;
-            height: 150px;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
-            background: conic-gradient(from 0deg, transparent 0deg 30deg, rgba(255, 220, 0, 0.25) 30deg 60deg, transparent 60deg 90deg, rgba(255, 220, 0, 0.25) 90deg 120deg, transparent 120deg 150deg, rgba(255, 220, 0, 0.25) 150deg 180deg, transparent 180deg 210deg, rgba(255, 220, 0, 0.25) 210deg 240deg, transparent 240deg 270deg, rgba(255, 220, 0, 0.25) 270deg 300deg, transparent 300deg 330deg, rgba(255, 220, 0, 0.25) 330deg 360deg);
+            background: conic-gradient(from 0deg, transparent 0deg 30deg, rgba(255, 220, 0, 0.3) 30deg 60deg, transparent 60deg 90deg, rgba(255, 220, 0, 0.3) 90deg 120deg, transparent 120deg 150deg, rgba(255, 220, 0, 0.3) 150deg 180deg, transparent 180deg 210deg, rgba(255, 220, 0, 0.3) 210deg 240deg, transparent 240deg 270deg, rgba(255, 220, 0, 0.3) 270deg 300deg, transparent 300deg 330deg, rgba(255, 220, 0, 0.3) 330deg 360deg);
             animation: treasureRaysSpin 12s linear infinite;
             pointer-events: none;
         }
@@ -479,67 +480,78 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        .treasure-chest-emoji {
-            font-size: 72px;
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)) drop-shadow(0 0 16px rgba(255,204,0,0.6));
-            animation: treasureFloat 2.6s ease-in-out infinite;
+        .treasure-chest-art {
+            width: 210px;
+            height: auto;
+            max-height: 155px;
+            object-fit: contain;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.65)) drop-shadow(0 0 16px rgba(255,204,0,0.5));
+            animation: treasureFloat 2.8s ease-in-out infinite;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             z-index: 2;
+            pointer-events: none;
         }
         @keyframes treasureFloat {
-            0%, 100% { transform: translateY(0) scale(1) rotate(-2deg); }
-            50% { transform: translateY(-8px) scale(1.06) rotate(2deg); }
+            0%, 100% { transform: translateY(0) scale(1) rotate(-1.5deg); }
+            50% { transform: translateY(-7px) scale(1.04) rotate(1.5deg); }
         }
-        .treasure-chest-emoji.opening {
-            animation: treasureBurst 0.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
+        .treasure-chest-art.opening {
+            animation: treasureBurst 0.9s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important;
         }
         @keyframes treasureBurst {
             0% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.3) rotate(6deg); filter: brightness(2) drop-shadow(0 0 30px #ffcc00); }
-            100% { transform: scale(1.05) rotate(0); filter: brightness(1.2); }
+            50% { transform: scale(1.2) rotate(4deg); filter: brightness(2) drop-shadow(0 0 36px #ffcc00); }
+            100% { transform: scale(1.04) rotate(0); filter: brightness(1.15); }
         }
         .treasure-tag-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: linear-gradient(135deg, rgba(255, 204, 0, 0.2), rgba(255, 100, 0, 0.15));
-            border: 1px solid rgba(255, 204, 0, 0.45);
-            border-radius: 12px;
-            padding: 4px 12px;
-            margin-top: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            background: linear-gradient(180deg, #062334 0%, #03141f 100%);
+            border: 1.5px solid #ffcc00;
+            border-radius: 20px;
+            padding: 5px 16px;
+            margin-top: -6px;
+            position: relative;
+            z-index: 4;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 10px rgba(255,204,0,0.3);
         }
         .treasure-title-text {
             font-family: 'Luckiest Guy', cursive;
             font-size: 13px;
             color: #ffcc00;
             letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
         .treasure-timer-btn {
             margin-top: 6px;
-            padding: 6px 18px;
+            padding: 7px 22px;
             border-radius: 20px;
             font-family: 'Luckiest Guy', cursive;
             font-size: 13px;
             letter-spacing: 0.5px;
-            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 4;
         }
         .treasure-timer-btn.ready {
-            background: linear-gradient(180deg, #ffe040, #ff8c00);
+            background: linear-gradient(180deg, #ffe040 0%, #ff8c00 100%);
             color: #000;
-            box-shadow: 0 4px 0 #cc6600, 0 0 16px rgba(255,204,0,0.5);
+            border: 2px solid #fff;
+            box-shadow: 0 4px 0 #cc6600, 0 0 20px rgba(255,204,0,0.8);
             animation: heroPulse 1.8s ease-in-out infinite;
         }
         .treasure-timer-btn.cooldown {
-            background: rgba(255,255,255,0.1);
-            color: #8be0ee;
-            border: 1px solid rgba(255,255,255,0.18);
-            box-shadow: none;
+            background: linear-gradient(180deg, #024864 0%, #012b3d 100%);
+            color: #fff;
+            border: 1.5px solid #00c6ff;
+            box-shadow: 0 0 14px rgba(0, 198, 255, 0.45), inset 0 1px 0 rgba(255,255,255,0.3);
         }
 
         /* Leaderboard Modal Items */
@@ -655,12 +667,12 @@
         <div class="hero-subtitle">✨ SLICE MANIA ✨</div>
     </div>
 
-    <!-- 3D Big Interactive Treasure Box (Every 12h: 20-70 FC) -->
+    <!-- 3D Big Interactive Treasure Box (Every 12h: 20-30 FC) -->
     <div class="hero-treasure-container ptr" id="hero-treasure-container" onclick="window.handleTreasureBoxClick()">
         <div class="treasure-stage">
             <div class="treasure-halo" id="treasure-halo"></div>
             <div class="treasure-rays" id="treasure-rays"></div>
-            <div class="treasure-chest-emoji" id="hero-treasure-emoji">🎁</div>
+            <img src="./assets/treasure_chest.png" class="treasure-chest-art" id="hero-treasure-img" alt="12H Treasure Box" />
         </div>
         <div class="treasure-tag-badge">
             <span>✨</span>
@@ -668,7 +680,8 @@
             <span>✨</span>
         </div>
         <button class="treasure-timer-btn ready ptr" id="hero-treasure-timer-btn">
-            🎁 OPEN BOX (20–70 FC)
+            <span id="hero-treasure-btn-icon">🎁</span>
+            <span id="hero-treasure-btn-text">OPEN BOX (20–30 FC)</span>
         </button>
     </div>
 
@@ -1446,42 +1459,44 @@
 
         // ── Auto retry: 5 attempts ────────────────────────────────────
         let res = null;
-        const maxTries = 5;
+        const maxTries = 4;
         const msgs = [
             'Connecting to server...',
-            'Server is waking up... please wait',
-            'Still trying... (slow network?)',
-            'Almost there...',
-            'Last attempt...'
+            'Waking up server...',
+            'Connecting...',
+            'Almost ready...'
         ];
-        const delays = [0, 3000, 4000, 5000, 6000]; // wait before each attempt
+        const delays = [0, 1500, 2500, 3500];
 
         for(let attempt = 0; attempt < maxTries; attempt++){
-            // Update loading text
-            let loaderText = document.getElementById('loader-text');
+            let loaderText = document.getElementById('loader-status-text') || document.getElementById('loader-text');
             if(loaderText) loaderText.textContent = msgs[attempt] || 'Connecting...';
+            let progressFill = document.getElementById('loader-progress-fill');
+            if(progressFill) progressFill.style.width = `${Math.min(90, 30 + attempt * 20)}%`;
 
-            // Wait before retry (first attempt: no wait)
             if(delays[attempt] > 0){
                 await new Promise(r => setTimeout(r, delays[attempt]));
             }
 
             try {
                 const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), 15000); // 15s per attempt
+                const timer = setTimeout(() => controller.abort(), 8000);
                 const response = await fetch('/api/auth', {
                     method:  'POST',
                     headers: {
                         'Content-Type':         'application/json',
                         'x-telegram-init-data': tg?.initData || ''
                     },
-                    body:   JSON.stringify({ deviceId: getDeviceId(), referredBy }),
+                    body:   JSON.stringify({
+                        deviceId: getDeviceId(),
+                        referredBy,
+                        photoUrl: tgUser?.photo_url || null
+                    }),
                     signal: controller.signal
                 });
                 clearTimeout(timer);
                 res = await response.json();
-                if(res && res.success) break; // ✅ success
-                // Definitive server responses — no point retrying the network for these.
+                if(res && res.success) break;
                 if(res && (res.status === 'blocked_device' || res.status === 'blocked_banned' || res.status === 'invalid_auth')) break;
             } catch(e){
                 res = { success: false, error: String(e) };
@@ -3233,7 +3248,7 @@
         const lastTime = window.G.lastDailyGiftAt ? new Date(window.G.lastDailyGiftAt).getTime() : 0;
         const elapsed = Date.now() - lastTime;
         const chestBtn = document.getElementById('hero-treasure-timer-btn');
-        const chestEmoji = document.getElementById('hero-treasure-emoji');
+        const chestImg = document.getElementById('hero-treasure-img');
         const chestRays = document.getElementById('treasure-rays');
         const chestHalo = document.getElementById('treasure-halo');
 
@@ -3245,20 +3260,20 @@
             const timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
             if(chestBtn){
                 chestBtn.className = 'treasure-timer-btn cooldown ptr';
-                chestBtn.innerHTML = `⏳ NEXT BOX: ${timeStr}`;
+                chestBtn.innerHTML = `<span>⏳</span><span>NEXT BOX: ${timeStr}</span>`;
             }
-            if(chestEmoji){
-                chestEmoji.style.filter = 'drop-shadow(0 6px 12px rgba(0,0,0,0.5)) opacity(0.85)';
+            if(chestImg){
+                chestImg.style.filter = 'drop-shadow(0 8px 16px rgba(0,0,0,0.6)) brightness(0.85)';
             }
             if(chestRays) chestRays.style.display = 'none';
-            if(chestHalo) chestHalo.style.opacity = '0.3';
+            if(chestHalo) chestHalo.style.opacity = '0.25';
         } else {
             if(chestBtn){
                 chestBtn.className = 'treasure-timer-btn ready ptr';
-                chestBtn.innerHTML = '🎁 OPEN BOX (20–70 FC)';
+                chestBtn.innerHTML = `<span>🎁</span><span>OPEN BOX (20–30 FC)</span>`;
             }
-            if(chestEmoji){
-                chestEmoji.style.filter = 'drop-shadow(0 10px 20px rgba(0,0,0,0.5)) drop-shadow(0 0 16px rgba(255,204,0,0.75))';
+            if(chestImg){
+                chestImg.style.filter = 'drop-shadow(0 14px 28px rgba(0,0,0,0.7)) drop-shadow(0 0 20px rgba(255,204,0,0.75))';
             }
             if(chestRays) chestRays.style.display = 'block';
             if(chestHalo) chestHalo.style.opacity = '1';
@@ -3300,7 +3315,7 @@
         return true;
     }
 
-    /* ── 12-Hour Treasure Box Click & Claim with Ad (20 to 70 FC) ── */
+    /* ── 12-Hour Treasure Box Click & Claim with Ad (20 to 30 FC) ── */
     window.handleTreasureBoxClick = function(){
         const lastTime = window.G.lastDailyGiftAt ? new Date(window.G.lastDailyGiftAt).getTime() : 0;
         const elapsed = Date.now() - lastTime;
@@ -3327,15 +3342,15 @@
         }
 
         const chestBtn = document.getElementById('hero-treasure-timer-btn');
-        const chestEmoji = document.getElementById('hero-treasure-emoji');
-        if(chestBtn){ chestBtn.disabled = true; chestBtn.textContent = 'Watching Ad...'; }
-        if(chestEmoji) chestEmoji.classList.add('opening');
+        const chestImg = document.getElementById('hero-treasure-img');
+        if(chestBtn){ chestBtn.disabled = true; chestBtn.innerHTML = `<span>📺</span><span>Watching Ad...</span>`; }
+        if(chestImg) chestImg.classList.add('opening');
 
         try {
             await playRandomRewardedAd();
         } catch(e){}
 
-        if(chestBtn){ chestBtn.textContent = 'Opening Box...'; }
+        if(chestBtn){ chestBtn.innerHTML = `<span>✨</span><span>Opening Box...</span>`; }
         const res = await apiCall('/api/game_claim', { action: 'claim_daily_gift' });
         if(chestBtn){ chestBtn.disabled = false; }
 
@@ -3349,10 +3364,10 @@
             }
             window.updateUI();
             setTimeout(() => {
-                if(chestEmoji) chestEmoji.classList.remove('opening');
+                if(chestImg) chestImg.classList.remove('opening');
             }, 1200);
         } else {
-            if(chestEmoji) chestEmoji.classList.remove('opening');
+            if(chestImg) chestImg.classList.remove('opening');
             showToast(res.message || '⚠️ Could not open box. Try again later.');
             updateDailyGiftCooldownUI();
         }
@@ -3370,8 +3385,9 @@
                 let rankIcon = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : '#' + item.rank;
                 let isMe = item.isCurrentUser ? 'current-user' : '';
                 let initial = (item.username || 'P').replace('@','').charAt(0).toUpperCase() || 'P';
-                let avatarContent = item.photoUrl
-                    ? `<img src="${item.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.parentElement.innerHTML='<span style=\\'font-weight:900;color:#ffcc00;font-size:14px;\\'>${initial}</span>';" />`
+                let photo = item.photoUrl || (item.isCurrentUser ? (window.G.photoUrl || tg?.initDataUnsafe?.user?.photo_url) : null);
+                let avatarContent = photo
+                    ? `<img src="${photo}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.parentElement.innerHTML='<span style=\\'font-weight:900;color:#ffcc00;font-size:14px;\\'>${initial}</span>';" />`
                     : `<span style="font-weight:900;color:#00e5ff;font-size:14px;">${initial}</span>`;
                 return `
                     <div class="lb-item ${isMe}">
