@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fruit Cut - Slice Mania (TON)</title>
-    <!-- Preconnect for faster resource loading -->
+    <!-- Preconnect & Preload for faster resource loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="image" href="./assets/loading_bg.jpg">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- ── Ad network SDKs — all loaded statically/eagerly, same as the -->
@@ -233,44 +234,53 @@
         .cp{position:absolute;width:10px;height:14px;animation:fall linear infinite;}
         @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
         
-        /* ── BEAUTIFUL LOADING SCREEN ── */
+        /* ── BEAUTIFUL 3D LOADING SCREEN ── */
         #fullscreen-loader{
-            display:flex;position:fixed;top:0;left:0;width:100%;height:100%;
-            background:linear-gradient(160deg,#003040 0%,#005060 50%,#002030 100%);
-            z-index:9999;justify-content:center;align-items:center;flex-direction:column;gap:0;
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:#02171d;
+            z-index:99999;
             overflow:hidden;
+            touch-action:none;
+            display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
         }
-        .fl-bg-glow{
-            position:absolute;width:300px;height:300px;border-radius:50%;
-            background:radial-gradient(circle,rgba(0,198,212,0.18) 0%,transparent 70%);
-            top:50%;left:50%;transform:translate(-50%,-60%);
-            animation:glowPulse 2.5s ease-in-out infinite;pointer-events:none;
+        .fl-bg-art{
+            position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;
+            z-index:1;pointer-events:none;
         }
-        @keyframes glowPulse{0%,100%{transform:translate(-50%,-60%) scale(1);opacity:0.6;}50%{transform:translate(-50%,-60%) scale(1.3);opacity:1;}}
-        .fl-fruits{font-size:44px;letter-spacing:-4px;margin-bottom:0;animation:fruitsFloat 2s ease-in-out infinite;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.5));}
-        @keyframes fruitsFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
-        .fl-title-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:32px;}
-        .fl-title-fruit{font-family:'Luckiest Guy',cursive;font-size:54px;color:#7dff00;-webkit-text-stroke:3px #2a7000;text-shadow:0 6px 0 #2a7000,0 10px 24px rgba(0,0,0,0.5);line-height:1;}
-        .fl-title-cut{font-family:'Luckiest Guy',cursive;font-size:54px;color:#ffcc00;-webkit-text-stroke:3px #996600;text-shadow:0 6px 0 #996600,0 10px 24px rgba(0,0,0,0.5);line-height:0.9;}
-        .fl-sub{font-size:12px;color:rgba(255,255,255,0.6);letter-spacing:4px;font-weight:800;margin-top:6px;}
-        /* Fruit orbit animation */
-        .fl-orbit{position:relative;width:120px;height:120px;margin-bottom:28px;}
-        .fl-orbit-ring{position:absolute;inset:0;border:2px solid rgba(255,255,255,0.08);border-radius:50%;}
-        .fl-orbit-fruit{position:absolute;top:50%;left:50%;font-size:26px;transform-origin:0 0;animation:orbitSpin 3s linear infinite;}
-        .fl-orbit-fruit:nth-child(2){animation-delay:-1s;font-size:22px;}
-        .fl-orbit-fruit:nth-child(3){animation-delay:-2s;font-size:20px;}
-        @keyframes orbitSpin{
-            0%  {transform:rotate(0deg)   translate(52px) rotate(0deg);}
-            100%{transform:rotate(360deg) translate(52px) rotate(-360deg);}
+        .fl-overlay-content{
+            position:relative;z-index:2;width:100%;display:flex;flex-direction:column;align-items:center;
+            padding-bottom:clamp(30px, 8vh, 52px);
+            background:linear-gradient(180deg, transparent 0%, rgba(0,20,30,0.35) 30%, rgba(0,14,22,0.88) 100%);
         }
-        /* Progress bar */
-        .fl-progress-wrap{width:200px;margin-bottom:16px;}
-        .fl-progress-bar{width:100%;height:6px;background:rgba(255,255,255,0.12);border-radius:10px;overflow:hidden;}
-        .fl-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#00c6d4,#ffcc00);border-radius:10px;animation:loadBar 2.2s ease-in-out forwards;}
-        @keyframes loadBar{0%{width:0%;}60%{width:75%;}90%{width:90%;}100%{width:100%;}}
-        .fl-status{font-size:12px;color:rgba(125,210,220,0.8);font-weight:700;letter-spacing:1px;text-align:center;}
-        #loader-text{font-size:12px;color:rgba(125,210,220,0.8);font-weight:700;letter-spacing:1px;text-align:center;margin-top:8px;}
-        /* dots animation */
+        .fl-progress-wrap{ width:82%;max-width:280px;margin-bottom:8px; }
+        .fl-progress-bar{
+            width:100%;height:16px;background:rgba(0,25,45,0.75);
+            border:2.5px solid rgba(80,210,255,0.65);border-radius:20px;
+            box-shadow:inset 0 2px 4px rgba(0,0,0,0.6),0 4px 15px rgba(0,200,255,0.4);
+            padding:2px;overflow:hidden;
+        }
+        .fl-progress-fill{
+            height:100%;width:0%;
+            background:linear-gradient(90deg, #2ecc71 0%, #a8ff78 50%, #f1c40f 100%);
+            border-radius:12px;box-shadow:0 0 10px rgba(46,204,113,0.8);
+            animation:loadBar 2.5s ease-in-out forwards;
+        }
+        @keyframes loadBar{0%{width:0%;}40%{width:55%;}75%{width:85%;}100%{width:100%;}}
+        .fl-status{
+            font-size:14px;font-weight:900;color:#ffffff;letter-spacing:1px;
+            text-shadow:0 2px 6px rgba(0,0,0,0.8);margin-bottom:4px;
+        }
+        .fl-divider{
+            display:flex;align-items:center;justify-content:center;gap:10px;width:160px;margin-bottom:6px;
+        }
+        .fl-divider-line{ flex:1;height:1.5px;background:linear-gradient(90deg,transparent,rgba(160,230,255,0.7),transparent); }
+        .fl-divider-fruit{ font-size:14px;animation:spinLime 4s linear infinite;display:inline-block; }
+        @keyframes spinLime{ 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+        .fl-tips-wrap{ min-height:22px;display:flex;align-items:center;justify-content:center; }
+        .fl-tip-text{
+            font-size:12px;font-weight:800;color:#e0f7fa;text-shadow:0 2px 8px rgba(0,0,0,0.9),0 0 12px rgba(0,229,255,0.4);
+            text-align:center;transition:opacity 0.35s ease,transform 0.35s ease;
+        }
         .fl-dots::after{content:'';animation:dots 1.2s steps(4,end) infinite;}
         @keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}100%{content:'';}}
 
@@ -443,14 +453,24 @@
 <body>
 
 <div id="fullscreen-loader">
-    <div class="fl-progress-wrap">
-        <div class="fl-progress-bar">
-            <div class="fl-progress-fill" id="loader-progress-fill"></div>
+    <img src="./assets/loading_bg.jpg" class="fl-bg-art" alt="Fruit Cut Mania" />
+    <div class="fl-overlay-content">
+        <div class="fl-progress-wrap">
+            <div class="fl-progress-bar">
+                <div class="fl-progress-fill" id="loader-progress-fill"></div>
+            </div>
         </div>
+        <div class="fl-status fl-dots" id="loader-status-text">Connecting..</div>
+        <div class="fl-divider">
+            <span class="fl-divider-line"></span>
+            <span class="fl-divider-fruit">🍈</span>
+            <span class="fl-divider-line"></span>
+        </div>
+        <div class="fl-tips-wrap">
+            <div id="loader-tip-text" class="fl-tip-text">⚡ Earning FC, more earning!</div>
+        </div>
+        <div id="loader-text" style="display:none;"></div>
     </div>
-    <div class="fl-status fl-dots" id="loader-status-text">Connecting..</div>
-    <div class="fl-lime-icon">🍈</div>
-    <div id="loader-text" style="margin-top:4px;font-size:11px;color:#7de;font-weight:700;"></div>
 </div>
 
 <!-- Blocked account overlay: multi-device conflict or suspended account -->
@@ -527,11 +547,6 @@
     <!-- Center Hero Blade & Big Action Button -->
     <div class="hero-center-area">
         <div class="hero-blade-icon">🗡️</div>
-
-        <div id="token-bar" class="ptr" onclick="window.showTokenInfo()">
-            🎮 Tokens: <span id="ui-tokens">3</span> / 10
-            <span class="token-refill" id="token-timer"></span>
-        </div>
         
         <div class="hero-action-container">
             <button class="hero-play-btn neon-ready-btn ptr" id="hero-play-btn" onclick="window.tryStartGame()">
@@ -586,9 +601,9 @@
             </div>
         </div>
         <div class="arena-header-pill">
-            <span style="font-size:16px;">🎮</span>
-            <span style="font-size:14px;font-weight:900;color:#ffcc00;" id="arena-tokens-val">3</span>
-            <span style="font-size:11px;color:#888;">/ 10</span>
+            <span style="font-size:16px;">🍎</span>
+            <span style="font-size:14px;font-weight:900;color:#ffcc00;" id="arena-fc-val">0</span>
+            <span style="font-size:11px;color:#888;">FC</span>
         </div>
         <button class="arena-header-pill" style="border:none;cursor:pointer;background:rgba(255,50,50,0.25);color:#fff;font-weight:900;font-size:15px;padding:6px 12px;" onclick="window.closeSlashArena()">✕</button>
     </div>
@@ -855,7 +870,7 @@
         <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px;text-align:left;font-size:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:6px;">
                 <span><strong>1️⃣ Join Channels:</strong> Friend verifies official channels</span>
-                <span style="color:#7dff00;font-weight:900;white-space:nowrap;">+30 FC &amp; 1 🎮</span>
+                <span style="color:#7dff00;font-weight:900;white-space:nowrap;">+30 FC 🍎</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:6px;">
                 <span><strong>2️⃣ 10 Tasks Done:</strong> Friend completes 10 tasks</span>
@@ -871,7 +886,7 @@
             </div>
         </div>
         <div style="font-size:11px;color:#aaa;text-align:center;margin-bottom:8px;">
-            Total reward per complete referral: <strong style="color:#7dff00;">430 FC + 1 Game Token</strong> (Max 10 tokens)
+            Total reward per complete referral: <strong style="color:#7dff00;">430 FC</strong> 🍎
         </div>
 
         <div style="font-size:12px;color:#aaa;margin-bottom:4px;text-align:left;">Your Refer Link:</div>
@@ -1217,17 +1232,20 @@
     // The final "show the actual game" step — runs either right after a
     // clean auth, or after the join-gate is satisfied.
     function revealMenu(){
+        if(window._loadingTipsTimer){ clearInterval(window._loadingTipsTimer); window._loadingTipsTimer = null; }
         let loader = document.getElementById('fullscreen-loader');
-        loader.style.transition = 'opacity 0.5s ease';
-        loader.style.opacity    = '0';
-        setTimeout(()=>{ loader.style.display='none'; loader.style.opacity='1'; }, 500);
+        if(loader){
+            loader.style.transition = 'opacity 0.5s ease';
+            loader.style.opacity    = '0';
+            setTimeout(()=>{ loader.style.display='none'; loader.style.opacity='1'; }, 500);
+        }
         document.getElementById('menu-screen').style.display = 'flex';
 
-        startTokenTimer();
         setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 500);
     }
 
     function showJoinGate(channels){
+        if(window._loadingTipsTimer){ clearInterval(window._loadingTipsTimer); window._loadingTipsTimer = null; }
         let loader = document.getElementById('fullscreen-loader');
         if(loader) loader.style.display = 'none';
         const list = document.getElementById('join-gate-list');
@@ -1263,6 +1281,28 @@
     };
 
     async function initApp() {
+        const LOADING_TIPS = [
+            "⚡ Earning FC, more earning!",
+            "🌴 Enjoy your day slicing fruits!",
+            "⚔️ Play & Slice every 1 hour to level up!",
+            "👥 Invite friends for huge FC rewards!",
+            "💎 Instant TonKeeper USDT withdrawals!"
+        ];
+        let tipIdx = 0;
+        if(window._loadingTipsTimer) clearInterval(window._loadingTipsTimer);
+        window._loadingTipsTimer = setInterval(() => {
+            const tipEl = document.getElementById('loader-tip-text');
+            if(!tipEl) return;
+            tipEl.style.opacity = '0';
+            tipEl.style.transform = 'translateY(4px)';
+            setTimeout(() => {
+                tipIdx = (tipIdx + 1) % LOADING_TIPS.length;
+                tipEl.textContent = LOADING_TIPS[tipIdx];
+                tipEl.style.opacity = '1';
+                tipEl.style.transform = 'translateY(0)';
+            }, 300);
+        }, 2400);
+
         let tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) {
             document.getElementById('fullscreen-loader').innerHTML = `
@@ -2698,9 +2738,12 @@
         bladeCanvas.addEventListener('pointerleave', endPointer);
 
         // Click / tap fallback on fruit
-        document.getElementById('arena-fruit-target').addEventListener('click', () => {
-            if(!arenaBusy) triggerFruitSliceEffect();
-        });
+        const targetEl = document.getElementById('fruit-whole-target');
+        if(targetEl){
+            targetEl.addEventListener('click', () => {
+                if(!arenaBusy) triggerFruitSliceEffect();
+            });
+        }
 
         startBladeRenderLoop();
     }
@@ -2753,13 +2796,13 @@
 
     function checkFruitSliceHit(x, y){
         if(arenaBusy) return;
-        const target = document.getElementById('arena-fruit-target');
+        const target = document.getElementById('fruit-whole-target');
         if(!target) return;
         const rect = target.getBoundingClientRect();
-        // Inner hit box
-        const hitMargin = 30;
-        if(x >= rect.left + hitMargin && x <= rect.right - hitMargin &&
-           y >= rect.top + hitMargin && y <= rect.bottom - hitMargin){
+        // Inner hit box with generous margins for responsive slicing
+        const hitMargin = 15;
+        if(x >= rect.left - hitMargin && x <= rect.right + hitMargin &&
+           y >= rect.top - hitMargin && y <= rect.bottom + hitMargin){
             triggerFruitSliceEffect();
         }
     }
@@ -2816,6 +2859,50 @@
             </svg>`,
             leftHalfSvg: `<svg viewBox="0 0 100 200" width="90" height="180"><path d="M 98,14 A 86,86 0 0,0 98,186 Z" fill="#ff9800" stroke="#ffe082" stroke-width="2"/><path d="M 98,30 A 70,70 0 0,0 98,170 Z" fill="#fff3e0"/><path d="M 98,38 A 62,62 0 0,0 98,162 Z" fill="#ff8c00"/></svg>`,
             rightHalfSvg: `<svg viewBox="100 0 100 200" width="90" height="180"><path d="M 102,14 A 86,86 0 0,1 102,186 Z" fill="#ff9800" stroke="#ffe082" stroke-width="2"/><path d="M 102,30 A 70,70 0 0,1 102,170 Z" fill="#fff3e0"/><path d="M 102,38 A 62,62 0 0,1 102,162 Z" fill="#ff8c00"/></svg>`
+        },
+        {
+            id: 'strawberry',
+            name: 'Sweet Strawberry',
+            juiceColor: '#ff1744',
+            wholeSvg: `<svg viewBox="0 0 200 200" width="180" height="180" style="filter:drop-shadow(0 12px 24px rgba(0,0,0,0.6));">
+                <defs>
+                    <radialGradient id="sb_skin" cx="40%" cy="30%" r="70%">
+                        <stop offset="0%" stop-color="#ff5252" />
+                        <stop offset="70%" stop-color="#d50000" />
+                        <stop offset="100%" stop-color="#8b0000" />
+                    </radialGradient>
+                </defs>
+                <path d="M 100,35 C 160,35 175,90 145,150 C 125,185 100,195 100,195 C 100,195 75,185 55,150 C 25,90 40,35 100,35 Z" fill="url(#sb_skin)" stroke="#ff8a80" stroke-width="2"/>
+                <circle cx="70" cy="70" r="2.5" fill="#ffe082"/><circle cx="100" cy="65" r="2.5" fill="#ffe082"/><circle cx="130" cy="70" r="2.5" fill="#ffe082"/>
+                <circle cx="85" cy="100" r="2.5" fill="#ffe082"/><circle cx="115" cy="100" r="2.5" fill="#ffe082"/>
+                <circle cx="70" cy="130" r="2.5" fill="#ffe082"/><circle cx="100" cy="135" r="2.5" fill="#ffe082"/><circle cx="130" cy="130" r="2.5" fill="#ffe082"/>
+                <circle cx="100" cy="165" r="2" fill="#ffe082"/>
+                <path d="M 100,35 Q 85,15 70,25 Q 90,30 95,36 Q 100,10 100,5 Q 105,10 105,36 Q 110,30 130,25 Q 115,15 100,35 Z" fill="#2e7d32"/>
+            </svg>`,
+            leftHalfSvg: `<svg viewBox="0 0 100 200" width="90" height="180"><defs><radialGradient id="sb_l" cx="70%" cy="30%" r="70%"><stop offset="0%" stop-color="#ff5252"/><stop offset="100%" stop-color="#8b0000"/></radialGradient></defs><path d="M 98,35 C 75,35 30,90 55,150 C 75,185 98,195 98,195 Z" fill="url(#sb_l)" stroke="#ff8a80" stroke-width="2"/><path d="M 98,45 C 85,60 80,100 85,140 C 90,165 98,180 98,180 Z" fill="#ffebee"/><circle cx="70" cy="70" r="2.5" fill="#ffe082"/><circle cx="85" cy="100" r="2.5" fill="#ffe082"/></svg>`,
+            rightHalfSvg: `<svg viewBox="100 0 100 200" width="90" height="180"><defs><radialGradient id="sb_r" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#ff5252"/><stop offset="100%" stop-color="#8b0000"/></radialGradient></defs><path d="M 102,35 C 125,35 170,90 145,150 C 125,185 102,195 102,195 Z" fill="url(#sb_r)" stroke="#ff8a80" stroke-width="2"/><path d="M 102,45 C 115,60 120,100 115,140 C 110,165 102,180 102,180 Z" fill="#ffebee"/><circle cx="130" cy="70" r="2.5" fill="#ffe082"/><circle cx="115" cy="100" r="2.5" fill="#ffe082"/></svg>`
+        },
+        {
+            id: 'pineapple',
+            name: 'Golden Pineapple',
+            juiceColor: '#ffeb3b',
+            wholeSvg: `<svg viewBox="0 0 200 200" width="180" height="180" style="filter:drop-shadow(0 12px 24px rgba(0,0,0,0.6));">
+                <defs>
+                    <radialGradient id="pa_skin" cx="40%" cy="40%" r="65%">
+                        <stop offset="0%" stop-color="#ffee58" />
+                        <stop offset="60%" stop-color="#f57f17" />
+                        <stop offset="100%" stop-color="#e65100" />
+                    </radialGradient>
+                </defs>
+                <path d="M 90,20 L 100,5 L 110,20 L 105,45 L 95,45 Z" fill="#2e7d32"/>
+                <path d="M 75,30 L 65,15 L 85,25 L 95,45 Z" fill="#388e3c"/>
+                <path d="M 125,30 L 135,15 L 115,25 L 105,45 Z" fill="#388e3c"/>
+                <ellipse cx="100" cy="115" rx="65" ry="75" fill="url(#pa_skin)" stroke="#fff59d" stroke-width="2"/>
+                <path d="M 50,85 Q 100,115 150,85 M 40,115 Q 100,145 160,115 M 50,145 Q 100,175 150,145" stroke="#bf360c" stroke-width="2" fill="none" opacity="0.45"/>
+                <path d="M 50,145 Q 100,115 150,145 M 40,115 Q 100,85 160,115 M 50,85 Q 100,55 150,85" stroke="#bf360c" stroke-width="2" fill="none" opacity="0.45"/>
+            </svg>`,
+            leftHalfSvg: `<svg viewBox="0 0 100 200" width="90" height="180"><defs><radialGradient id="pa_l" cx="70%" cy="40%" r="65%"><stop offset="0%" stop-color="#ffee58"/><stop offset="100%" stop-color="#e65100"/></radialGradient></defs><path d="M 98,42 A 65,75 0 0,0 98,188 Z" fill="url(#pa_l)" stroke="#fff59d" stroke-width="2"/><path d="M 98,55 A 50,60 0 0,0 98,175 Z" fill="#fff9c4"/><circle cx="75" cy="115" r="5" fill="#f57f17"/></svg>`,
+            rightHalfSvg: `<svg viewBox="100 0 100 200" width="90" height="180"><defs><radialGradient id="pa_r" cx="30%" cy="40%" r="65%"><stop offset="0%" stop-color="#ffee58"/><stop offset="100%" stop-color="#e65100"/></radialGradient></defs><path d="M 102,42 A 65,75 0 0,1 102,188 Z" fill="url(#pa_r)" stroke="#fff59d" stroke-width="2"/><path d="M 102,55 A 50,60 0 0,1 102,175 Z" fill="#fff9c4"/><circle cx="125" cy="115" r="5" fill="#f57f17"/></svg>`
         }
     ];
 
@@ -3015,12 +3102,6 @@
             return;
         }
 
-        if((window.G.tokens || 0) < 1){
-            showToast('⚠️ No Game Tokens! Refer friends to collect tokens.');
-            window.showModal('share-modal');
-            return;
-        }
-
         window.openSlashArena();
     };
 
@@ -3034,6 +3115,20 @@
         window.updateUI();
 
         spawnArenaFruit();
+    };
+
+    window.closeSlashArena = function(){
+        arenaActive = false;
+        if(bladeAnimFrame) cancelAnimationFrame(bladeAnimFrame);
+        const arena = document.getElementById('slash-arena');
+        if(arena) arena.style.display = 'none';
+        const burstEl = document.getElementById('arena-reward-burst');
+        if(burstEl) burstEl.classList.remove('show');
+        const bannerEl = document.getElementById('arena-levelup-banner');
+        if(bannerEl) bannerEl.style.display = 'none';
+        if(window.G.sound) playSound('menu');
+        updateSlashCooldownUI();
+        window.updateUI();
     };
 
     /* ── Cooldown & Timer Systems ── */

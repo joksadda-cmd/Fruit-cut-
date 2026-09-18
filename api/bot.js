@@ -623,8 +623,8 @@ module.exports = async function handler(req, res) {
           chatId,
           WELCOME_PHOTO_URL,
           `🍉 <b>Welcome to Fruit Cut!</b>\n\n` +
-            `Slice fruits, earn Gold, and cash out real rewards!\n\n` +
-            `Invite friends to earn bonus Game Tokens instantly. 🚀`,
+            `Slice fruits every 1 hour, earn Fruit Coin, and cash out real crypto!\n\n` +
+            `Invite friends to earn huge Fruit Coin bonuses! 🚀`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -712,7 +712,8 @@ module.exports = async function handler(req, res) {
               `ID: <code>${user.telegramId}</code>\n` +
               `🪙 Gold: <b>${user.gold || 0}</b>\n` +
               `🍎 Fruit Coin: <b>${user.fruitCoin || 0}</b>\n` +
-              `🎮 Game Tokens: <b>${user.gameTokens ?? 3}</b>\n` +
+              `⭐ Level: <b>${user.level || 1}</b> (XP: <b>${user.xp || 0}</b>)\n` +
+              `⚔️ Total Slices: <b>${user.totalSlices || 0}</b>\n` +
               `📺 Total Ads Watched: <b>${user.totalAdsWatched || 0}</b>\n` +
               `👥 Referrals: <b>${user.referralCount || 0}</b>\n` +
               `📅 Joined: <b>${joinedDays !== null ? joinedDays + ' day(s) ago' : 'Unknown'}</b>\n` +

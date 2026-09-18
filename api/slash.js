@@ -9,7 +9,7 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { pickSlashReward, SLASH_COOLDOWN_MS } = require('../lib/slashGame');
 const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
-const { checkReferralStep3, checkReferralStep4, MAX_TOKENS } = require('../lib/referral');
+const { checkReferralStep3, checkReferralStep4 } = require('../lib/referral');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
     const now = new Date();
     const lastSlashTime = user.lastSlashAt ? new Date(user.lastSlashAt).getTime() : 0;
     const elapsed = now.getTime() - lastSlashTime;
-    const onCooldown = elapsed < SLASH_COOLDOWN_MS;
+    const onCooldown = lastSlashTime > 0 && elapsed < SLASH_COOLDOWN_MS;
     const nextAvailableAt = new Date(lastSlashTime + SLASH_COOLDOWN_MS);
     const remainingMs = Math.max(0, SLASH_COOLDOWN_MS - elapsed);
 
@@ -53,7 +53,8 @@ module.exports = async (req, res) => {
         remainingMs,
         nextAvailableAt,
         fruitCoin: user.fruitCoin || 0,
-        totalSlices: currentSlices,
+        totalSlices: user.totalSlices || 0,
+        xp: currentXp,
         level: currentProgress.level,
         levelProgress: currentProgress,
       });
@@ -108,6 +109,7 @@ module.exports = async (req, res) => {
           $inc: {
             fruitCoin: totalReward,
             totalSlices: 1,
+            xp: 5,
           },
           $set: {
             level: newLevel,
@@ -139,12 +141,19 @@ module.exports = async (req, res) => {
           levelReward,
           isLevelUp,
           level: newLevel,
-          totalSlices: newSlices,
+          totalSlices: updatedUser.totalSlices,
+          xp: updatedUser.xp,
         },
         createdAt: now,
       });
 
-      const updatedProgress = getLevelProgress(updatedUser.totalSlices || newSlices);
+      // 5. Trigger referral milestones asynchronously
+      checkReferralStep3(updatedUser).catch(() => {});
+      if (newLevel >= 3) {
+        checkReferralStep4(updatedUser, newLevel).catch(() => {});
+      }
+
+      const updatedProgress = getLevelProgress(updatedUser.xp || newXp);
 
       return res.status(200).json({
         success: true,
@@ -158,6 +167,9 @@ module.exports = async (req, res) => {
           fruitCoin: updatedUser.fruitCoin,
           level: updatedProgress.level,
           levelProgress: updatedProgress,
+          totalSlices: updatedUser.totalSlices,
+          lastSlashAt: updatedUser.lastSlashAt,
+          xp: updatedUser.xp,
         },
       });
     }

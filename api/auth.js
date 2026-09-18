@@ -120,50 +120,28 @@ module.exports = async (req, res) => {
       await usersCol.insertOne(newUser);
       user = newUser;
 
-      // ── Instant referral reward (server-side only, never trust client) ──
-      // Only fires once, right here at registration time, and only if the
-      // referrer is a real, non-banned, different user.
+      // ── Instant referral link association (server-side only) ─────────
       if (referredBy && String(referredBy) !== String(telegramId)) {
         const referrer = await findUserByTelegramId(usersCol, referredBy);
         if (referrer && !referrer.banned) {
-          const updated = await usersCol.findOneAndUpdate(
+          await usersCol.updateOne(
             { _id: referrer._id },
-            [
-              {
-                $set: {
-                  // Referral bonus is the ONE way tokens can exceed the
-                  // normal 10 cap (per spec) — natural 4h regen elsewhere
-                  // caps at 10, this doesn't.
-                  gameTokens: { $add: [{ $ifNull: ['$gameTokens', 3] }, 1] },
-                  referralCount: { $add: [{ $ifNull: ['$referralCount', 0] }, 1] },
-                  lastActive: new Date(),
-                },
-              },
-            ],
-            { returnDocument: 'after' }
+            {
+              $inc: { referralCount: 1 },
+              $set: { lastActive: new Date() },
+            }
           );
 
-          const txCol = await getCollection('transactions');
-          await txCol.insertOne({
-            telegramId: referrer.telegramId,
-            type: TRANSACTION_TYPES.REFERRAL_REWARD,
-            amount: 0, // no gold/FC in the instant reward — just tokens (logged in meta)
-            balanceAfter: updated ? updated.gold : referrer.gold,
-            meta: { gameTokens: 1, referredTelegramId: telegramId },
-            createdAt: new Date(),
-          });
-
-          // Notification text matches the existing "Refer Reward Received!" format
-          const joinedWho = username && username !== 'Player' ? `@${username}` : 'Someone';
+          const joinedWho = username && username !== 'Player' ? `@${username}` : 'Your friend';
           sendTelegramMessage(
             referrer.telegramId,
-            `🎉 <b>Refer Reward Received!</b>\n\n` +
-              `${joinedWho} joined using your invite link!\n\n` +
-              `🎮 +1 Game Token added!\n\n` +
-              `Keep inviting friends to earn more! 🚀`,
+            `🎉 <b>New Friend Joined!</b>\n\n` +
+              `${joinedWho} just joined using your invite link!\n\n` +
+              `You will earn <b>+30 FC</b> when they verify channel membership! 🍎\n\n` +
+              `Keep inviting friends to earn up to 430 FC per friend! 🚀`,
             {
               reply_markup: {
-                inline_keyboard: [[{ text: '🎮 Open Game & Collect Reward', url: MINI_APP_URL }]],
+                inline_keyboard: [[{ text: '🎮 Open Game', url: MINI_APP_URL }]],
               },
             }
           ).catch((e) => console.error('referral notify failed:', e));
