@@ -8,7 +8,7 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { pickSlashReward, SLASH_COOLDOWN_MS } = require('../lib/slashGame');
-const { getLevelForSlices, getLevelProgress, LEVELS } = require('../lib/levelSystem');
+const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
 const { checkReferralStep3, checkReferralStep4, MAX_TOKENS } = require('../lib/referral');
 
 module.exports = async (req, res) => {
@@ -42,8 +42,8 @@ module.exports = async (req, res) => {
     const remainingMs = Math.max(0, SLASH_COOLDOWN_MS - elapsed);
 
     const action = req.body && req.body.action ? req.body.action : 'status';
-    const currentSlices = user.totalSlices || 0;
-    const currentProgress = getLevelProgress(currentSlices);
+    const currentXp = user.xp || 0;
+    const currentProgress = getLevelProgress(currentXp);
 
     // ── Status Action ──────────────────────────────────────────────
     if (action === 'status') {
@@ -74,11 +74,11 @@ module.exports = async (req, res) => {
       // 1. Calculate slice reward: 15 - 40 FC (weighted)
       const baseReward = pickSlashReward();
 
-      // 2. Calculate level progression
-      const oldSlices = user.totalSlices || 0;
-      const newSlices = oldSlices + 1;
-      const oldLevel = getLevelForSlices(oldSlices);
-      const newLevel = getLevelForSlices(newSlices);
+      // 2. Calculate XP & Level progression (+5 XP per slash game)
+      const oldXp = user.xp || 0;
+      const newXp = oldXp + 5;
+      const oldLevel = getLevelForXp(oldXp);
+      const newLevel = getLevelForXp(newXp);
 
       let levelReward = 0;
       let isLevelUp = false;

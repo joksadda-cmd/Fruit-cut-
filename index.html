@@ -108,7 +108,7 @@
         .diamond-value{font-size:20px;color:#003366;font-weight:900;font-family:'Luckiest Guy',cursive;}
 
         /* ---- MENU SCREEN ---- */
-        #menu-screen{ position:fixed;top:0;left:0;width:100%;height:100%;z-index:12; display:none;flex-direction:column;align-items:center;justify-content:flex-start; padding:10px 10px 0 10px;overflow:hidden; }
+        #menu-screen{ position:fixed;top:0;left:0;width:100%;height:100%;z-index:12; display:none;flex-direction:column;align-items:center;justify-content:space-between; padding:75px 16px 85px 16px;overflow:hidden; }
         .game-title{ display:flex;flex-direction:column;align-items:center; margin-top:70px;animation:floatLogo 3s ease-in-out infinite; }
         @keyframes floatLogo{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
         .title-fruits{font-size:48px;letter-spacing:-4px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));}
@@ -385,13 +385,13 @@
         .fc-usdt { font-size:9.5px;color:#7dff00;font-weight:800;margin-top:1px; }
 
         /* Clean Hero Center */
-        .hero-logo-section { display:flex;flex-direction:column;align-items:center;margin-top:45px;animation:floatLogo 3s ease-in-out infinite; }
+        .hero-logo-section { display:flex;flex-direction:column;align-items:center;margin-top:10px;animation:floatLogo 3s ease-in-out infinite; }
         .hero-fruits-row { font-size:36px;letter-spacing:-2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
         .hero-title-wrap { font-family:'Luckiest Guy',cursive;font-size:52px;line-height:0.9;text-align:center;letter-spacing:2px;display:flex;gap:6px; }
         .hero-title-fruit { color:#7dff00;-webkit-text-stroke:3px #2a7000;text-shadow:0 6px 0 #2a7000,0 10px 20px rgba(0,0,0,0.5); }
         .hero-title-cut { color:#ffcc00;-webkit-text-stroke:3px #996600;text-shadow:0 6px 0 #996600,0 10px 20px rgba(0,0,0,0.5); }
         .hero-subtitle { font-size:12px;color:rgba(255,255,255,0.85);font-weight:800;letter-spacing:3px;margin-top:4px; }
-        .hero-center-area { display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:15px;width:100%;max-width:320px; }
+        .hero-center-area { display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:15px;width:100%;max-width:340px; }
         .hero-blade-icon { font-size:52px;filter:drop-shadow(0 6px 12px rgba(0,0,0,0.5));animation:knifeFloat 2.2s ease-in-out infinite; }
         .hero-action-container { width:100%;max-width:280px;display:flex;flex-direction:column;align-items:center; }
         .hero-play-btn { width:100%;padding:15px 20px;border-radius:22px;border:3px solid rgba(255,255,255,0.85);font-family:'Luckiest Guy',cursive;font-size:24px;letter-spacing:1px;color:#fff;cursor:pointer;position:relative;overflow:hidden;transition:transform 0.15s,box-shadow 0.15s;text-align:center; }
@@ -1121,6 +1121,16 @@
             if(arenaLvlNum) arenaLvlNum.textContent = lp.level;
             if(arenaLvlName) arenaLvlName.textContent = lp.name;
             if(arenaLvlFruit) arenaLvlFruit.textContent = lp.fruit || '🍎';
+
+            // Modal sync
+            let curTitle = document.getElementById('level-modal-cur-title');
+            let slicesStat = document.getElementById('level-modal-slices-stat');
+            let modalFill = document.getElementById('level-modal-fill');
+            let nextStat = document.getElementById('level-modal-next-stat');
+            if(curTitle) curTitle.textContent = `${lp.name} (Lv. ${lp.level})`;
+            if(slicesStat) slicesStat.textContent = `${lp.totalXp || 0} XP`;
+            if(modalFill) modalFill.style.width = (lp.progressPercent || 0) + '%';
+            if(nextStat) nextStat.textContent = lp.isMaxLevel ? 'MAX LEVEL REACHED' : `${lp.xpToNext} XP to Lv. ${lp.nextLevel}`;
         }
 
         let sndEl = document.getElementById('snd-toggle');
@@ -2386,6 +2396,49 @@
     ];
 
     window.renderLevelModal = function(){
+        const container = document.getElementById('level-list-container');
+        if(!container) return;
+
+        const XP_LEVELS = [
+            { level: 1,  name: 'Novice Slicer',       requiredXp: 0,     rewardFc: 0,    fruit: '🍎' },
+            { level: 2,  name: 'Fruit Peeler',        requiredXp: 100,   rewardFc: 25,   fruit: '🍊' },
+            { level: 3,  name: 'Juice Maker',         requiredXp: 250,   rewardFc: 50,   fruit: '🍋' },
+            { level: 4,  name: 'Kitchen Apprentice',  requiredXp: 500,   rewardFc: 75,   fruit: '🍇' },
+            { level: 5,  name: 'Fruit Carver',        requiredXp: 850,   rewardFc: 100,  fruit: '🍓' },
+            { level: 6,  name: 'Fast Blade',          requiredXp: 1300,  rewardFc: 150,  fruit: '🍑' },
+            { level: 7,  name: 'Samurai Novice',      requiredXp: 1900,  rewardFc: 200,  fruit: '🍒' },
+            { level: 8,  name: 'Combo Striker',       requiredXp: 2700,  rewardFc: 250,  fruit: '🥝' },
+            { level: 9,  name: 'Ninja Warrior',       requiredXp: 3700,  rewardFc: 300,  fruit: '🍍' },
+            { level: 10, name: 'Master Slicer',       requiredXp: 5000,  rewardFc: 400,  fruit: '🥥' },
+            { level: 11, name: 'Dojo Master',         requiredXp: 6800,  rewardFc: 500,  fruit: '🍉' },
+            { level: 12, name: 'Blade Grandmaster',   requiredXp: 9000,  rewardFc: 650,  fruit: '🍈' },
+            { level: 13, name: 'Fruit Legend',        requiredXp: 12000, rewardFc: 800,  fruit: '🍌' },
+            { level: 14, name: 'Supreme Sensei',      requiredXp: 16000, rewardFc: 1000, fruit: '🍏' },
+            { level: 15, name: 'Fruit God',           requiredXp: 22000, rewardFc: 1500, fruit: '🌟' }
+        ];
+
+        const userXp = window.G.levelProgress?.totalXp || 0;
+        const curLvl = window.G.level || 1;
+
+        container.innerHTML = XP_LEVELS.map(lvl => {
+            const isCompleted = curLvl > lvl.level;
+            const isCurrent = curLvl === lvl.level;
+            const stateClass = isCurrent ? 'current' : (isCompleted ? 'completed' : '');
+            const badgeTxt = isCurrent ? '📍 Current' : (isCompleted ? '✅ Unlocked' : `🔒 ${lvl.requiredXp} XP`);
+            return `
+                <div class="level-item-card ${stateClass}">
+                    <div class="level-icon-badge">${lvl.fruit}</div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px;font-weight:900;color:#fff;">Lv. ${lvl.level}: ${lvl.name}</div>
+                        <div style="font-size:11px;color:#00e5ff;margin-top:2px;">${badgeTxt}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:12px;font-weight:900;color:#ffcc00;">${lvl.rewardFc > 0 ? '+' + lvl.rewardFc + ' 🍎 FC' : 'Starting'}</div>
+                    </div>
+                </div>`;
+        }).join('');
+    };
+    const _oldRenderLevelModal = function(){
         let container = document.getElementById('level-list-container');
         if(!container) return;
         let curLevel = window.G.level || 1;
@@ -2949,6 +3002,38 @@
         }).catch(function(){
             clearTimeout(blankGuard);
         });
+    };
+
+    
+    /* ── Play & Slash Initiation ── */
+    window.tryStartGame = function(){
+        const SLASH_COOLDOWN_MS = 60 * 60 * 1000;
+        const lastTime = window.G.lastSlashAt ? new Date(window.G.lastSlashAt).getTime() : 0;
+        const elapsed = Date.now() - lastTime;
+        if(lastTime > 0 && elapsed < SLASH_COOLDOWN_MS){
+            window.showSlashCooldownToast();
+            return;
+        }
+
+        if((window.G.tokens || 0) < 1){
+            showToast('⚠️ No Game Tokens! Refer friends to collect tokens.');
+            window.showModal('share-modal');
+            return;
+        }
+
+        window.openSlashArena();
+    };
+
+    window.openSlashArena = function(){
+        arenaActive = true;
+        const arena = document.getElementById('slash-arena');
+        if(arena) arena.style.display = 'flex';
+        stopSound('menu');
+        if(!bladeCanvas) initBladeCanvas();
+        else resizeBladeCanvas();
+        window.updateUI();
+
+        spawnArenaFruit();
     };
 
     /* ── Cooldown & Timer Systems ── */
