@@ -9,6 +9,7 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { pickSlashReward, SLASH_COOLDOWN_MS } = require('../lib/slashGame');
 const { getLevelForSlices, getLevelProgress, LEVELS } = require('../lib/levelSystem');
+const { checkReferralStep3, checkReferralStep4, MAX_TOKENS } = require('../lib/referral');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {

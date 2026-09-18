@@ -1,10 +1,8 @@
 // api/checkJoin.js
-// Frontend calls this right after login, and again when the user taps
-// "I've Joined — Verify". Blocks nothing by itself — index.html decides
-// what to show based on the response.
-
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { checkChannelMembership } = require('../lib/joinGate');
+const { getCollection, findUserByTelegramId } = require('../lib/db');
+const { checkReferralStep1 } = require('../lib/referral');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -17,9 +15,18 @@ module.exports = async (req, res) => {
     if (!verify.valid) {
       return res.status(401).json({ success: false, status: 'invalid_auth' });
     }
+    const telegramId = verify.user.id;
 
-    const channels = await checkChannelMembership(verify.user.id);
+    const channels = await checkChannelMembership(telegramId);
     const allJoined = channels.every((c) => c.joined);
+
+    if (allJoined) {
+      const usersCol = await getCollection('users');
+      const user = await findUserByTelegramId(usersCol, telegramId);
+      if (user && user.referredBy && !user.referStep1Given) {
+        checkReferralStep1(user).catch(() => {});
+      }
+    }
 
     return res.status(200).json({ success: true, allJoined, channels });
   } catch (err) {

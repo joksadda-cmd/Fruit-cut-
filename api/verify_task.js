@@ -21,7 +21,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { ObjectId } = require('mongodb');
-const { maybeTriggerValidReferral } = require('../lib/referral');
+const { checkReferralStep2 } = require('../lib/referral');
 
 const JOINED_STATUSES = ['creator', 'administrator', 'member', 'restricted'];
 
@@ -134,7 +134,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ success: false, message: 'Task already completed' });
     }
 
-    maybeTriggerValidReferral(updatedUser); // fire-and-forget
+    checkReferralStep2(updatedUser); // fire-and-forget (Step 2: 10 tasks completed)
 
     const txCol = await getCollection('transactions');
     await txCol.insertOne({

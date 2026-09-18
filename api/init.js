@@ -31,6 +31,10 @@ module.exports = async (req, res) => {
     const telegramId = verify.user.id;
     const usersCol = await getCollection('users');
     const user = await findUserByTelegramId(usersCol, telegramId);
+    if (user && user.gameTokens > 10) {
+      await usersCol.updateOne({ _id: user._id }, { $set: { gameTokens: 10 } });
+      user.gameTokens = 10;
+    }
 
     if (!user) {
       // Shouldn't normally happen (api/auth.js registers on app load first),

@@ -22,7 +22,6 @@ const { checkChannelMembership } = require('../lib/joinGate');
 
 // 50,000 Fruit Coin = $1 USDT  →  1 FC = $0.00002
 const RATES = {
-  binance: { rate: 0.00002, unit: 'USDT', decimals: 4 },
   tonkeeper: { rate: 0.00002, unit: 'USDT', decimals: 4 },
 };
 
@@ -46,8 +45,8 @@ module.exports = async (req, res) => {
     const { method, address, amount } = req.body || {};
     const amt = Number(amount);
 
-    if (!RATES[method]) {
-      return res.status(400).json({ success: false, error: 'Invalid withdrawal method' });
+    if (method !== 'tonkeeper') {
+      return res.status(400).json({ success: false, error: 'Only TonKeeper address (USDT on TON) is supported.' });
     }
     if (!address || typeof address !== 'string' || address.trim().length < 4) {
       return res.status(400).json({ success: false, error: 'Invalid address' });
