@@ -1,13 +1,13 @@
 // api/slash.js
 // POST /api/slash
 // Fruit Cut Slash Game API Endpoint
-// Handles status query and slice reward claim with atomic MongoDB updates.
+// Cooldown: 1 hour between games.
+// Reward: 15 to 40 FC randomly (server-validated).
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { applyRegen, MAX_TOKENS } = require('../lib/tokens');
-const { pickSlashReward } = require('../lib/slashGame');
+const { pickSlashReward, SLASH_COOLDOWN_MS } = require('../lib/slashGame');
 const { getLevelForSlices, getLevelProgress, LEVELS } = require('../lib/levelSystem');
 
 module.exports = async (req, res) => {
@@ -33,12 +33,14 @@ module.exports = async (req, res) => {
       return res.status(403).json({ success: false, error: 'Account suspended' });
     }
 
-    // Apply any pending token regen
-    const regen = await applyRegen(usersCol, user);
-    user.gameTokens = regen.gameTokens;
+    const now = new Date();
+    const lastSlashTime = user.lastSlashAt ? new Date(user.lastSlashAt).getTime() : 0;
+    const elapsed = now.getTime() - lastSlashTime;
+    const onCooldown = elapsed < SLASH_COOLDOWN_MS;
+    const nextAvailableAt = new Date(lastSlashTime + SLASH_COOLDOWN_MS);
+    const remainingMs = Math.max(0, SLASH_COOLDOWN_MS - elapsed);
 
     const action = req.body && req.body.action ? req.body.action : 'status';
-
     const currentSlices = user.totalSlices || 0;
     const currentProgress = getLevelProgress(currentSlices);
 
@@ -46,9 +48,9 @@ module.exports = async (req, res) => {
     if (action === 'status') {
       return res.status(200).json({
         success: true,
-        tokens: user.gameTokens ?? 3,
-        maxTokens: MAX_TOKENS,
-        nextTokenAt: regen.nextTokenAt,
+        onCooldown,
+        remainingMs,
+        nextAvailableAt,
         fruitCoin: user.fruitCoin || 0,
         totalSlices: currentSlices,
         level: currentProgress.level,
@@ -58,15 +60,17 @@ module.exports = async (req, res) => {
 
     // ── Claim / Slash Action ───────────────────────────────────────
     if (action === 'claim') {
-      if ((user.gameTokens || 0) < 1) {
+      if (onCooldown) {
         return res.status(200).json({
           success: false,
-          error: 'no_tokens',
-          message: 'No game tokens left! Claim Free Box, buy in Shop, or watch Ads.',
+          error: 'on_cooldown',
+          message: 'Fruit slice is on cooldown. Come back in 1 hour!',
+          nextAvailableAt,
+          remainingMs,
         });
       }
 
-      // 1. Calculate slice reward: 10 - 200 FC (weighted)
+      // 1. Calculate slice reward: 15 - 40 FC (weighted)
       const baseReward = pickSlashReward();
 
       // 2. Calculate level progression
@@ -87,17 +91,20 @@ module.exports = async (req, res) => {
       }
 
       const totalReward = baseReward + levelReward;
-      const now = new Date();
+      const cutoff = new Date(now.getTime() - SLASH_COOLDOWN_MS);
 
-      // 3. Deduct token and add rewards atomically
+      // 3. Atomically ensure user hasn't claimed within 1 hour
       const updatedUser = await usersCol.findOneAndUpdate(
         {
           _id: user._id,
-          gameTokens: { $gte: 1 },
+          $or: [
+            { lastSlashAt: { $exists: false } },
+            { lastSlashAt: null },
+            { lastSlashAt: { $lt: cutoff } },
+          ],
         },
         {
           $inc: {
-            gameTokens: -1,
             fruitCoin: totalReward,
             totalSlices: 1,
           },
@@ -113,8 +120,9 @@ module.exports = async (req, res) => {
       if (!updatedUser) {
         return res.status(200).json({
           success: false,
-          error: 'no_tokens',
-          message: 'Not enough tokens to slice!',
+          error: 'on_cooldown',
+          message: 'Already slashed this hour! Try again later.',
+          nextAvailableAt: new Date(now.getTime() + SLASH_COOLDOWN_MS),
         });
       }
 
@@ -144,9 +152,9 @@ module.exports = async (req, res) => {
         isLevelUp,
         newLevel,
         totalSlices: updatedUser.totalSlices,
+        nextAvailableAt: new Date(now.getTime() + SLASH_COOLDOWN_MS),
         user: {
           fruitCoin: updatedUser.fruitCoin,
-          tokens: updatedUser.gameTokens,
           level: updatedProgress.level,
           levelProgress: updatedProgress,
         },

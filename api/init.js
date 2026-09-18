@@ -68,12 +68,14 @@ module.exports = async (req, res) => {
       user: {
         coins: user.gold,               // frontend's window.G.coins field
         fruitCoin: user.fruitCoin,
+        photoUrl: user.photoUrl || null,
         tokens: user.gameTokens ?? 3,   // frontend's window.G.tokens field
         maxTokens: MAX_TOKENS,
         nextTokenAt: regen.nextTokenAt,
         referralCount: user.referralCount,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
+        lastDailyGiftAt: user.lastDailyGiftAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
         level: levelProg.level,
         levelProgress: levelProg,

@@ -49,6 +49,7 @@ module.exports = async (req, res) => {
 
     const telegramId = verify.user.id;
     const username = verify.user.username || verify.user.first_name || 'Player';
+    const photoUrl = verify.user.photo_url || null;
 
     const usersCol = await getCollection('users');
     const devicesCol = await getCollection('devices');
@@ -93,11 +94,13 @@ module.exports = async (req, res) => {
       const newUser = {
         telegramId,
         username,
+        photoUrl,
         gold: 0,
         fruitCoin: 0,
         gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
         lastTokenRegenAt: new Date(),
         lastFreeBoxAt: null,
+        lastDailyGiftAt: null,
         lastSlashAt: null,
         slashEarningsUsd: 0,
         totalSlices: 0,
@@ -174,7 +177,16 @@ module.exports = async (req, res) => {
       const regen = await applyRegen(usersCol, user);
       user.gameTokens = regen.gameTokens;
       user.lastTokenRegenAt = regen.lastTokenRegenAt;
-      await usersCol.updateOne({ _id: user._id }, { $set: { lastActive: new Date(), username } });
+      await usersCol.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            lastActive: new Date(),
+            username,
+            ...(photoUrl ? { photoUrl } : {}),
+          },
+        }
+      );
     }
 
     const finalRegen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt || new Date());
@@ -193,12 +205,14 @@ module.exports = async (req, res) => {
       user: {
         telegramId: user.telegramId,
         username: user.username,
+        photoUrl: user.photoUrl || photoUrl || null,
         gold: user.gold,
         fruitCoin: user.fruitCoin,
         gameTokens: user.gameTokens ?? 3,
         maxTokens: MAX_TOKENS,
         nextTokenAt: finalRegen.nextTokenAt,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
+        lastDailyGiftAt: user.lastDailyGiftAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
         completedTasks: user.completedTasks ?? [],
         referralCount: user.referralCount,

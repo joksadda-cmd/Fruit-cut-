@@ -1,31 +1,15 @@
 // api/game_claim.js
 // POST /api/game_claim
-//
-// Related "credit/spend something for this user" actions share this one
-// file on purpose — Vercel's Hobby plan caps a project at 12 Serverless
-// Functions.
-//
-// action: 'claim_gift' -> claims an admin-sent gift (from the bot's
-//   "Send Gift" flow). Body: { action: 'claim_gift', giftId }
-//   Atomic: the filter requires status:'pending', so a double-tap or two
-//   overlapping requests can only ever credit the user once.
-//
-// action: 'buy_shop_item' -> spends Gold on a Game Token bundle.
-// action: 'freebox_ad_session' / 'claim_freebox' -> the 24h Free Box flow.
-//
-// NOTE: the old Level/Stage system (start_game / level-complete claim)
-// lived here before — removed along with the fruit-slicing game itself.
-// It's gone from index.html, so these actions are no longer reachable;
-// removing the handlers too so there's no dead code claiming Gold for a
-// "level" that no longer exists anywhere in the app.
+// Handles gift claims, Daily Gift Box (10-40 FC), and Leaderboard ranking.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { MAX_TOKENS } = require('../lib/tokens');
-const { createAdSession, claimAdSession, revertAdSession } = require('../lib/adSession');
 const { ObjectId } = require('mongodb');
 
+const DAILY_GIFT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// ── Admin-sent gift claim ──────────────────────────────────────────
 async function handleClaimGift(req, res, user) {
   const { giftId } = req.body || {};
   if (!giftId) return res.status(400).json({ success: false, error: 'missing_gift_id' });
@@ -62,115 +46,114 @@ async function handleClaimGift(req, res, user) {
     success: true,
     amount: gift.amount,
     reason: gift.reason,
-    user: { gold: updatedUser.gold, fruitCoin: updatedUser.fruitCoin },
+    user: { fruitCoin: updatedUser.fruitCoin, gold: updatedUser.gold },
   });
 }
 
-// ── Shop — 6-slot Gold item catalog (server-only; never trust a price
-// or item id sent from the client — same rule as everywhere else in
-// this project). Keys are what the frontend sends as `itemId`.
-const SHOP_ITEMS = {
-  token_1:     { cost: 120,  type: 'token',    amount: 1,  label: '1 🎮 Game Token' },
-  token_2:     { cost: 200,  type: 'token',    amount: 2,  label: '2 🎮 Game Token' },
-  token_5:     { cost: 450,  type: 'token',    amount: 5,  label: '5 🎮 Game Token' },
-};
-
-async function handleBuyShopItem(req, res, user) {
-  const { itemId } = req.body || {};
-  const item = SHOP_ITEMS[itemId];
-  if (!item) return res.status(400).json({ success: false, error: 'invalid_item' });
-
-  const usersCol = await getCollection('users');
-
-  // Clamp to MAX_TOKENS — buying a bundle while already near/at the cap
-  // can't push you over it.
-  const updated = await usersCol.findOneAndUpdate(
-    { _id: user._id, gold: { $gte: item.cost } },
-    [{ $set: {
-        gold: { $subtract: ['$gold', item.cost] },
-        gameTokens: { $min: [{ $add: [{ $ifNull: ['$gameTokens', 3] }, item.amount] }, MAX_TOKENS] },
-    } }],
-    { returnDocument: 'after' }
-  );
-
-  if (!updated) return res.status(200).json({ success: false, error: 'not_enough_gold' });
-
-  const txCol = await getCollection('transactions');
-  await txCol.insertOne({
-    telegramId: user.telegramId,
-    type: TRANSACTION_TYPES.SHOP_PURCHASE,
-    amount: -item.cost,
-    balanceAfter: updated.gold,
-    meta: { itemId, itemType: item.type, itemAmount: item.amount },
-    createdAt: new Date(),
-  });
+// ── Daily Gift Box: 10 to 40 FC randomly once per 24 hours ────────
+async function handleDailyGiftStatus(req, res, user) {
+  const now = Date.now();
+  const lastTime = user.lastDailyGiftAt ? new Date(user.lastDailyGiftAt).getTime() : 0;
+  const elapsed = now - lastTime;
+  const onCooldown = elapsed < DAILY_GIFT_COOLDOWN_MS;
+  const nextDailyGiftAt = new Date(lastTime + DAILY_GIFT_COOLDOWN_MS);
 
   return res.status(200).json({
     success: true,
-    label: item.label,
-    user: { gold: updated.gold, gameTokens: updated.gameTokens },
+    onCooldown,
+    nextDailyGiftAt,
+    remainingMs: Math.max(0, DAILY_GIFT_COOLDOWN_MS - elapsed),
   });
 }
 
-const FREEBOX_COOLDOWN_MS = 24 * 60 * 60 * 1000; // rolling 24h from last claim
-const FREEBOX_MIN = 100;
-const FREEBOX_MAX = 500;
-const FREEBOX_AD_NETWORK = 'freebox'; // synthetic network tag — kept separate
-// from 'adsgram'/'adsgramDaily'/'gigapub'/'monetag' on purpose, so watching
-// an ad to unlock the free box never eats into the daily watch caps shown
-// on the "5/5 remaining" / "10/10 remaining" ad-for-gold buttons in Shop.
+async function handleClaimDailyGift(req, res, user) {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - DAILY_GIFT_COOLDOWN_MS);
 
-async function handleFreeboxAdSession(req, res, user) {
-  const sessionId = await createAdSession(user.telegramId, FREEBOX_AD_NETWORK);
-  return res.status(200).json({ success: true, sessionId });
-}
-
-async function handleClaimFreebox(req, res, user) {
-  const { sessionId } = req.body || {};
-  if (!sessionId) {
-    return res.status(400).json({ success: false, error: 'missing_ad_session' });
-  }
-  const adClaim = await claimAdSession(user.telegramId, sessionId, FREEBOX_AD_NETWORK);
-  if (!adClaim.ok) {
-    return res.status(200).json({ success: false, error: 'ad_not_verified', reason: adClaim.reason });
-  }
+  // Server-side random reward: 10 to 40 FC
+  const reward = Math.floor(Math.random() * (40 - 10 + 1)) + 10;
 
   const usersCol = await getCollection('users');
-  const now = new Date();
-  const cutoff = new Date(now.getTime() - FREEBOX_COOLDOWN_MS);
-
-  // Atomic: only succeeds if lastFreeBoxAt is missing/null or older than
-  // the 24h cutoff. Reward computed here — never trust a client amount.
-  const reward = FREEBOX_MIN + Math.floor(Math.random() * (FREEBOX_MAX - FREEBOX_MIN + 1));
-  const updated = await usersCol.findOneAndUpdate(
-    { _id: user._id, $or: [{ lastFreeBoxAt: { $exists: false } }, { lastFreeBoxAt: null }, { lastFreeBoxAt: { $lt: cutoff } }] },
-    { $inc: { gold: reward }, $set: { lastFreeBoxAt: now } },
+  const updatedUser = await usersCol.findOneAndUpdate(
+    {
+      _id: user._id,
+      $or: [
+        { lastDailyGiftAt: { $exists: false } },
+        { lastDailyGiftAt: null },
+        { lastDailyGiftAt: { $lt: cutoff } },
+      ],
+    },
+    {
+      $inc: { fruitCoin: reward },
+      $set: { lastDailyGiftAt: now, lastActive: now },
+    },
     { returnDocument: 'after' }
   );
 
-  if (!updated) {
-    // Already watched the ad but the box turned out to still be on
-    // cooldown (stale client state) — give the session back instead of
-    // burning a real ad watch for nothing.
-    await revertAdSession(sessionId, user.telegramId);
-    const nextAt = user.lastFreeBoxAt ? new Date(new Date(user.lastFreeBoxAt).getTime() + FREEBOX_COOLDOWN_MS) : now;
-    return res.status(200).json({ success: false, error: 'freebox_on_cooldown', nextAt });
+  if (!updatedUser) {
+    const nextDailyGiftAt = user.lastDailyGiftAt
+      ? new Date(new Date(user.lastDailyGiftAt).getTime() + DAILY_GIFT_COOLDOWN_MS)
+      : new Date(now.getTime() + DAILY_GIFT_COOLDOWN_MS);
+    return res.status(200).json({
+      success: false,
+      error: 'gift_on_cooldown',
+      message: 'Daily gift already claimed today! Come back tomorrow.',
+      nextDailyGiftAt,
+    });
   }
 
   const txCol = await getCollection('transactions');
   await txCol.insertOne({
     telegramId: user.telegramId,
-    type: TRANSACTION_TYPES.FREEBOX_REWARD,
+    type: 'daily_gift_reward',
     amount: reward,
-    balanceAfter: updated.gold,
+    balanceAfter: updatedUser.fruitCoin,
     createdAt: now,
   });
 
   return res.status(200).json({
     success: true,
     reward,
-    nextAt: new Date(now.getTime() + FREEBOX_COOLDOWN_MS),
-    user: { gold: updated.gold },
+    nextDailyGiftAt: new Date(now.getTime() + DAILY_GIFT_COOLDOWN_MS),
+    user: { fruitCoin: updatedUser.fruitCoin },
+  });
+}
+
+// ── Top 20 Leaderboard ─────────────────────────────────────────────
+async function handleLeaderboard(req, res, user) {
+  const usersCol = await getCollection('users');
+  const topUsers = await usersCol
+    .find({ banned: { $ne: true } })
+    .sort({ fruitCoin: -1 })
+    .limit(20)
+    .project({
+      username: 1,
+      telegramId: 1,
+      photoUrl: 1,
+      fruitCoin: 1,
+      level: 1,
+      totalSlices: 1,
+    })
+    .toArray();
+
+  const formatted = topUsers.map((u, index) => {
+    const rawId = String(u.telegramId || '');
+    const maskedId = rawId.length > 5 ? rawId.slice(0, 3) + '***' + rawId.slice(-2) : rawId;
+    return {
+      rank: index + 1,
+      username: u.username || `Player_${maskedId}`,
+      maskedId,
+      photoUrl: u.photoUrl || null,
+      fruitCoin: u.fruitCoin || 0,
+      level: u.level || 1,
+      totalSlices: u.totalSlices || 0,
+      isCurrentUser: String(u.telegramId) === String(user.telegramId),
+    };
+  });
+
+  return res.status(200).json({
+    success: true,
+    leaderboard: formatted,
   });
 }
 
@@ -194,9 +177,10 @@ module.exports = async (req, res) => {
 
     const action = req.body && req.body.action;
     if (action === 'claim_gift') return await handleClaimGift(req, res, user);
-    if (action === 'buy_shop_item') return await handleBuyShopItem(req, res, user);
-    if (action === 'claim_freebox') return await handleClaimFreebox(req, res, user);
-    if (action === 'freebox_ad_session') return await handleFreeboxAdSession(req, res, user);
+    if (action === 'daily_gift_status') return await handleDailyGiftStatus(req, res, user);
+    if (action === 'claim_daily_gift') return await handleClaimDailyGift(req, res, user);
+    if (action === 'leaderboard') return await handleLeaderboard(req, res, user);
+
     return res.status(400).json({ success: false, error: 'invalid_action' });
   } catch (err) {
     console.error('game_claim error:', err);
