@@ -1,15 +1,18 @@
 // api/slash.js
 // POST /api/slash
 // Fruit Cut Slash Game API Endpoint
-// Cooldown: 1 hour between games.
-// Reward: 15 to 40 FC randomly (server-validated).
+// Cooldown: 30 minutes between games.
+// Reward: 15 to 60 FC randomly (server-validated).
+// Caps: 48 claims / UTC day, 366 claims / week (see lib/slashGame.js).
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { pickSlashReward, SLASH_COOLDOWN_MS } = require('../lib/slashGame');
+const { pickSlashReward, SLASH_COOLDOWN_MS, SLASH_MAX_PER_DAY, SLASH_MAX_PER_WEEK } = require('../lib/slashGame');
+const { checkAndIncrementDailyLimit, checkAndIncrementWeeklyLimit } = require('../lib/dailyLimit');
 const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
-const { checkReferralStep3, checkReferralStep4 } = require('../lib/referral');
+const { checkReferralStep3, checkReferralStep4, checkReferralWeeklyValid } = require('../lib/referral');
+const { recordSlashWin } = require('../lib/leaderboard');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -66,13 +69,31 @@ module.exports = async (req, res) => {
         return res.status(200).json({
           success: false,
           error: 'on_cooldown',
-          message: 'Fruit slice is on cooldown. Come back in 1 hour!',
+          message: 'Fruit slice is on cooldown. Come back in 30 minutes!',
           nextAvailableAt,
           remainingMs,
         });
       }
 
-      // 1. Calculate slice reward: 15 - 40 FC (weighted)
+      // Daily / weekly ceilings (see lib/slashGame.js for why 48/366).
+      const dailyCheck = await checkAndIncrementDailyLimit(telegramId, 'slash_claim', SLASH_MAX_PER_DAY);
+      if (!dailyCheck.allowed) {
+        return res.status(200).json({
+          success: false,
+          error: 'daily_limit_reached',
+          message: `Daily slash limit reached (${SLASH_MAX_PER_DAY}/day). Come back tomorrow!`,
+        });
+      }
+      const weeklyCheck = await checkAndIncrementWeeklyLimit(telegramId, 'slash_claim', SLASH_MAX_PER_WEEK);
+      if (!weeklyCheck.allowed) {
+        return res.status(200).json({
+          success: false,
+          error: 'weekly_limit_reached',
+          message: `Weekly slash limit reached (${SLASH_MAX_PER_WEEK}/week). Come back next week!`,
+        });
+      }
+
+      // 1. Calculate slice reward: 15 - 60 FC (weighted)
       const baseReward = pickSlashReward();
 
       // 2. Calculate XP & Level progression (+5 XP per slash game)
@@ -95,7 +116,7 @@ module.exports = async (req, res) => {
       const totalReward = baseReward + levelReward;
       const cutoff = new Date(now.getTime() - SLASH_COOLDOWN_MS);
 
-      // 3. Atomically ensure user hasn't claimed within 1 hour
+      // 3. Atomically ensure user hasn't claimed within the cooldown window
       const updatedUser = await usersCol.findOneAndUpdate(
         {
           _id: user._id,
@@ -124,7 +145,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({
           success: false,
           error: 'on_cooldown',
-          message: 'Already slashed this hour! Try again later.',
+          message: 'Already slashed recently! Try again in a bit.',
           nextAvailableAt: new Date(now.getTime() + SLASH_COOLDOWN_MS),
         });
       }
@@ -147,8 +168,15 @@ module.exports = async (req, res) => {
         createdAt: now,
       });
 
-      // 5. Trigger referral milestones asynchronously
+      // 5. Feed this week's leaderboard tally (weekly Top Slasher competition)
+      recordSlashWin(user.telegramId, user.username).catch(() => {});
+
+      // 6. Trigger referral milestones asynchronously
       checkReferralStep3(updatedUser).catch(() => {});
+      // Also check: does this claim make the referral "valid" for this
+      // week's Top Referrer leaderboard? (5 slash claims — separate,
+      // lower bar than Step 3's 10-claim/120 FC milestone above.)
+      checkReferralWeeklyValid(updatedUser).catch(() => {});
       if (newLevel >= 3) {
         checkReferralStep4(updatedUser, newLevel).catch(() => {});
       }
