@@ -1,10 +1,13 @@
 // api/game_claim.js
 // POST /api/game_claim
-// Handles gift claims, Daily Gift Box (10-40 FC), and Leaderboard ranking.
+// Handles gift claims, Daily Gift Box (10-40 FC), and the Weekly Competition
+// leaderboard (Slash + Refer tabs — see handleWeeklyLeaderboard below).
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
-const { TRANSACTION_TYPES } = require('../lib/constants');
+const { TRANSACTION_TYPES, LEADERBOARD_WEEKLY_REWARDS, LEADERBOARD_MIN_WINS_FOR_PRIZE, REFERRAL_WEEKLY_REWARDS } = require('../lib/constants');
+const { getWeekKey, getTopSlashers, getWeeklyWins, getUserRank } = require('../lib/leaderboard');
+const { getTopReferrers, getWeeklyReferrals, getUserReferralRank } = require('../lib/referralLeaderboard');
 const { ObjectId } = require('mongodb');
 
 const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec: every 12hr)
@@ -141,54 +144,88 @@ async function resolveTelegramPhoto(telegramId, botToken) {
   return null;
 }
 
-// ── Top 20 Leaderboard ─────────────────────────────────────────────
-async function handleLeaderboard(req, res, user) {
-  const usersCol = await getCollection('users');
-  const botToken = process.env.BOT_TOKEN;
-  const topUsers = await usersCol
-    .find({ banned: { $ne: true } })
-    .sort({ fruitCoin: -1 })
-    .limit(20)
-    .project({
-      username: 1,
-      telegramId: 1,
-      photoUrl: 1,
-      fruitCoin: 1,
-      level: 1,
-      totalSlices: 1,
-    })
+// ── Weekly Competition (Slash + Refer tabs) ─────────────────────────
+// Backs the "Weekly Competition" leaderboard modal: two tabs sharing one
+// call — Top Slasher (lib/leaderboard.js, 100+ wins gate, 30,000 FC pool,
+// top 20) and Top Referrer (lib/referralLeaderboard.js, no gate, 25,000 FC
+// pool, top 10). Both reset every Monday 00:00 UTC and are paid out by the
+// same cron (api/cron_weekly_leaderboard.js).
+async function attachProfiles(entries, usersCol, botToken) {
+  if (entries.length === 0) return [];
+  const ids = entries.map((e) => e.telegramId);
+  const profiles = await usersCol
+    .find({ telegramId: { $in: ids } })
+    .project({ telegramId: 1, photoUrl: 1, level: 1 })
     .toArray();
+  const byId = new Map(profiles.map((p) => [String(p.telegramId), p]));
 
-  const formatted = await Promise.all(
-    topUsers.map(async (u, index) => {
-      const rawId = String(u.telegramId || '');
-      const maskedId = rawId.length > 5 ? rawId.slice(0, 3) + '***' + rawId.slice(-2) : rawId;
-      let photoUrl = u.photoUrl || null;
-
-      // Automatically fetch from Telegram Bot API if missing in DB
-      if (!photoUrl && botToken && u.telegramId) {
-        photoUrl = await resolveTelegramPhoto(u.telegramId, botToken);
-        if (photoUrl) {
-          usersCol.updateOne({ _id: u._id }, { $set: { photoUrl } }).catch(() => {});
-        }
+  return Promise.all(
+    entries.map(async (e) => {
+      const profile = byId.get(String(e.telegramId));
+      let photoUrl = profile && profile.photoUrl ? profile.photoUrl : null;
+      if (!photoUrl && botToken) {
+        photoUrl = await resolveTelegramPhoto(e.telegramId, botToken);
       }
-
-      return {
-        rank: index + 1,
-        username: u.username || `Player_${maskedId}`,
-        maskedId,
-        photoUrl: photoUrl || null,
-        fruitCoin: u.fruitCoin || 0,
-        level: u.level || 1,
-        totalSlices: u.totalSlices || 0,
-        isCurrentUser: String(u.telegramId) === String(user.telegramId),
-      };
+      return { entry: e, photoUrl, level: profile ? profile.level || 1 : 1 };
     })
   );
+}
+
+async function handleWeeklyLeaderboard(req, res, user) {
+  const botToken = process.env.BOT_TOKEN;
+  const usersCol = await getCollection('users');
+  const weekKey = getWeekKey();
+  const myId = String(user.telegramId);
+
+  const [slashTop, referTop, myWins, myReferrals, mySlashRank, myReferralRank] = await Promise.all([
+    getTopSlashers(weekKey, LEADERBOARD_WEEKLY_REWARDS.length),
+    getTopReferrers(weekKey, REFERRAL_WEEKLY_REWARDS.length),
+    getWeeklyWins(myId, weekKey),
+    getWeeklyReferrals(myId, weekKey),
+    getUserRank(myId, weekKey),
+    getUserReferralRank(myId, weekKey),
+  ]);
+
+  const [slashWithProfiles, referWithProfiles] = await Promise.all([
+    attachProfiles(slashTop, usersCol, botToken),
+    attachProfiles(referTop, usersCol, botToken),
+  ]);
+
+  const slashList = slashWithProfiles.map(({ entry, photoUrl, level }, index) => ({
+    rank: index + 1,
+    username: entry.username || 'Player',
+    photoUrl,
+    level,
+    wins: entry.wins || 0,
+    prizeFc: LEADERBOARD_WEEKLY_REWARDS[index] || 0,
+    eligible: (entry.wins || 0) >= LEADERBOARD_MIN_WINS_FOR_PRIZE,
+    isCurrentUser: entry.telegramId === myId,
+  }));
+
+  const referList = referWithProfiles.map(({ entry, photoUrl, level }, index) => ({
+    rank: index + 1,
+    username: entry.username || 'Player',
+    photoUrl,
+    level,
+    referrals: entry.referrals || 0,
+    prizeFc: REFERRAL_WEEKLY_REWARDS[index] || 0,
+    isCurrentUser: entry.telegramId === myId,
+  }));
 
   return res.status(200).json({
     success: true,
-    leaderboard: formatted,
+    weekKey,
+    slash: {
+      list: slashList,
+      poolFc: LEADERBOARD_WEEKLY_REWARDS.reduce((a, b) => a + b, 0),
+      minWinsForPrize: LEADERBOARD_MIN_WINS_FOR_PRIZE,
+      me: { wins: myWins, rank: mySlashRank },
+    },
+    refer: {
+      list: referList,
+      poolFc: REFERRAL_WEEKLY_REWARDS.reduce((a, b) => a + b, 0),
+      me: { referrals: myReferrals, rank: myReferralRank },
+    },
   });
 }
 
@@ -214,7 +251,7 @@ module.exports = async (req, res) => {
     if (action === 'claim_gift') return await handleClaimGift(req, res, user);
     if (action === 'daily_gift_status') return await handleDailyGiftStatus(req, res, user);
     if (action === 'claim_daily_gift') return await handleClaimDailyGift(req, res, user);
-    if (action === 'leaderboard') return await handleLeaderboard(req, res, user);
+    if (action === 'weekly_leaderboard') return await handleWeeklyLeaderboard(req, res, user);
 
     return res.status(400).json({ success: false, error: 'invalid_action' });
   } catch (err) {
