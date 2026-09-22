@@ -2,6 +2,12 @@
 // fetch URL '/api/init' in your frontend, OR rename to '/api/auth', your
 // choice — just make sure frontend and this file's route match)
 //
+// Two call shapes (merged from the old separate api/checkJoin.js — Vercel
+// Hobby caps a project at 12 Serverless Functions, see api/verify_task.js's
+// header comment for the same reasoning):
+//   { action: 'check_join' }                        -> channel-join status check
+//   { deviceId, referredBy, photoUrl } (default)     -> register/sync user
+//
 // Reads initData from the 'x-telegram-init-data' HEADER — matches your
 // existing frontend pattern (apiCall() and initApp() already send this).
 //
@@ -19,10 +25,26 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { computeRegen, applyRegen, MAX_TOKENS } = require('../lib/tokens');
 const { getLevelProgress } = require('../lib/levelSystem');
+const { checkChannelMembership } = require('../lib/joinGate');
+const { checkReferralStep1 } = require('../lib/referral');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
+
+async function handleCheckJoin(req, res, telegramId) {
+  const channels = await checkChannelMembership(telegramId);
+  const allJoined = channels.every((c) => c.joined);
+
+  if (allJoined) {
+    const usersCol = await getCollection('users');
+    const user = await findUserByTelegramId(usersCol, telegramId);
+    if (user && user.referredBy && !user.referStep1Given) {
+      checkReferralStep1(user).catch(() => {});
+    }
+  }
+
+  return res.status(200).json({ success: true, allJoined, channels });
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -44,14 +66,8 @@ module.exports = async (req, res) => {
 
     const telegramId = verify.user.id;
 
-    // ── Terms & Conditions: accept action ─────────────────────────
-    if (action === 'accept_terms') {
-      const usersCol = await getCollection('users');
-      await usersCol.updateOne(
-        { telegramId },
-        { $set: { termsAccepted: true, termsAcceptedAt: new Date() } }
-      );
-      return res.status(200).json({ success: true, termsAccepted: true });
+    if (action === 'check_join') {
+      return await handleCheckJoin(req, res, telegramId);
     }
 
     const username = verify.user.username || verify.user.first_name || 'Player';
@@ -103,8 +119,6 @@ module.exports = async (req, res) => {
         photoUrl,
         gold: 0,
         fruitCoin: 0,
-        gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
-        lastTokenRegenAt: new Date(),
         lastFreeBoxAt: null,
         lastDailyGiftAt: null,
         lastSlashAt: null,
@@ -119,8 +133,6 @@ module.exports = async (req, res) => {
         referredBy: referredBy || null,
         referralCount: 0,
         tonWallet: null,
-        withdrawAddress: null,     // permanent withdraw wallet address (set on first withdrawal)
-        termsAccepted: false,      // must accept T&C on first login
         banned: false,
         joinedAt: new Date(),
         lastActive: new Date(),
@@ -139,6 +151,12 @@ module.exports = async (req, res) => {
               $set: { lastActive: new Date() },
             }
           );
+          // NOTE: this new referral does NOT yet count toward the weekly
+          // "Top Referrer" leaderboard — that only happens once the friend
+          // has played REFERRAL_WEEKLY_VALID_SLASH_COUNT slash games (see
+          // checkReferralWeeklyValid in lib/referral.js, called from
+          // api/slash.js). Crediting it here at signup would let anyone
+          // farm the weekly FC pool with disposable accounts.
 
           const joinedWho = username && username !== 'Player' ? `@${username}` : 'Your friend';
           sendTelegramMessage(
@@ -156,13 +174,6 @@ module.exports = async (req, res) => {
         }
       }
     } else {
-      // Atomic (compare-and-swap) regen — see lib/tokens.js for why this
-      // replaced the old read → compute → blind-$set pattern that could
-      // double-apply a tick jump when this endpoint and api/init.js's
-      // periodic sync raced each other.
-      const regen = await applyRegen(usersCol, user);
-      user.gameTokens = regen.gameTokens;
-      user.lastTokenRegenAt = regen.lastTokenRegenAt;
       await usersCol.updateOne(
         { _id: user._id },
         {
@@ -175,8 +186,6 @@ module.exports = async (req, res) => {
       );
     }
 
-    const finalRegen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt || new Date());
-
     const giftsCol = await getCollection('gifts');
     const pendingGift = await giftsCol.findOne(
       { telegramId: user.telegramId, status: 'pending' },
@@ -184,21 +193,16 @@ module.exports = async (req, res) => {
     );
 
     const levelProg = getLevelProgress(user.totalSlices || 0);
-    const termsAccepted = user.termsAccepted || false;
 
     return res.status(200).json({
       success: true,
       status: 'ok',
-      showTerms: !termsAccepted,   // true = show T&C modal (new user or not yet accepted)
       user: {
         telegramId: user.telegramId,
         username: user.username,
         photoUrl: user.photoUrl || photoUrl || null,
         gold: user.gold,
         fruitCoin: user.fruitCoin,
-        gameTokens: user.gameTokens ?? 3,
-        maxTokens: MAX_TOKENS,
-        nextTokenAt: finalRegen.nextTokenAt,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
         lastDailyGiftAt: user.lastDailyGiftAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
@@ -208,8 +212,6 @@ module.exports = async (req, res) => {
         level: levelProg.level,
         levelProgress: levelProg,
         totalSlices: user.totalSlices || 0,
-        termsAccepted,
-        withdrawAddress: user.withdrawAddress || null,  // permanent saved address
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
