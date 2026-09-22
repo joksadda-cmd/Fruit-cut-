@@ -25,7 +25,6 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
 const { TRANSACTION_TYPES } = require('../lib/constants');
-const { computeRegen, applyRegen, MAX_TOKENS } = require('../lib/tokens');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
 const { checkReferralStep1 } = require('../lib/referral');
@@ -120,8 +119,6 @@ module.exports = async (req, res) => {
         photoUrl,
         gold: 0,
         fruitCoin: 0,
-        gameTokens: 3,       // starting tokens (matches frontend's default "3/10" display)
-        lastTokenRegenAt: new Date(),
         lastFreeBoxAt: null,
         lastDailyGiftAt: null,
         lastSlashAt: null,
@@ -177,13 +174,6 @@ module.exports = async (req, res) => {
         }
       }
     } else {
-      // Atomic (compare-and-swap) regen — see lib/tokens.js for why this
-      // replaced the old read → compute → blind-$set pattern that could
-      // double-apply a tick jump when this endpoint and api/init.js's
-      // periodic sync raced each other.
-      const regen = await applyRegen(usersCol, user);
-      user.gameTokens = regen.gameTokens;
-      user.lastTokenRegenAt = regen.lastTokenRegenAt;
       await usersCol.updateOne(
         { _id: user._id },
         {
@@ -195,8 +185,6 @@ module.exports = async (req, res) => {
         }
       );
     }
-
-    const finalRegen = computeRegen(user.gameTokens ?? 3, user.lastTokenRegenAt || new Date());
 
     const giftsCol = await getCollection('gifts');
     const pendingGift = await giftsCol.findOne(
@@ -215,9 +203,6 @@ module.exports = async (req, res) => {
         photoUrl: user.photoUrl || photoUrl || null,
         gold: user.gold,
         fruitCoin: user.fruitCoin,
-        gameTokens: user.gameTokens ?? 3,
-        maxTokens: MAX_TOKENS,
-        nextTokenAt: finalRegen.nextTokenAt,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
         lastDailyGiftAt: user.lastDailyGiftAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
