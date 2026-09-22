@@ -1,7 +1,14 @@
 // api/withdraw.js
-// User submits a withdrawal request. Balance is deducted immediately
-// (atomically, so a devtools-edited amount can never overdraw the real
-// balance) and a 'pending' request is created for the admin to review.
+// POST /api/withdraw
+// Two call shapes (merged from the old separate api/withdraw_history.js —
+// Vercel Hobby caps a project at 12 Serverless Functions, see
+// api/verify_task.js's header comment for the same reasoning):
+//   { method, address, amount }  -> submit a withdrawal request (default)
+//   { action: 'history' }        -> return the caller's own withdrawal history
+//
+// SUBMIT: Balance is deducted immediately (atomically, so a devtools-edited
+// amount can never overdraw the real balance) and a 'pending' request is
+// created for the admin to review.
 //
 // USDT only — both methods pay out in USDT, just to a different wallet
 // (Binance UID vs a TonKeeper address paid in USDT-on-TON). Rates here
@@ -29,6 +36,48 @@ const MIN_FRUIT_COIN = 2500; // 2,500 FC = $0.05 minimum withdrawal
 const MIN_TASKS = 5;
 const FEE_RATE = 0.05; // 5%
 
+async function handleHistory(req, res, telegramId) {
+  const col = await getCollection('withdrawals');
+  const history = await col.find({ telegramId }).sort({ createdAt: -1 }).limit(30).toArray();
+
+  let totalPendingFc = 0;
+  let totalPendingUsdt = 0;
+  let totalApprovedFc = 0;
+  let totalApprovedUsdt = 0;
+
+  const formatted = history.map((w) => {
+    const amt = w.amount || 0;
+    const converted = w.convertedAmount || Number((amt * 0.95 * 0.00002).toFixed(4));
+
+    if (w.status === 'pending') {
+      totalPendingFc += amt;
+      totalPendingUsdt += converted;
+    } else if (w.status === 'approved') {
+      totalApprovedFc += amt;
+      totalApprovedUsdt += converted;
+    }
+
+    return {
+      method: w.method || 'tonkeeper',
+      amount: amt,
+      netFruitCoin: w.netFruitCoin || Math.round(amt * 0.95),
+      convertedAmount: converted,
+      address: w.address || '',
+      status: w.status || 'pending',
+      createdAt: w.createdAt,
+    };
+  });
+
+  return res.status(200).json({
+    success: true,
+    totalPendingFc,
+    totalPendingUsdt: Number(totalPendingUsdt.toFixed(4)),
+    totalApprovedFc,
+    totalApprovedUsdt: Number(totalApprovedUsdt.toFixed(4)),
+    history: formatted,
+  });
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
@@ -41,6 +90,10 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, error: 'invalid_auth' });
     }
     const telegramId = verify.user.id;
+
+    if (req.body && req.body.action === 'history') {
+      return await handleHistory(req, res, telegramId);
+    }
 
     const { method, address, amount } = req.body || {};
     const amt = Number(amount);
