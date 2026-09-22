@@ -2,6 +2,12 @@
 // fetch URL '/api/init' in your frontend, OR rename to '/api/auth', your
 // choice — just make sure frontend and this file's route match)
 //
+// Two call shapes (merged from the old separate api/checkJoin.js — Vercel
+// Hobby caps a project at 12 Serverless Functions, see api/verify_task.js's
+// header comment for the same reasoning):
+//   { action: 'check_join' }                        -> channel-join status check
+//   { deviceId, referredBy, photoUrl } (default)     -> register/sync user
+//
 // Reads initData from the 'x-telegram-init-data' HEADER — matches your
 // existing frontend pattern (apiCall() and initApp() already send this).
 //
@@ -21,8 +27,25 @@ const { sendTelegramMessage } = require('../lib/notify');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { computeRegen, applyRegen, MAX_TOKENS } = require('../lib/tokens');
 const { getLevelProgress } = require('../lib/levelSystem');
+const { checkChannelMembership } = require('../lib/joinGate');
+const { checkReferralStep1 } = require('../lib/referral');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
+
+async function handleCheckJoin(req, res, telegramId) {
+  const channels = await checkChannelMembership(telegramId);
+  const allJoined = channels.every((c) => c.joined);
+
+  if (allJoined) {
+    const usersCol = await getCollection('users');
+    const user = await findUserByTelegramId(usersCol, telegramId);
+    if (user && user.referredBy && !user.referStep1Given) {
+      checkReferralStep1(user).catch(() => {});
+    }
+  }
+
+  return res.status(200).json({ success: true, allJoined, channels });
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -31,7 +54,7 @@ module.exports = async (req, res) => {
 
   try {
     const initData = req.headers['x-telegram-init-data'] || '';
-    const { deviceId, referredBy: rawReferredBy, photoUrl: clientPhotoUrl } = req.body || {};
+    const { deviceId, referredBy: rawReferredBy, photoUrl: clientPhotoUrl, action } = req.body || {};
     const botToken = process.env.BOT_TOKEN;
 
     // referredBy validation
@@ -43,6 +66,11 @@ module.exports = async (req, res) => {
     }
 
     const telegramId = verify.user.id;
+
+    if (action === 'check_join') {
+      return await handleCheckJoin(req, res, telegramId);
+    }
+
     const username = verify.user.username || verify.user.first_name || 'Player';
     const photoUrl = verify.user.photo_url || clientPhotoUrl || null;
 
