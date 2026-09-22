@@ -10,7 +10,6 @@
     <link rel="preload" as="image" href="./assets/loading_bg.jpg">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@700;800;900&display=swap">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="./i18n.js" defer></script>
     <!-- ── Ad network SDKs — all loaded statically/eagerly, same as the -->
     <!-- rest of the fleet. Loading only when the Ads panel opens meant  -->
     <!-- a user who tapped "Watch" quickly (very common — and doubly so  -->
@@ -354,17 +353,11 @@
         .fruit-whole-target{ position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;animation:fruitBob 2.8s ease-in-out infinite alternate;z-index:18;transition:transform 0.15s; }
         .fruit-whole-target:active{ transform:scale(0.95); }
         @keyframes fruitBob{ 0%{transform:translateY(-12px) rotate(-4deg);} 100%{transform:translateY(12px) rotate(4deg);} }
-        .fruit-half-piece{ position:absolute;width:110px;height:220px;z-index:18;transition:transform 0.85s cubic-bezier(0.55,0,0.85,0.35),opacity 0.85s ease 0.15s; }
+        .fruit-half-piece{ position:absolute;width:110px;height:220px;z-index:18;transition:transform 0.6s cubic-bezier(0.16,1,0.3,1),opacity 0.6s ease; }
         .fruit-half-left{ left:30px; }
-        .fruit-half-right{ right:30px; transition-delay:0.12s; }
-        .fruit-half-right.split{ transition-delay:0.12s; }
-        .fruit-half-left.split{ transform:translate(-120px, 320px) rotate(-320deg) scale(0.6);opacity:0; }
-        .fruit-half-right.split{ transform:translate(120px, 340px) rotate(300deg) scale(0.6);opacity:0; }
-        .fruit-whole-target.cut-hit{ animation:fruitCutShake 0.22s ease; }
-        @keyframes fruitCutShake{ 0%{transform:scale(1) rotate(0);} 25%{transform:scale(1.05) rotate(-3deg);} 50%{transform:scale(0.97) rotate(3deg);} 75%{transform:scale(1.03) rotate(-2deg);} 100%{transform:scale(1) rotate(0);} }
-        .slash-mark{ position:absolute;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#fff,rgba(0,229,255,0.9),transparent);z-index:22;pointer-events:none;animation:slashMarkFade 0.35s ease-out forwards; }
-        @keyframes slashMarkFade{ 0%{opacity:0;transform:scaleX(0.3);} 30%{opacity:1;transform:scaleX(1);} 100%{opacity:0;transform:scaleX(1);} }
-        .arena-cut-progress{ font-size:12px;font-weight:800;color:#00e5ff;text-align:center;margin-top:4px;letter-spacing:0.5px; }
+        .fruit-half-right{ right:30px; }
+        .fruit-half-left.split{ transform:translate(-90px, 70px) rotate(-55deg) scale(0.85);opacity:0; }
+        .fruit-half-right.split{ transform:translate(90px, 70px) rotate(55deg) scale(0.85);opacity:0; }
         .juice-particle{ position:absolute;border-radius:50%;pointer-events:none;z-index:25;animation:juiceFly 0.55s forwards cubic-bezier(0.25,1,0.5,1); }
         @keyframes juiceFly{ 0%{transform:translate(0,0) scale(1);opacity:1;} 100%{transform:translate(var(--dx),var(--dy)) scale(0.2);opacity:0;} }
         .reward-burst{ position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.5);z-index:35;pointer-events:none;text-align:center;opacity:0;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
@@ -396,12 +389,6 @@
 
         .fc-balance-pill { display:flex;align-items:center;gap:8px;background:rgba(8,28,36,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1.5px solid rgba(255,204,0,0.35);border-radius:20px;padding:6px 14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3),0 0 10px rgba(255,204,0,0.15);transition:transform 0.15s; }
         .fc-balance-pill:active { transform:scale(0.96); }
-        .lang-switch-pill { display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:rgba(8,28,36,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1.5px solid rgba(255,255,255,0.18);border-radius:50%;font-size:18px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:transform 0.15s;flex-shrink:0; }
-        .lang-switch-pill:active { transform:scale(0.92); }
-        .lang-row { justify-content:space-between;align-items:center; }
-        .lang-check { opacity:0;color:#4caf50;font-weight:900;font-size:16px; }
-        .lang-row-active .lang-check { opacity:1; }
-        .lang-row-active { background:rgba(255,204,0,0.08); }
         .fc-icon-wrap { font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
         .fc-info-wrap { display:flex;flex-direction:column;align-items:flex-end; }
         .fc-amount { font-family:'Luckiest Guy',cursive;font-size:18px;color:#ffcc00;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,0.4); }
@@ -576,13 +563,6 @@
         .lb-name { font-size:13px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
         .lb-level { font-size:10px;color:#7de;font-weight:700; }
         .lb-coins { font-family:'Luckiest Guy',cursive;font-size:14px;color:#ffcc00;text-align:right;white-space:nowrap; }
-        .lb-item.ineligible { opacity:0.55; }
-        .lb-badge { font-size:9px;font-weight:800;color:#ff8080;white-space:nowrap; }
-
-        /* Weekly Competition tabs (Slash / Refer) */
-        .lb-tabs { display:flex;gap:8px;margin-bottom:10px; }
-        .lb-tab { flex:1;padding:9px 6px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#aaa;font-family:'Luckiest Guy',cursive;font-size:13px;letter-spacing:0.5px;cursor:pointer;transition:all 0.15s ease; }
-        .lb-tab.active { background:linear-gradient(180deg,#ffcc00 0%,#cc8800 100%);color:#3a2400;border-color:#ffcc00;box-shadow:0 0 12px rgba(255,204,0,0.35); }
 
         /* Cinematic Katana Slash Opening Screen */
         .fl-blade-cut { position:relative;width:150px;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:10px; }
@@ -644,6 +624,46 @@
   </div>
 </div>
 
+<!-- Terms & Conditions overlay — shown to new users on first login -->
+<div id="terms-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+  <div style="background:linear-gradient(180deg,#003040,#001828);border:2px solid rgba(0,229,255,0.3);border-radius:20px;padding:24px 20px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;text-align:center;">
+    <div style="font-size:40px;margin-bottom:8px;">📜</div>
+    <div style="font-family:'Luckiest Guy',cursive;font-size:22px;color:#ffcc00;margin-bottom:4px;">Terms & Conditions</div>
+    <div style="font-size:11px;color:#aaa;margin-bottom:16px;">Please read and accept before playing</div>
+
+    <div style="text-align:left;background:rgba(0,0,0,0.3);border-radius:12px;padding:14px;margin-bottom:16px;font-size:12px;color:#ccc;line-height:1.7;max-height:300px;overflow-y:auto;">
+      <p><strong style="color:#ffcc00;">1. One Account Per Device</strong><br>
+      Only one Fruit Cut account is allowed per device. Multiple accounts from the same device will be automatically banned.</p>
+
+      <p><strong style="color:#ffcc00;">2. No Cheating or Hacking</strong><br>
+      Using Termux, DevTools, bots, scripts, modified apps, or any automated tools to earn rewards is strictly prohibited and will result in a permanent ban.</p>
+
+      <p><strong style="color:#ffcc00;">3. Withdrawal Rules</strong><br>
+      • Minimum 5 tasks must be completed<br>
+      • You must reach Level 3 to unlock withdrawal<br>
+      • Your wallet address is permanent once saved<br>
+      • Maximum 100,000 FC per withdrawal<br>
+      • Wrong address refunds incur a 10% penalty</p>
+
+      <p><strong style="color:#ffcc00;">4. Fair Play</strong><br>
+      Any attempt to manipulate the system, exploit bugs, or abuse referrals will result in account suspension. Decisions made by the admin are final.</p>
+
+      <p><strong style="color:#ffcc00;">5. Referral Policy</strong><br>
+      Self-referrals and fake accounts are not allowed. Referral rewards are credited only after genuine activity milestones.</p>
+
+      <p><strong style="color:#ffcc00;">6. Changes to Rules</strong><br>
+      The admin reserves the right to update these rules at any time. Continued use of the app means acceptance of the updated terms.</p>
+
+      <p style="color:#888;font-size:11px;margin-top:12px;">By tapping "I Agree", you confirm that you have read, understood, and agreed to all the above terms and conditions.</p>
+    </div>
+
+    <button onclick="window.acceptTerms()" style="background:linear-gradient(180deg,#00e5ff,#0099cc);border:none;border-radius:14px;padding:14px 32px;font-family:'Luckiest Guy',cursive;font-size:18px;color:#000;cursor:pointer;box-shadow:0 4px 0 #006688;width:100%;margin-bottom:8px;">
+      ✅ I AGREE — LET'S PLAY!
+    </button>
+    <div style="font-size:10px;color:#666;">You must agree to use Fruit Cut</div>
+  </div>
+</div>
+
 <div class="bg-stripes"></div>
 <div id="snowflakes"></div>
 
@@ -664,9 +684,6 @@
                     <span id="ui-top-level-fruit">Novice Slicer 🍎</span>
                 </div>
             </div>
-        </div>
-        <div class="lang-switch-pill ptr" id="lang-switch-btn" onclick="window.showModal('language-modal')">
-            <span id="lang-switch-flag">🇬🇧</span>
         </div>
         <div class="fc-balance-pill ptr" onclick="window.showModal('wallet-modal')">
             <div class="fc-icon-wrap">🍎</div>
@@ -695,7 +712,7 @@
         <div class="treasure-stage">
             <div class="treasure-halo" id="treasure-halo"></div>
             <div class="treasure-rays" id="treasure-rays"></div>
-            <img src="./assets/treasure_chest_closed.png" class="treasure-chest-art" id="hero-treasure-img" alt="12H Treasure Box" data-closed-src="./assets/treasure_chest_closed.png" data-open-src="./assets/treasure_chest_open.png" />
+            <img src="./assets/treasure_chest.png" class="treasure-chest-art" id="hero-treasure-img" alt="12H Treasure Box" />
         </div>
         <div class="treasure-tag-badge">
             <span>✨</span>
@@ -722,7 +739,7 @@
         </div>
 
         <div class="reward-info-pill">
-            <span>🎁 Reward: <strong>15 – 60 FC</strong> per slice (30m Cooldown)</span>
+            <span>🎁 Reward: <strong>15 – 40 FC</strong> per slice (1h Cooldown)</span>
         </div>
     </div>
 
@@ -803,7 +820,6 @@
     <!-- Arena Bottom Controls -->
     <div class="slash-action-btns">
         <div class="slash-hint" id="arena-hint-text">⚔️ SWIPE OR TAP TO SLICE THE BIG FRUIT!</div>
-        <div class="arena-cut-progress" id="arena-cut-progress" style="display:none;"></div>
         
         <!-- Claim Button with Ad -->
         <div id="arena-claim-wrap" style="display:none;width:100%;max-width:300px;text-align:center;">
@@ -821,7 +837,7 @@
 
         <!-- Cooldown / Tokens Notice (Shop removed) -->
         <div id="arena-notokens-wrap" style="display:none;width:100%;max-width:280px;text-align:center;">
-            <div style="font-size:12px;color:#ff8888;font-weight:800;margin-bottom:8px;">⏳ Slice is on 30-minute cooldown!</div>
+            <div style="font-size:12px;color:#ff8888;font-weight:800;margin-bottom:8px;">⏳ Slice is on 1-hour cooldown!</div>
             <button class="btn btn-gold" style="padding:10px 0;font-size:13px;margin:0;width:100%;" onclick="window.closeSlashArena();window.showModal('ads-modal');">📺 WATCH AD</button>
         </div>
     </div>
@@ -911,26 +927,16 @@
     </div>
 </div>
 
-<!-- LEADERBOARD MODAL (Weekly Competition: Slash + Refer tabs) -->
+<!-- LEADERBOARD MODAL (Top 20 players) -->
 <div class="overlay ptr" id="leaderboard-modal">
     <div class="modal" style="max-height:85vh;display:flex;flex-direction:column;">
-        <div class="mh mh-gold">🏆 Weekly Competition</div>
-
-        <div class="lb-tabs">
-            <button class="lb-tab active" id="lb-tab-slash" onclick="window.switchLeaderboardTab('slash')">🔪 Slash</button>
-            <button class="lb-tab" id="lb-tab-refer" onclick="window.switchLeaderboardTab('refer')">👥 Refer</button>
+        <div class="mh mh-gold">🏆 Top Slicers Leaderboard</div>
+        <div style="font-size:11px;color:#aaa;text-align:center;margin-bottom:10px;">
+            Top 20 players ranked by Fruit Coin earnings!
         </div>
-
-        <div id="leaderboard-subtitle" style="font-size:11px;color:#aaa;text-align:center;margin-bottom:10px;">
-            Top 20 by slash wins · 30,000 🍎 pool · need 100+ wins to win a prize
-        </div>
-
         <div id="leaderboard-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px;">
             <div style="text-align:center;color:#aaa;padding:20px;">Loading rankings...</div>
         </div>
-
-        <div id="leaderboard-my-rank" style="font-size:11px;color:#7de;text-align:center;margin-top:8px;font-weight:800;"></div>
-
         <button class="btn btn-grey" style="margin-top:12px;" onclick="window.hideModal('leaderboard-modal')">CLOSE</button>
     </div>
 </div>
@@ -943,14 +949,21 @@
             <span class="mrow-label">My Fruit Coin</span>
             <span class="mrow-val">🍎 <span id="w-gems">0</span> <span style="color:#00e5ff;font-size:13px;font-weight:900;">(≈ $<span id="w-gems-usdt">0.00</span> USDT)</span></span>
         </div>
-        
+
+        <!-- Level 3 lock banner -->
+        <div id="wd-level-lock-box" style="display:none;background:rgba(255,80,0,0.15);border:1.5px solid rgba(255,100,0,0.5);border-radius:12px;padding:10px 14px;margin-bottom:8px;text-align:center;">
+            🔒 <strong style="color:#ff8c00;">Withdraw Locked</strong><br>
+            <span style="font-size:12px;color:#ccc;">Reach <strong style="color:#ffcc00;">Level 3</strong> to unlock withdrawals!</span><br>
+            <span id="wd-level-lock-current" style="font-size:11px;color:#aaa;margin-top:4px;display:block;"></span>
+        </div>
+
         <div id="withdraw-req-box" class="withdraw-req">
-            ⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> + Join our <strong>Official Channel &amp; Community</strong><br>
-            <span id="withdraw-req-status">Tasks: 0/5</span>
+            ⚠️ To unlock withdraw: Reach <strong>Level 3</strong> + Complete <strong>5 Tasks</strong> + Join our <strong>Official Channel &amp; Community</strong><br>
+            <span id="withdraw-req-status">Tasks: 0/5 | Level: 1/3</span>
         </div>
         <div class="info-text" style="margin-bottom:8px;">
             Rate: <strong style="color:#ffcc00;">50,000 FC = $1.00 USDT</strong><br>
-            Minimum: <strong style="color:#7dff00;">2,500 FC ($0.05 USDT)</strong> · <span style="color:#ff8888;">5% fee applies</span>
+            Min: <strong style="color:#7dff00;">2,500 FC ($0.05)</strong> · Max: <strong style="color:#ffaa00;">100,000 FC ($2.00)</strong> · <span style="color:#ff8888;">5% fee applies</span>
         </div>
 
         <!-- Payout Method (TonKeeper Only) -->
@@ -962,16 +975,23 @@
             </div>
         </div>
 
+        <!-- Permanent wallet address display -->
+        <div id="wd-saved-addr-box" style="display:none;background:rgba(0,200,100,0.1);border:1.5px solid rgba(0,200,100,0.4);border-radius:12px;padding:10px 14px;margin-bottom:8px;">
+            <div style="font-size:12px;color:#4cff90;font-weight:900;">🔐 Your Registered Wallet Address</div>
+            <div id="wd-saved-addr-text" style="font-size:11px;color:#ccc;word-break:break-all;margin-top:4px;"></div>
+            <div style="font-size:10px;color:#888;margin-top:4px;">⚠️ This address is permanent and cannot be changed. Contact admin for help.</div>
+        </div>
+
         <div style="position:relative;">
             <div class="quick-amounts">
                 <div class="quick-amt-btn" onclick="window.setWithdrawAmount(2500)">2.5K ($0.05)</div>
                 <div class="quick-amt-btn" onclick="window.setWithdrawAmount(5000)">5K ($0.10)</div>
                 <div class="quick-amt-btn" onclick="window.setWithdrawAmount(25000)">25K ($0.50)</div>
                 <div class="quick-amt-btn" onclick="window.setWithdrawAmount(50000)">50K ($1.00)</div>
-                <div class="quick-amt-btn" style="flex:100%;" onclick="window.setWithdrawMax()">MAX BALANCE</div>
+                <div class="quick-amt-btn" onclick="window.setWithdrawAmount(100000)">MAX 100K ($2.00)</div>
             </div>
-            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount (min 2,500)" min="2500" oninput="window.updateWithdrawPreview()">
-            
+            <input type="number" id="w-amount" placeholder="Enter Fruit Coin amount (min 2,500, max 100,000)" min="2500" max="100000" oninput="window.updateWithdrawPreview()">
+
             <div id="w-convert-preview" style="display:none;background:linear-gradient(135deg,rgba(0,229,255,0.12),rgba(125,255,0,0.08));border:2px solid rgba(0,229,255,0.4);border-radius:12px;padding:10px 14px;margin-top:4px;text-align:center;">
                 <div style="font-size:11px;color:#aaa;margin-bottom:4px;">After 5% fee, you will receive approximately:</div>
                 <div id="w-convert-value" style="font-family:'Luckiest Guy',cursive;font-size:26px;color:#7dff00;"></div>
@@ -980,9 +1000,18 @@
         </div>
 
         <input type="text" id="w-address" placeholder="TonKeeper Wallet Address (UQ... or EQ...)">
+
+        <!-- Ads watch requirement before withdraw -->
+        <div id="wd-ads-section" style="background:rgba(255,140,0,0.1);border:1.5px solid rgba(255,140,0,0.4);border-radius:12px;padding:10px 14px;margin-bottom:8px;text-align:center;">
+            <div style="font-size:12px;color:#ffaa00;font-weight:900;margin-bottom:6px;">📺 Watch an Ad to Unlock Withdraw</div>
+            <div style="font-size:11px;color:#aaa;margin-bottom:8px;">You must watch one ad before each withdrawal request.</div>
+            <button id="btn-wd-watch-ad" class="btn btn-gold" style="width:auto;padding:8px 20px;font-size:13px;" onclick="window.watchWithdrawAd()">▶️ Watch Ad Now</button>
+            <div id="wd-ad-status" style="display:none;font-size:12px;color:#4cff90;margin-top:6px;font-weight:900;">✅ Ad watched! You can now withdraw.</div>
+        </div>
+
         <button class="btn btn-gold" id="btn-withdraw" onclick="window.doWithdraw()">💸 WITHDRAW NOW</button>
         <div class="info-text">Processing: 24-48 hours after review</div>
-
+        </div>
         <!-- Withdraw History & Summaries -->
         <div style="margin-top:12px;border-top:1px dashed rgba(255,255,255,0.12);padding-top:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -1056,15 +1085,6 @@
             <button class="btn btn-blue" style="flex:1;padding:11px 0;font-size:14px;margin:0;" onclick="window.shareToTelegram()">✈️ Telegram</button>
         </div>
         <button class="btn btn-grey" style="margin-top:10px;" onclick="window.hideModal('share-modal')">CLOSE</button>
-    </div>
-</div>
-
-<!-- Language switcher -->
-<div class="overlay ptr" id="language-modal">
-    <div class="modal" style="max-height:80vh;display:flex;flex-direction:column;overflow-y:auto;">
-        <div class="mh mh-gold">🌐 Language</div>
-        <div id="language-modal-list"></div>
-        <button class="btn btn-grey" style="margin-top:10px;" onclick="window.hideModal('language-modal')">CLOSE</button>
     </div>
 </div>
 
@@ -1194,6 +1214,8 @@
             if(result.success && result.user) {
                 if(result.user.gold      !== undefined) window.G.coins = result.user.gold;
                 if(result.user.fruitCoin !== undefined) window.G.gems  = result.user.fruitCoin;
+                if(result.user.tokens    !== undefined) window.G.tokens = result.user.tokens;
+                if(result.user.gameTokens!== undefined) window.G.tokens = result.user.gameTokens;
                 if(result.user.level     !== undefined) window.G.level = result.user.level;
                 if(result.user.levelProgress !== undefined) window.G.levelProgress = result.user.levelProgress;
                 if(result.user.totalSlices   !== undefined) window.G.totalSlices = result.user.totalSlices;
@@ -1270,6 +1292,12 @@
         let uiUsdtBadge = document.getElementById('ui-usdt-badge');
         if(uiUsdtBadge) uiUsdtBadge.textContent = `≈ $${usdtVal} USDT`;
 
+        let uiTokens = document.getElementById('ui-tokens');
+        if(uiTokens) uiTokens.textContent = window.G.tokens ?? 3;
+
+        let arenaTokens = document.getElementById('arena-tokens-val');
+        if(arenaTokens) arenaTokens.textContent = window.G.tokens ?? 3;
+
         let wGems = document.getElementById('w-gems');
         if(wGems) wGems.textContent = gems.toLocaleString();
 
@@ -1314,24 +1342,66 @@
         if(refEl) refEl.textContent = window.G.referCount || 0;
         let rd = document.getElementById('refer-diamonds-display');
         if(rd) rd.textContent = window.G.referDiamonds || 0;
+        let sg = document.getElementById('shop-my-gold');
+        let sd = document.getElementById('shop-my-diamond');
+        if(sg) sg.textContent = window.G.coins;
+        if(sd) sd.textContent = window.G.gems;
         updateWithdrawReqUI();
+        if(document.getElementById('shop-modal') && document.getElementById('shop-modal').style.display === 'flex'){
+            updateShopUI();
+        }
     };
 
     function updateWithdrawReqUI(){
-        let tasks = (window.G.completedTasks||[]).length;
-        let taskOk = tasks >= 5;
+        let tasks   = (window.G.completedTasks||[]).length;
+        let level   = window.G.level || 1;
+        let taskOk  = tasks >= 5;
+        let levelOk = level >= 3;
+        let allOk   = taskOk && levelOk;
+
+        // Level lock banner
+        let lockBox = document.getElementById('wd-level-lock-box');
+        let lockCur = document.getElementById('wd-level-lock-current');
+        if(lockBox){
+            lockBox.style.display = levelOk ? 'none' : 'block';
+            if(lockCur) lockCur.textContent = `Current: Level ${level} — Need Level 3 to unlock`;
+        }
+
+        // Requirements box
         let box = document.getElementById('withdraw-req-box');
         if(box){
-            box.className = 'withdraw-req' + (taskOk ? ' met' : '');
-            box.innerHTML = taskOk
-                ? '✅ Task requirement met! (Make sure you\'ve also joined our Official Channel & Community — checked when you submit)'
-                : `⚠️ To unlock withdraw: Complete <strong>5 Tasks</strong> + Join our <strong>Official Channel &amp; Community</strong><br><span>Tasks: ${tasks}/5</span>`;
+            box.className = 'withdraw-req' + (allOk ? ' met' : '');
+            if(allOk){
+                box.innerHTML = '✅ All requirements met! Watch an ad below then submit.';
+            } else {
+                box.innerHTML =
+                    `⚠️ Unlock requirements: Reach <strong>Level 3</strong> + Complete <strong>5 Tasks</strong> + Join channels<br>` +
+                    `<span>Level: ${level}/3 ${levelOk?'✅':'❌'} | Tasks: ${tasks}/5 ${taskOk?'✅':'❌'}</span>`;
+            }
         }
-        // NOTE: the button is never disabled here — Channel/Community join
-        // can't be reliably checked from the client, so the real gate is
-        // api/withdraw.js. Submitting always attempts, and the server's
-        // exact error (e.g. "join our Channel & Community first") is
-        // shown if something's missing.
+
+        // Permanent saved address display
+        let savedAddr = window.G.withdrawAddress || null;
+        let addrBox   = document.getElementById('wd-saved-addr-box');
+        let addrText  = document.getElementById('wd-saved-addr-text');
+        let addrInput = document.getElementById('w-address');
+        if(savedAddr && addrBox && addrText && addrInput){
+            addrBox.style.display = 'block';
+            addrText.textContent  = savedAddr;
+            addrInput.value       = savedAddr;
+            addrInput.readOnly    = true;
+            addrInput.style.opacity = '0.6';
+        } else if(addrBox){
+            addrBox.style.display = 'none';
+            if(addrInput) addrInput.readOnly = false;
+        }
+
+        // Reset ads watch state each time the modal opens
+        window._withdrawAdsSessionId = null;
+        let adStatus = document.getElementById('wd-ad-status');
+        let adBtn    = document.getElementById('btn-wd-watch-ad');
+        if(adStatus) adStatus.style.display = 'none';
+        if(adBtn){ adBtn.disabled = false; adBtn.textContent = '▶️ Watch Ad Now'; }
     }
 
     // ── Device fingerprint (weak-signal based; recomputed every load so
@@ -1395,6 +1465,58 @@
         setTimeout(()=>{ if(window.G.sound) playSound('menu'); }, 500);
     }
 
+    // ── Terms & Conditions modal ──────────────────────────────────────
+    window.showTermsModal = function(){
+        if(window._loadingTipsTimer){ clearInterval(window._loadingTipsTimer); window._loadingTipsTimer = null; }
+        let loader = document.getElementById('fullscreen-loader');
+        if(loader) loader.style.display = 'none';
+        let overlay = document.getElementById('terms-overlay');
+        if(overlay) overlay.style.display = 'flex';
+    };
+
+    window.acceptTerms = async function(){
+        let btn = document.querySelector('#terms-overlay button');
+        if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+
+        try {
+            const r = await fetch('/api/auth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-telegram-init-data': window.Telegram?.WebApp?.initData || ''
+                },
+                body: JSON.stringify({ action: 'accept_terms' })
+            });
+            await r.json();
+        } catch(e){ /* fail silently — TC is stored client-side too */ }
+
+        let overlay = document.getElementById('terms-overlay');
+        if(overlay) overlay.style.display = 'none';
+
+        // Continue normal flow after TC accepted
+        let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        let prefs = localStorage.getItem('fc_prefs');
+        if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
+        window.G.username = tgUser?.username || '';
+        window.updateUI();
+
+        // Check join gate
+        const joinCheck = await fetch('/api/auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-telegram-init-data': window.Telegram?.WebApp?.initData || ''
+            },
+            body: JSON.stringify({ action: 'check_join' })
+        }).then(r => r.json()).catch(() => ({ success: false }));
+
+        if(joinCheck && joinCheck.success && !joinCheck.allJoined){
+            showJoinGate(joinCheck.channels);
+        } else {
+            revealMenu();
+        }
+    };
+
     function showJoinGate(channels){
         if(window._loadingTipsTimer){ clearInterval(window._loadingTipsTimer); window._loadingTipsTimer = null; }
         let loader = document.getElementById('fullscreen-loader');
@@ -1420,7 +1542,7 @@
     window.verifyJoinGate = async function(){
         const btn = document.getElementById('join-gate-verify-btn');
         btn.disabled = true; btn.textContent = 'Checking...';
-        const res = await apiCall('/api/auth', { action: 'check_join' });
+        const res = await apiCall('/api/checkJoin', {});
         btn.disabled = false; btn.textContent = '✅ I\'ve Joined — Verify';
         if(res && res.success && res.allJoined){
             document.getElementById('join-gate-overlay').style.display = 'none';
@@ -1435,7 +1557,7 @@
         const LOADING_TIPS = [
             "⚡ Earning FC, more earning!",
             "🌴 Enjoy your day slicing fruits!",
-            "⚔️ Play & Slice every 30 minutes to level up!",
+            "⚔️ Play & Slice every 1 hour to level up!",
             "👥 Invite friends for huge FC rewards!",
             "💎 Instant TonKeeper USDT withdrawals!"
         ];
@@ -1543,13 +1665,25 @@
                 window.G.gems        = res.user.fruitCoin      ?? window.G.gems;
                 window.G.referCount = res.user.referralCount  ?? window.G.referCount;
                 window.G.referDiamonds = res.user.referralFruitCoinEarned ?? window.G.referDiamonds;
+                window.G.tokens      = res.user.gameTokens    ?? window.G.tokens;
+                window.G.maxTokens   = res.user.maxTokens      ?? window.G.maxTokens;
+                window.G.nextTokenAt = res.user.nextTokenAt    ?? window.G.nextTokenAt;
                 window.G.completedTasks = res.user.completedTasks ?? window.G.completedTasks;
                 window.G.lastFreeBoxAt = res.user.lastFreeBoxAt ?? window.G.lastFreeBoxAt;
                 window.G.lastSlashAt = res.user.lastSlashAt ?? window.G.lastSlashAt;
                 window.G.lastDailyGiftAt = res.user.lastDailyGiftAt ?? window.G.lastDailyGiftAt;
                 window.G.photoUrl = res.user.photoUrl || tgUser?.photo_url || '';
+                window.G.level    = res.user.level ?? window.G.level;
+                window.G.levelProgress = res.user.levelProgress ?? window.G.levelProgress;
+                window.G.withdrawAddress = res.user.withdrawAddress || null;  // permanent wallet
             }
             if(res.pendingGift) window.showGiftModal(res.pendingGift);
+
+            // ── Terms & Conditions modal for new / non-accepted users ──
+            if(res.showTerms){
+                window.showTermsModal();
+                return; // stop — revealMenu() runs after TC accepted
+            }
 
             let prefs = localStorage.getItem('fc_prefs');
             if(prefs){ try{ let p=JSON.parse(prefs); window.G.sound=p.sound; window.G.vib=p.vib; }catch(e){} }
@@ -1574,7 +1708,7 @@
             document.getElementById('refer-link').textContent = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
 
             // ── Join-gate: must be a member of all official channels ────
-            const joinCheck = await apiCall('/api/auth', { action: 'check_join' });
+            const joinCheck = await apiCall('/api/checkJoin', {});
             if (joinCheck && joinCheck.success && !joinCheck.allJoined) {
                 showJoinGate(joinCheck.channels);
                 return; // stop here — revealMenu() runs after verifyJoinGate() succeeds
@@ -1608,6 +1742,60 @@
         }
     }
 
+    function startTokenTimer(){
+        // Update token countdown every second using the server's real
+        // nextTokenAt timestamp (was previously always 0 client-side,
+        // which is why this used to permanently show "+1 soon...").
+        setInterval(()=>{
+            let el = document.getElementById('token-timer');
+            if(!el) return;
+            if(window.G.tokens >= (window.G.maxTokens || 10)){
+                el.textContent = 'MAX';
+                return;
+            }
+            let nextAt = window.G.nextTokenAt ? new Date(window.G.nextTokenAt).getTime() : 0;
+            let left = nextAt - Date.now();
+            if(!nextAt || left <= 0){
+                el.textContent = '(+1 soon...)';
+            } else {
+                let h = Math.floor(left / 3600000);
+                let m = Math.floor((left % 3600000) / 60000);
+                let s = Math.floor((left % 60000) / 1000);
+                el.textContent = h > 0 ? `(+1 in ${h}h ${m}m)` : `(+1 in ${m}:${s.toString().padStart(2,'0')})`;
+            }
+        }, 1000);
+
+        // Free Box countdown — cheap re-render, only visually matters
+        // while the Shop modal happens to be open.
+        setInterval(()=>{ updateFreeboxUI(); }, 30000);
+
+        // Sync with server every 5 minutes — reduces Firebase writes by 80%
+        setInterval(async ()=>{
+            if(window.G.tokens < 10 && currentUser){
+                try {
+                    const res = await fetch('/api/init', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type':'application/json',
+                            'x-telegram-init-data': tg?.initData || ''
+                        },
+                        body: JSON.stringify({ telegramId: currentUser?.id, syncOnly: true })
+                    });
+                    const data = await res.json();
+                    if(data.success && data.user){
+                        let prevTokens = window.G.tokens;
+                        Object.assign(window.G, data.user);
+                        if(window.G.tokens > prevTokens){
+                            showToast(`🎮 Token refilled! Now: ${window.G.tokens}/10`);
+                        }
+                        window.updateUI();
+                        if(data.pendingGift) window.showGiftModal(data.pendingGift);
+                    }
+                } catch(e){}
+            }
+        }, 5 * 60 * 1000); // 5 minutes
+    }
+
     window.showModal = function(id){
         document.getElementById(id).style.display='flex';
         if(id==='ads-modal'){
@@ -1616,6 +1804,7 @@
         }
         if(id==='task-modal'){ window.renderTasks(); }
         if(id==='share-modal'){ window.updateUI(); }
+        if(id==='shop-modal'){ updateShopUI(); }
         if(id==='level-modal'){ window.renderLevelModal(); }
         if(id==='slash-modal' || id==='slash-arena'){ window.openSlashArena(); }
         if(id==='leaderboard-modal'){ window.loadLeaderboard(); }
@@ -1635,6 +1824,43 @@
         document.getElementById(id).style.display='none';
         if(id==='ads-modal'){ playSound('menu'); }
         if(id==='slash-arena'){ window.closeSlashArena(); }
+    };
+
+    window.showTokenInfo = function(){ showToast('Tokens: 1 token = 1 game. Max 10. Refills +1 every 6 hours!'); };
+
+    const SHOP_ITEMS_CLIENT = [
+        { id: 'token_1',     icon: '🎮', title: '1 Game Token',     cost: 120  },
+        { id: 'token_2',     icon: '🎮', title: '2 Game Token',     cost: 200  },
+        { id: 'token_5',     icon: '🎮', title: '5 Game Token',     cost: 450,  badge: 'POPULAR' },
+    ];
+
+    function renderShopItems(){
+        let c = document.getElementById('shop-item-list');
+        if(!c) return;
+        c.innerHTML = SHOP_ITEMS_CLIENT.map(it => `
+            <div class="shop-item-card">
+                ${it.badge ? `<span class="shop-item-badge">${it.badge}</span>` : ''}
+                <div class="shop-item-icon">${it.icon}</div>
+                <div class="shop-item-info">
+                    <div class="shop-item-title">${it.title}</div>
+                    <div class="shop-item-price">🪙 ${it.cost.toLocaleString()} Gold</div>
+                </div>
+                <button class="task-btn" id="shop-buy-${it.id}" onclick="window.buyShopItem('${it.id}')">Buy</button>
+            </div>`).join('');
+    }
+
+    window.buyShopItem = async function(itemId){
+        let btn = document.getElementById('shop-buy-' + itemId);
+        if(btn) { btn.disabled = true; btn.textContent = '...'; }
+        const res = await apiCall('/api/game_claim', { action: 'buy_shop_item', itemId });
+        if(btn) { btn.disabled = false; btn.textContent = 'Buy'; }
+        if(res.success){
+            if(res.user.gameTokens    !== undefined) window.G.tokens        = res.user.gameTokens;
+            showToast(`✅ Purchased: ${res.label}`);
+            window.updateUI();
+        } else {
+            showToast(res.error === 'not_enough_gold' ? '❌ Not enough Gold!' : '❌ Purchase failed, try again.');
+        }
     };
 
     function freeboxNextAtMs(){
@@ -1724,7 +1950,7 @@
             pendingExchangeGold = 0;
             document.getElementById('exchange-preview').textContent = 'Select Gold amount to see Fruit Coin reward';
             document.getElementById('exchange-confirm-btn').disabled = true;
-            updateFreeboxUI();
+            updateShopUI();
         } else {
             showToast('Error: ' + (res.error || 'Failed'));
         }
@@ -1760,7 +1986,7 @@
             resultEl.textContent = `✅ Redeemed! +${parts.join(' + ')}`;
             showToast(`🎉 Promo redeemed: ${parts.join(' + ')}`);
             input.value = '';
-            updateFreeboxUI();
+            updateShopUI();
 
             // Reward is already credited at this point — this ad is purely
             // for revenue, so any failure/skip here can never cost the user
@@ -1781,6 +2007,23 @@
             resultEl.textContent = msgMap[res.error] || '❌ Could not redeem code.';
         }
     };
+
+    window.switchShopTab = function(tab){
+        document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.shop-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('shop-panel-' + tab).classList.add('active');
+    };
+
+    function updateShopUI(){
+        let sg = document.getElementById('shop-my-gold');
+        let sd = document.getElementById('shop-my-diamond');
+        if(sg) sg.textContent = window.G.coins;
+        if(sd) sd.textContent = window.G.gems;
+
+        renderShopItems();
+        updateFreeboxUI();
+    }
 
     window.copyRefer = function(){
         let txt = `https://t.me/Fruit_cut_bot/PlayTo_Earn?startapp=${window.G.referCode}`;
@@ -2207,7 +2450,7 @@
     window.setWithdrawMax = function(){
         let input = document.getElementById('w-amount');
         if(input){
-            input.value = window.G.gems || 0;
+            input.value = Math.min(window.G.gems || 0, 100000); // max 100K FC
             window.updateWithdrawPreview();
         }
     };
@@ -2234,30 +2477,91 @@
         }
     };
 
+    // ── Watch Adsgram ad before withdraw (gets a server-side session) ──
+    window.watchWithdrawAd = async function(){
+        let btn    = document.getElementById('btn-wd-watch-ad');
+        let status = document.getElementById('wd-ad-status');
+        if(btn) { btn.disabled = true; btn.textContent = '⏳ Loading ad...'; }
+
+        try {
+            // Request a session from the server first
+            const sessRes = await apiCall('/api/ads', { action: 'request_session', network: 'adsgram' });
+            if(!sessRes || !sessRes.success){
+                showToast('⚠️ ' + (sessRes?.message || 'Could not start ad. Try again.'));
+                if(btn){ btn.disabled = false; btn.textContent = '▶️ Watch Ad Now'; }
+                return;
+            }
+            const sessionId = sessRes.sessionId;
+
+            // Show the Adsgram ad
+            await new Promise((res, rej) => {
+                window.Adsgram.init({ blockId: '28066' }).show().then(res).catch(rej);
+            });
+
+            // Claim the session — this is the sessionId we'll send with the withdraw
+            window._withdrawAdsSessionId = sessionId;
+            if(status){ status.style.display = 'block'; }
+            if(btn)   { btn.textContent = '✅ Ad Watched'; btn.disabled = true; }
+            showToast('✅ Ad watched! You can now withdraw.');
+        } catch(e){
+            showToast('Ad was closed or failed. Please try again.');
+            if(btn){ btn.disabled = false; btn.textContent = '▶️ Watch Ad Now'; }
+        }
+    };
+
     window.doWithdraw = async function(){
         let btn = document.getElementById('btn-withdraw');
         if(btn.disabled) return;
 
+        // Level 3 check
+        let level = window.G.level || 1;
+        if(level < 3){
+            showToast(`🔒 Withdraw locked! Reach Level 3 first. (Current: Level ${level})`);
+            return;
+        }
+
+        // Task check
         let tasks = (window.G.completedTasks||[]).length;
         if(tasks < 5){
             showToast(`Complete 5 tasks first! (${tasks}/5)`);
             return;
         }
-        let method = document.getElementById('w-method').value;
+
+        // Ads session check
+        if(!window._withdrawAdsSessionId){
+            showToast('📺 Please watch the ad first before withdrawing!');
+            return;
+        }
+
         let addr   = document.getElementById('w-address').value.trim();
         let amount = parseInt(document.getElementById('w-amount').value)||0;
-        if(!addr)            return showToast('Enter address!');
-        if(amount < 2500)    return showToast('Minimum withdrawal is 2,500 Fruit Coin ($0.05)!');
+        if(!addr)             return showToast('Enter your TonKeeper wallet address!');
+        if(amount < 2500)     return showToast('Minimum withdrawal is 2,500 Fruit Coin ($0.05)!');
+        if(amount > 100000)   return showToast('Maximum withdrawal is 100,000 Fruit Coin per request!');
         if(window.G.gems < amount) return showToast('Not enough Fruit Coin!');
 
-        btn.disabled = true; btn.textContent = "Processing...";
-        const res = await apiCall('/api/withdraw', { username: window.G.username, method, address: addr, amount });
-        btn.disabled = false; btn.textContent = "💸 WITHDRAW NOW";
+        btn.disabled = true; btn.textContent = 'Processing...';
+        const res = await apiCall('/api/withdraw', {
+            method: 'tonkeeper',
+            address: addr,
+            amount,
+            adsSessionId: window._withdrawAdsSessionId
+        });
+        btn.disabled = false; btn.textContent = '💸 WITHDRAW NOW';
+
         if(res.success){
             showToast(`✅ Withdrawal requested! You'll receive ${res.convertedAmount} ${res.unit || 'USDT'} after the 5% fee.`);
+            // Save the permanent address to G state if it's new
+            if(res.savedAddress) window.G.withdrawAddress = res.savedAddress;
             document.getElementById('w-amount').value  = '';
-            document.getElementById('w-address').value = '';
             document.getElementById('w-convert-preview').style.display = 'none';
+            // Reset ads session
+            window._withdrawAdsSessionId = null;
+            let adStatus = document.getElementById('wd-ad-status');
+            let adBtn    = document.getElementById('btn-wd-watch-ad');
+            if(adStatus) adStatus.style.display = 'none';
+            if(adBtn){ adBtn.disabled = false; adBtn.textContent = '▶️ Watch Ad Now'; }
+            updateWithdrawReqUI();
             window.loadWdHistory(true);
         } else {
             showToast('Error: ' + (res.error || 'Server Error'));
@@ -2294,7 +2598,7 @@
         list.innerHTML = '<div style="text-align:center;color:#aaa;font-size:12px;padding:10px;">Loading...</div>';
 
         try {
-            const res = await apiCall('/api/withdraw', { action: 'history' });
+            const res = await apiCall('/api/withdraw_history', {});
             if(!res || !res.success){
                 list.innerHTML = '<div style="text-align:center;color:#ff6666;font-size:12px;padding:12px;">⚠️ Could not load history, try again.</div>';
                 return;
@@ -2677,10 +2981,6 @@
     let currentArenaFruit = null;
     let arenaBusy = false;
     let arenaActive = false;
-    let arenaCutsNeeded = 3;
-    let arenaCutsDone = 0;
-    let lastCutAt = 0;
-    const CUT_DEBOUNCE_MS = 260; // one swipe/tap = one cut, not a spam of pointermove samples
 
     // Blade trail animation points
     let bladePoints = [];
@@ -2911,9 +3211,7 @@
 
     function spawnArenaFruit(){
         arenaBusy = false;
-        arenaCutsDone = 0;
-        arenaCutsNeeded = 3 + Math.floor(Math.random() * 3); // random 3, 4 or 5
-
+        
         // Hide claim and end wraps
         const claimWrap = document.getElementById('arena-claim-wrap');
         const doneWrap = document.getElementById('arena-done-wrap');
@@ -2921,7 +3219,6 @@
         const bannerEl = document.getElementById('arena-levelup-banner');
         const notokensWrap = document.getElementById('arena-notokens-wrap');
         const hintEl = document.getElementById('arena-hint-text');
-        const progressEl = document.getElementById('arena-cut-progress');
 
         if(claimWrap) claimWrap.style.display = 'none';
         if(doneWrap) doneWrap.style.display = 'none';
@@ -2929,7 +3226,6 @@
         if(bannerEl) bannerEl.style.display = 'none';
         if(notokensWrap) notokensWrap.style.display = 'none';
         if(hintEl) hintEl.style.display = 'block';
-        if(progressEl){ progressEl.style.display = 'block'; progressEl.textContent = `✂️ Cuts: 0/${arenaCutsNeeded}`; }
 
         // Reset pieces
         const wholeTarget = document.getElementById('fruit-whole-target');
@@ -2953,72 +3249,31 @@
         if(rightPiece) rightPiece.innerHTML = currentArenaFruit.rightHalfSvg;
     }
 
-    // Quick flash line across the fruit — visual feedback for a non-final cut.
-    function spawnSlashMark(){
-        const stage = document.querySelector('.slash-fruit-stage');
-        if(!stage) return;
-        const mark = document.createElement('div');
-        mark.className = 'slash-mark';
-        const angle = -35 + Math.random() * 70; // roughly diagonal, varies per cut
-        const width = 140 + Math.random() * 60;
-        mark.style.width = width + 'px';
-        mark.style.left = (140 - width / 2) + 'px';
-        mark.style.top = (110 + (Math.random() * 60 - 30)) + 'px';
-        mark.style.transform = `rotate(${angle}deg)`;
-        stage.appendChild(mark);
-        setTimeout(() => mark.remove(), 400);
-    }
-
     async function triggerFruitSliceEffect(){
         if(arenaBusy) return;
 
-        const nowTs = Date.now();
-        if(nowTs - lastCutAt < CUT_DEBOUNCE_MS) return; // one swipe = one cut, not a burst
-        lastCutAt = nowTs;
-
-        // Cooldown only gates the FIRST cut of a fresh round — once the
-        // player has started cutting this fruit, the remaining taps are free.
-        if(arenaCutsDone === 0){
-            const lastTime = window.G.lastSlashAt ? new Date(window.G.lastSlashAt).getTime() : 0;
-            const elapsed = Date.now() - lastTime;
-            if(lastTime > 0 && elapsed < SLASH_COOLDOWN_MS){
-                showToast('⏳ Slicing is on 30-minute cooldown!');
-                const hint = document.getElementById('arena-hint-text');
-                const noTokens = document.getElementById('arena-notokens-wrap');
-                if(hint) hint.style.display = 'none';
-                if(noTokens) noTokens.style.display = 'block';
-                return;
-            }
-        }
-
-        arenaCutsDone++;
-        const wholeTarget = document.getElementById('fruit-whole-target');
-        const progressEl = document.getElementById('arena-cut-progress');
-
-        // Sound & haptic on every cut (lighter than the final split hit)
-        playSound('slice');
-        playFallbackSliceSound();
-        if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.impactOccurred(arenaCutsDone < arenaCutsNeeded ? 'light' : 'heavy');
-
-        if(arenaCutsDone < arenaCutsNeeded){
-            // Not the final cut yet — just a visual "hit": shake + slash flash.
-            spawnSlashMark();
-            if(wholeTarget){
-                wholeTarget.classList.remove('cut-hit');
-                void wholeTarget.offsetWidth; // restart animation
-                wholeTarget.classList.add('cut-hit');
-            }
-            if(progressEl) progressEl.textContent = `✂️ Cuts: ${arenaCutsDone}/${arenaCutsNeeded}`;
+        const lastTime = window.G.lastSlashAt ? new Date(window.G.lastSlashAt).getTime() : 0;
+        const elapsed = Date.now() - lastTime;
+        if(lastTime > 0 && elapsed < SLASH_COOLDOWN_MS){
+            showToast('⏳ Slicing is on 1-hour cooldown!');
+            const hint = document.getElementById('arena-hint-text');
+            const noTokens = document.getElementById('arena-notokens-wrap');
+            if(hint) hint.style.display = 'none';
+            if(noTokens) noTokens.style.display = 'block';
             return;
         }
 
-        // ── Final cut: the fruit actually breaks apart ──
         arenaBusy = true;
         const hint = document.getElementById('arena-hint-text');
         if(hint) hint.style.display = 'none';
-        if(progressEl) progressEl.style.display = 'none';
 
-        // 2. Hide whole fruit & let the two halves fall away, staggered
+        // 1. Sound & Haptic
+        playSound('slice');
+        playFallbackSliceSound();
+        if(window.G.vib && tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+
+        // 2. Hide whole fruit & Show halves splitting in 3D
+        const wholeTarget = document.getElementById('fruit-whole-target');
         const leftPiece = document.getElementById('fruit-half-left');
         const rightPiece = document.getElementById('fruit-half-right');
 
@@ -3028,16 +3283,14 @@
             rightPiece.style.display = 'block';
             setTimeout(() => {
                 leftPiece.classList.add('split');
-            }, 20);
-            setTimeout(() => {
                 rightPiece.classList.add('split');
-            }, 140); // slight delay so the halves fall one after another
+            }, 20);
         }
 
         // 3. Juice particle splashes
         createJuiceSplashParticles(currentArenaFruit ? currentArenaFruit.juiceColor : '#ff2d55');
 
-        // 4. Reveal Claim Action Button (after the pieces have finished falling)
+        // 4. Reveal Claim Action Button
         setTimeout(() => {
             const claimBtn = document.getElementById('arena-claim-btn');
             const claimWrap = document.getElementById('arena-claim-wrap');
@@ -3046,7 +3299,7 @@
                 claimBtn.textContent = '🎁 CLAIM REWARD (WATCH AD)';
             }
             if(claimWrap) claimWrap.style.display = 'block';
-        }, 950);
+        }, 500);
     }
 
     function createJuiceSplashParticles(color){
@@ -3148,7 +3401,7 @@
     
     /* ── Play & Slash Initiation ── */
     window.tryStartGame = function(){
-        const SLASH_COOLDOWN_MS = 30 * 60 * 1000;
+        const SLASH_COOLDOWN_MS = 60 * 60 * 1000;
         const lastTime = window.G.lastSlashAt ? new Date(window.G.lastSlashAt).getTime() : 0;
         const elapsed = Date.now() - lastTime;
         if(lastTime > 0 && elapsed < SLASH_COOLDOWN_MS){
@@ -3186,7 +3439,7 @@
     };
 
     /* ── Cooldown & Timer Systems ── */
-    const SLASH_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+    const SLASH_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
     const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec)
 
     function updateSlashCooldownUI(){
@@ -3311,19 +3564,11 @@
         const chestBtn = document.getElementById('hero-treasure-timer-btn');
         const chestImg = document.getElementById('hero-treasure-img');
         if(chestBtn){ chestBtn.disabled = true; chestBtn.innerHTML = `<span>📺</span><span>Watching Ad...</span>`; }
-        if(chestImg){
-            chestImg.classList.add('opening');
-            chestImg.src = chestImg.dataset.openSrc || chestImg.src;
-        }
+        if(chestImg) chestImg.classList.add('opening');
 
         try {
             await playRandomRewardedAd();
-        } catch(e){
-            if(chestBtn){ chestBtn.disabled = false; chestBtn.innerHTML = `<span>🎁</span><span>OPEN BOX (20–30 FC)</span>`; }
-            if(chestImg) chestImg.classList.remove('opening');
-            showToast('⚠️ Ad failed to load — try again.');
-            return;
-        }
+        } catch(e){}
 
         if(chestBtn){ chestBtn.innerHTML = `<span>✨</span><span>Opening Box...</span>`; }
         const res = await apiCall('/api/game_claim', { action: 'claim_daily_gift' });
@@ -3339,100 +3584,43 @@
             }
             window.updateUI();
             setTimeout(() => {
-                if(chestImg){
-                    chestImg.classList.remove('opening');
-                    chestImg.src = chestImg.dataset.closedSrc || chestImg.src;
-                }
+                if(chestImg) chestImg.classList.remove('opening');
             }, 1200);
         } else {
-            if(chestImg){
-                chestImg.classList.remove('opening');
-                chestImg.src = chestImg.dataset.closedSrc || chestImg.src;
-            }
+            if(chestImg) chestImg.classList.remove('opening');
             showToast(res.message || '⚠️ Could not open box. Try again later.');
             updateDailyGiftCooldownUI();
         }
     };
 
-    /* ── Weekly Competition Leaderboard (Slash + Refer tabs) ── */
-    window.lbTab = window.lbTab || 'slash';
-    window.lbData = null; // cached response from the last fetch, reused when switching tabs
-
-    function renderLbAvatar(item){
-        let initial = (item.username || 'P').replace('@','').charAt(0).toUpperCase() || 'P';
-        let photo = item.photoUrl || (item.isCurrentUser ? (window.G.photoUrl || tg?.initDataUnsafe?.user?.photo_url) : null);
-        return photo
-            ? `<img src="${photo}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.parentElement.innerHTML='<span style=\\'font-weight:900;color:#ffcc00;font-size:14px;\\'>${initial}</span>';" />`
-            : `<span style="font-weight:900;color:#00e5ff;font-size:14px;">${initial}</span>`;
-    }
-
-    function renderLeaderboardTab(){
-        const listEl = document.getElementById('leaderboard-list');
-        const subtitleEl = document.getElementById('leaderboard-subtitle');
-        const myRankEl = document.getElementById('leaderboard-my-rank');
-        if(!listEl || !window.lbData) return;
-
-        const isSlash = window.lbTab === 'slash';
-        const tab = isSlash ? window.lbData.slash : window.lbData.refer;
-
-        if(subtitleEl){
-            subtitleEl.textContent = isSlash
-                ? `Top 20 by slash wins · ${tab.poolFc.toLocaleString()} 🍎 pool · need ${tab.minWinsForPrize}+ wins to win a prize`
-                : `Top 10 by referrals this week · ${tab.poolFc.toLocaleString()} 🍎 pool`;
-        }
-
-        if(tab.list && tab.list.length > 0){
-            listEl.innerHTML = tab.list.map(item => {
-                let rankIcon = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : '#' + item.rank;
-                let isMe = item.isCurrentUser ? 'current-user' : '';
-                let ineligible = (isSlash && !item.eligible) ? 'ineligible' : '';
-                let statLine = isSlash
-                    ? `Level ${item.level} · ${item.wins} wins`
-                    : `Level ${item.level} · ${item.referrals} invites`;
-                let badge = (isSlash && !item.eligible)
-                    ? `<div class="lb-badge">Needs ${window.lbData.slash.minWinsForPrize}+ wins</div>`
-                    : '';
-                return `
-                    <div class="lb-item ${isMe} ${ineligible}">
-                        <div class="lb-rank">${rankIcon}</div>
-                        <div class="lb-avatar">${renderLbAvatar(item)}</div>
-                        <div class="lb-info">
-                            <div class="lb-name">${item.username} ${item.isCurrentUser ? '<span style="color:#00e5ff;font-size:10px;">(YOU)</span>' : ''}</div>
-                            <div class="lb-level">${statLine}</div>
-                            ${badge}
-                        </div>
-                        <div class="lb-coins">${item.prizeFc.toLocaleString()} 🍎</div>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            listEl.innerHTML = `<div style="text-align:center;color:#aaa;padding:20px;">No ${isSlash ? 'slashes' : 'referrals'} recorded yet this week.</div>`;
-        }
-
-        if(myRankEl){
-            myRankEl.textContent = isSlash
-                ? (tab.me.rank ? `Your rank: #${tab.me.rank} · ${tab.me.wins} wins this week` : `You have ${tab.me.wins} wins this week — keep slashing!`)
-                : (tab.me.rank ? `Your rank: #${tab.me.rank} · ${tab.me.referrals} referrals this week` : `You have ${tab.me.referrals} referrals this week — invite friends!`);
-        }
-    }
-
-    window.switchLeaderboardTab = function(tabName){
-        window.lbTab = tabName;
-        document.getElementById('lb-tab-slash').classList.toggle('active', tabName === 'slash');
-        document.getElementById('lb-tab-refer').classList.toggle('active', tabName === 'refer');
-        if(window.lbData){ renderLeaderboardTab(); }
-        else { window.loadLeaderboard(); }
-    };
-
+    /* ── Leaderboard Loading with Telegram Profile Avatars ── */
     window.loadLeaderboard = async function(){
         const listEl = document.getElementById('leaderboard-list');
         if(!listEl) return;
-        listEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">Loading rankings...</div>';
+        listEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">Loading top players...</div>';
 
-        const res = await apiCall('/api/game_claim', { action: 'weekly_leaderboard' });
-        if(res.success){
-            window.lbData = res;
-            renderLeaderboardTab();
+        const res = await apiCall('/api/game_claim', { action: 'leaderboard' });
+        if(res.success && res.leaderboard && res.leaderboard.length > 0){
+            listEl.innerHTML = res.leaderboard.map(item => {
+                let rankIcon = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : '#' + item.rank;
+                let isMe = item.isCurrentUser ? 'current-user' : '';
+                let initial = (item.username || 'P').replace('@','').charAt(0).toUpperCase() || 'P';
+                let photo = item.photoUrl || (item.isCurrentUser ? (window.G.photoUrl || tg?.initDataUnsafe?.user?.photo_url) : null);
+                let avatarContent = photo
+                    ? `<img src="${photo}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.onerror=null;this.parentElement.innerHTML='<span style=\\'font-weight:900;color:#ffcc00;font-size:14px;\\'>${initial}</span>';" />`
+                    : `<span style="font-weight:900;color:#00e5ff;font-size:14px;">${initial}</span>`;
+                return `
+                    <div class="lb-item ${isMe}">
+                        <div class="lb-rank">${rankIcon}</div>
+                        <div class="lb-avatar">${avatarContent}</div>
+                        <div class="lb-info">
+                            <div class="lb-name">${item.username} ${item.isCurrentUser ? '<span style="color:#00e5ff;font-size:10px;">(YOU)</span>' : ''}</div>
+                            <div class="lb-level">Level ${item.level} · ${item.totalSlices || 0} Slices</div>
+                        </div>
+                        <div class="lb-coins">${(item.fruitCoin || 0).toLocaleString()} 🍎</div>
+                    </div>
+                `;
+            }).join('');
         } else {
             listEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">No rankings available yet.</div>';
         }
@@ -3443,17 +3631,9 @@
         const btn = document.getElementById('arena-claim-btn');
         if(btn){ btn.disabled = true; btn.textContent = 'Watching Ad...'; }
 
-        // Previously: a failed/errored ad was silently swallowed and the
-        // claim went through anyway — meaning any ad-network hiccup (or a
-        // bot that just never calls the ad SDK at all) got a free claim.
-        // Now: a real ad failure blocks the claim outright.
         try {
             await playRandomRewardedAd();
-        } catch(e){
-            if(btn){ btn.disabled = false; btn.textContent = '🎁 CLAIM REWARD (WATCH AD)'; }
-            showToast('⚠️ Ad failed to load — try again.');
-            return;
-        }
+        } catch(e){}
 
         if(btn){ btn.textContent = 'Claiming...'; }
         const res = await apiCall('/api/slash', { action: 'claim' });
