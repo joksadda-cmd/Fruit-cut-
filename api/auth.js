@@ -126,6 +126,12 @@ module.exports = async (req, res) => {
               $set: { lastActive: new Date() },
             }
           );
+          // NOTE: this new referral does NOT yet count toward the weekly
+          // "Top Referrer" leaderboard — that only happens once the friend
+          // has played REFERRAL_WEEKLY_VALID_SLASH_COUNT slash games (see
+          // checkReferralWeeklyValid in lib/referral.js, called from
+          // api/slash.js). Crediting it here at signup would let anyone
+          // farm the weekly FC pool with disposable accounts.
 
           const joinedWho = username && username !== 'Player' ? `@${username}` : 'Your friend';
           sendTelegramMessage(
