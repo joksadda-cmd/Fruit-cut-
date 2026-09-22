@@ -17,6 +17,7 @@
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { ObjectId } = require('mongodb');
 const { createPromoCode, listActivePromoCodes } = require('../lib/promo');
+const { grantWithdrawCommission } = require('../lib/referral');
 
 const ADMIN_ID = String(process.env.ADMIN_TELEGRAM_ID || process.env.ADMIN_ID || '');
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -420,16 +421,18 @@ module.exports = async function handler(req, res) {
             );
           }
         }
-      } else if (data.startsWith('a_wd_ok_') || data.startsWith('a_wd_no_')) {
-        const approve = data.startsWith('a_wd_ok_');
-        const idStr = data.replace(approve ? 'a_wd_ok_' : 'a_wd_no_', '');
+      } else if (data.startsWith('a_wd_ok_') || data.startsWith('a_wd_no_') || data.startsWith('a_wd_wra_')) {
+        const approve   = data.startsWith('a_wd_ok_');
+        const wrongAddr = data.startsWith('a_wd_wra_');
+        const idStr     = data.replace(approve ? 'a_wd_ok_' : wrongAddr ? 'a_wd_wra_' : 'a_wd_no_', '');
         const withdrawalsCol = await getCollection('withdrawals');
+        const usersCol       = await getCollection('users');
 
-        // Atomic: only one admin tap can flip 'pending' -> approved/rejected
-        // (Driver v6+ returns the document directly, not wrapped in { value })
+        // Atomic: only one admin tap can flip 'pending' -> approved/rejected/wrong_address
+        const newStatus = approve ? 'approved' : wrongAddr ? 'wrong_address_refunded' : 'rejected';
         const w = await withdrawalsCol.findOneAndUpdate(
           { _id: new ObjectId(idStr), status: 'pending' },
-          { $set: { status: approve ? 'approved' : 'rejected', processedAt: new Date() } },
+          { $set: { status: newStatus, processedAt: new Date() } },
           { returnDocument: 'after' }
         );
 
@@ -439,7 +442,7 @@ module.exports = async function handler(req, res) {
         }
 
         if (approve) {
-          // Post to the public payment channel with a masked address
+          // 1. Post to public payment channel
           await send(
             PAYMENT_CHANNEL,
             `✅ <b>Withdrawal Completed</b>\n\n` +
@@ -448,7 +451,7 @@ module.exports = async function handler(req, res) {
               `📍 Address: <code>${maskAddress(w.address)}</code>`
           ).catch((e) => console.error('payment channel post failed:', e));
 
-          // Notify the user privately with the FULL address
+          // 2. Notify the user with FULL address
           await send(
             w.telegramId,
             `🎉 <b>Congratulations! You have received ${w.convertedAmount} ${w.unit}</b>\n\n` +
@@ -456,10 +459,35 @@ module.exports = async function handler(req, res) {
             { reply_markup: { inline_keyboard: [[{ text: '🎮 Open Mini App', url: MINI_APP_URL }]] } }
           ).catch((e) => console.error('user notify failed:', e));
 
-          await edit(chatId, msgId, `✅ Approved — posted to payment channel & user notified.`, { reply_markup: backKb });
+          // 3. Grant 10% referral commission to referrer (fire-and-forget)
+          grantWithdrawCommission(w.telegramId, w.amount).catch(() => {});
+
+          await edit(chatId, msgId, `✅ Approved — posted to payment channel & user notified. Commission sent to referrer (if any).`, { reply_markup: backKb });
+
+        } else if (wrongAddr) {
+          // Wrong address refund: refund 90% (10% penalty)
+          const penaltyFc = Math.round(w.amount * 0.10);
+          const refundFc  = w.amount - penaltyFc;
+
+          await usersCol.updateOne(
+            { telegramId: w.telegramId },
+            { $inc: { fruitCoin: refundFc } }
+          );
+
+          await send(
+            w.telegramId,
+            `⚠️ <b>Wrong Address Refund</b>\n\n` +
+              `Your withdrawal of <b>${w.amount} Fruit Coin</b> was refunded because you entered a wrong wallet address.\n\n` +
+              `💸 Refunded: <b>${refundFc} Fruit Coin</b>\n` +
+              `🔻 Penalty (10%): <b>-${penaltyFc} Fruit Coin</b>\n\n` +
+              `⚠️ Please make sure to use the correct wallet address next time!`
+          ).catch((e) => console.error('user notify failed:', e));
+
+          await edit(chatId, msgId, `⚠️ Wrong Address Refund processed — ${refundFc} FC refunded (${penaltyFc} FC penalty deducted). User notified.`, { reply_markup: backKb });
+
         } else {
-          // Refund the Fruit Coin back to the user
-          await users.updateOne({ telegramId: w.telegramId }, { $inc: { fruitCoin: w.amount } });
+          // Normal rejection: full refund
+          await usersCol.updateOne({ telegramId: w.telegramId }, { $inc: { fruitCoin: w.amount } });
 
           await send(
             w.telegramId,
@@ -469,6 +497,7 @@ module.exports = async function handler(req, res) {
 
           await edit(chatId, msgId, `❌ Rejected — Fruit Coin refunded & user notified.`, { reply_markup: backKb });
         }
+
       } else if (data.startsWith('a_managetasks_')) {
         const page = parseInt(data.replace('a_managetasks_', ''), 10) || 0;
         const perPage = 6;
