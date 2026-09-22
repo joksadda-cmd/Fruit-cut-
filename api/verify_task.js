@@ -122,7 +122,7 @@ module.exports = async (req, res) => {
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id, completedTasks: { $ne: taskId } }, // re-check atomically (race guard)
       {
-        $inc: { fruitCoin: fcReward, xp: 2 },  // +2 XP per task (updated)
+        $inc: { fruitCoin: fcReward, xp: 10 },
         $addToSet: { completedTasks: taskId },
         $set: { lastActive: new Date() },
       },
