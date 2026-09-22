@@ -24,12 +24,18 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
-const { TRANSACTION_TYPES } = require('../lib/constants');
+const { TRANSACTION_TYPES, DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD } = require('../lib/constants');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
 const { checkReferralStep1 } = require('../lib/referral');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
+
+async function handleAcceptTerms(req, res, telegramId) {
+  const usersCol = await getCollection('users');
+  await usersCol.updateOne({ telegramId }, { $set: { termsAcceptedAt: new Date() } });
+  return res.status(200).json({ success: true });
+}
 
 async function handleCheckJoin(req, res, telegramId) {
   const channels = await checkChannelMembership(telegramId);
@@ -69,6 +75,9 @@ module.exports = async (req, res) => {
     if (action === 'check_join') {
       return await handleCheckJoin(req, res, telegramId);
     }
+    if (action === 'accept_terms') {
+      return await handleAcceptTerms(req, res, telegramId);
+    }
 
     const username = verify.user.username || verify.user.first_name || 'Player';
     const photoUrl = verify.user.photo_url || clientPhotoUrl || null;
@@ -96,6 +105,29 @@ module.exports = async (req, res) => {
       // blocking the device's TRUE owner because "123" !== 123.
       if (deviceOwner && String(deviceOwner.telegramId) !== telegramId) {
         const owner = await findUserByTelegramId(usersCol, deviceOwner.telegramId);
+
+        // ── Multi-account enforcement, step 2: repeated attempts ban the
+        // ORIGINAL owner, not just refuse the new attempt. $addToSet keeps
+        // this to DISTINCT attempting telegramIds — one account retrying
+        // this same second telegramId over and over doesn't count multiple
+        // times, since that's a UI-refresh loop, not new farmed accounts. ──
+        const updatedDevice = await devicesCol.findOneAndUpdate(
+          { deviceId },
+          { $addToSet: { blockedAttempts: telegramId }, $set: { lastBlockedAt: new Date() } },
+          { returnDocument: 'after' }
+        );
+        const distinctAttempts = (updatedDevice && updatedDevice.blockedAttempts) ? updatedDevice.blockedAttempts.length : 0;
+
+        if (owner && !owner.banned && distinctAttempts >= DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD) {
+          await usersCol.updateOne({ _id: owner._id }, { $set: { banned: true, bannedReason: 'multi_account_device' } });
+          sendTelegramMessage(
+            owner.telegramId,
+            `🚫 <b>Account Suspended</b>\n\n` +
+              `Your account was suspended for violating the "one device, one account" rule — multiple different accounts were opened from your device.`
+          ).catch(() => {});
+          return res.status(200).json({ success: false, status: 'blocked_banned' });
+        }
+
         return res.status(200).json({
           success: false,
           status: 'blocked_device',
@@ -134,6 +166,7 @@ module.exports = async (req, res) => {
         referralCount: 0,
         tonWallet: null,
         banned: false,
+        termsAcceptedAt: null,
         joinedAt: new Date(),
         lastActive: new Date(),
       };
@@ -207,6 +240,7 @@ module.exports = async (req, res) => {
         lastDailyGiftAt: user.lastDailyGiftAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
         completedTasks: user.completedTasks ?? [],
+        termsAccepted: !!user.termsAcceptedAt,
         referralCount: user.referralCount,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
         level: levelProg.level,
