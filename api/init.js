@@ -1,17 +1,18 @@
 // api/init.js
 // Lightweight periodic-sync endpoint — the frontend polls this every so
-// often (see index.html) just to refresh balances/tokens on screen.
+// often (see index.html) just to refresh balances on screen.
 //
 // Registration/device-check already happens once via api/auth.js when the
 // app first loads. This used to be a FULL COPY of that same registration
 // logic, running again on every sync tick — two independent code paths
 // writing to the same users/devices collections is exactly the kind of
-// thing that causes race conditions. Now this is read-only (except for
-// the token-regen tick, which is safe to run repeatedly).
+// thing that causes race conditions. Now this is purely read-only.
+// (The old game-token/energy system that used to live here was removed —
+// it never actually gated any gameplay action, just displayed a number
+// nothing consumed.)
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
-const { applyRegen, MAX_TOKENS } = require('../lib/tokens');
 const { getLevelProgress } = require('../lib/levelSystem');
 
 module.exports = async (req, res) => {
@@ -31,10 +32,6 @@ module.exports = async (req, res) => {
     const telegramId = verify.user.id;
     const usersCol = await getCollection('users');
     const user = await findUserByTelegramId(usersCol, telegramId);
-    if (user && user.gameTokens > 10) {
-      await usersCol.updateOne({ _id: user._id }, { $set: { gameTokens: 10 } });
-      user.gameTokens = 10;
-    }
 
     if (!user) {
       // Shouldn't normally happen (api/auth.js registers on app load first),
@@ -45,13 +42,6 @@ module.exports = async (req, res) => {
     if (user.banned) {
       return res.status(200).json({ success: false, status: 'blocked_banned' });
     }
-
-    // Atomic (compare-and-swap) regen — see lib/tokens.js. This endpoint
-    // polls frequently, so it's the most likely place to race api/auth.js
-    // on a fresh app open; applyRegen makes that race harmless instead of
-    // letting both sides double-apply a tick jump.
-    const regen = await applyRegen(usersCol, user);
-    user.gameTokens = regen.gameTokens;
 
     // Pending gift (created via the admin bot's "Send Gift" flow) — the
     // frontend shows an animated gift-box popup if this is non-null.
@@ -73,9 +63,6 @@ module.exports = async (req, res) => {
         coins: user.gold,               // frontend's window.G.coins field
         fruitCoin: user.fruitCoin,
         photoUrl: user.photoUrl || null,
-        tokens: user.gameTokens ?? 3,   // frontend's window.G.tokens field
-        maxTokens: MAX_TOKENS,
-        nextTokenAt: regen.nextTokenAt,
         referralCount: user.referralCount,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
         lastFreeBoxAt: user.lastFreeBoxAt ?? null,
