@@ -122,7 +122,7 @@ module.exports = async (req, res) => {
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id, completedTasks: { $ne: taskId } }, // re-check atomically (race guard)
       {
-        $inc: { fruitCoin: fcReward, xp: 10 },
+        $inc: { fruitCoin: fcReward, xp: 2 },
         $addToSet: { completedTasks: taskId },
         $set: { lastActive: new Date() },
       },
@@ -149,14 +149,12 @@ module.exports = async (req, res) => {
     return res.status(200).json({
       success: true,
       rewardFc: fcReward,
-      coinsReward: fcReward,
       gemsReward: fcReward,
       user: {
         fruitCoin: updatedUser.fruitCoin,
-        gold: updatedUser.fruitCoin,
-        coins: updatedUser.fruitCoin,
         gems: updatedUser.fruitCoin,
         completedTasks: updatedUser.completedTasks,
+        xp: updatedUser.xp,
       },
     });
   } catch (err) {
