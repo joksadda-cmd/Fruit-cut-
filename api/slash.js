@@ -171,6 +171,11 @@ module.exports = async (req, res) => {
       // 5. Feed this week's leaderboard tally (weekly Top Slasher competition)
       recordSlashWin(user.telegramId, user.username).catch(() => {});
 
+      // 5b. Log for the admin dashboard's rolling 7-day slash count (auto-purged via TTL)
+      getCollection('slashLog')
+        .then((col) => col.insertOne({ telegramId: user.telegramId, createdAt: now }))
+        .catch(() => {});
+
       // 6. Trigger referral milestones asynchronously
       checkReferralStep3(updatedUser).catch(() => {});
       // Also check: does this claim make the referral "valid" for this
