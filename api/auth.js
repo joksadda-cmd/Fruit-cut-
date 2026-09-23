@@ -149,9 +149,8 @@ module.exports = async (req, res) => {
         telegramId,
         username,
         photoUrl,
-        gold: 0,
         fruitCoin: 0,
-        lastFreeBoxAt: null,
+        xp: 0,
         lastDailyGiftAt: null,
         lastSlashAt: null,
         slashEarningsUsd: 0,
@@ -225,7 +224,7 @@ module.exports = async (req, res) => {
       { sort: { createdAt: 1 } }
     );
 
-    const levelProg = getLevelProgress(user.totalSlices || 0);
+    const levelProg = getLevelProgress(user.xp || 0);
 
     return res.status(200).json({
       success: true,
@@ -234,9 +233,8 @@ module.exports = async (req, res) => {
         telegramId: user.telegramId,
         username: user.username,
         photoUrl: user.photoUrl || photoUrl || null,
-        gold: user.gold,
         fruitCoin: user.fruitCoin,
-        lastFreeBoxAt: user.lastFreeBoxAt ?? null,
+        xp: user.xp || 0,
         lastDailyGiftAt: user.lastDailyGiftAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
         completedTasks: user.completedTasks ?? [],
