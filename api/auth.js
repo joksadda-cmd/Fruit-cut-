@@ -24,7 +24,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
-const { TRANSACTION_TYPES, DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD } = require('../lib/constants');
+const { DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD } = require('../lib/constants');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
 const { checkReferralStep1 } = require('../lib/referral');
