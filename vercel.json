@@ -1,6 +1,9 @@
 {
   "version": 2,
   "functions": {
+    "api/bot.js": {
+      "maxDuration": 60
+    },
     "api/*.js": {
       "maxDuration": 10
     }
