@@ -96,9 +96,9 @@ module.exports = async (req, res) => {
       // 1. Calculate slice reward: 15 - 60 FC (weighted)
       const baseReward = pickSlashReward();
 
-      // 2. Calculate XP & Level progression (+5 XP per slash game)
+      // 2. Calculate XP & Level progression (+1 XP per slash)
       const oldXp = user.xp || 0;
-      const newXp = oldXp + 5;
+      const newXp = oldXp + 1;
       const oldLevel = getLevelForXp(oldXp);
       const newLevel = getLevelForXp(newXp);
 
@@ -130,7 +130,7 @@ module.exports = async (req, res) => {
           $inc: {
             fruitCoin: totalReward,
             totalSlices: 1,
-            xp: 5,
+            xp: 1,
           },
           $set: {
             level: newLevel,
