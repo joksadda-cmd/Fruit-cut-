@@ -45,7 +45,7 @@ module.exports = async (req, res) => {
 
     // Pending gift (created via the admin bot's "Send Gift" flow) — the
     // frontend shows an animated gift-box popup if this is non-null.
-    // Claiming happens through the separate /api/gift_claim endpoint so
+    // Claiming happens through /api/game_claim (action: 'claim_gift') so
     // the credit only ever happens once, even if init polls again before
     // the popup is dismissed.
     const giftsCol = await getCollection('gifts');
