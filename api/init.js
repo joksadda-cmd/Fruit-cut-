@@ -54,18 +54,17 @@ module.exports = async (req, res) => {
       { sort: { createdAt: 1 } }
     );
 
-    const levelProg = getLevelProgress(user.totalSlices || 0);
+    const levelProg = getLevelProgress(user.xp || 0);
 
     return res.status(200).json({
       success: true,
       status: 'ok',
       user: {
-        coins: user.gold,               // frontend's window.G.coins field
         fruitCoin: user.fruitCoin,
+        xp: user.xp || 0,
         photoUrl: user.photoUrl || null,
         referralCount: user.referralCount,
         referralFruitCoinEarned: user.referralFruitCoinEarned ?? 0,
-        lastFreeBoxAt: user.lastFreeBoxAt ?? null,
         lastDailyGiftAt: user.lastDailyGiftAt ?? null,
         lastSlashAt: user.lastSlashAt ?? null,
         level: levelProg.level,
