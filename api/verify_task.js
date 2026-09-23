@@ -22,6 +22,7 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { ObjectId } = require('mongodb');
 const { checkReferralStep2 } = require('../lib/referral');
+const { getLevelProgress } = require('../lib/levelSystem');
 
 const JOINED_STATUSES = ['creator', 'administrator', 'member', 'restricted'];
 
@@ -133,6 +134,16 @@ module.exports = async (req, res) => {
       return res.status(200).json({ success: false, message: 'Task already completed' });
     }
 
+    // Keep the stored `level` field (used elsewhere — withdraw gate, admin
+    // panel, etc.) in sync with the XP we just credited, and hand the fresh
+    // progress back so the frontend can update the level UI immediately
+    // instead of only on the next app reload.
+    const newProgress = getLevelProgress(updatedUser.xp || 0);
+    if (newProgress.level !== updatedUser.level) {
+      await usersCol.updateOne({ _id: updatedUser._id }, { $set: { level: newProgress.level } });
+      updatedUser.level = newProgress.level;
+    }
+
     checkReferralStep2(updatedUser); // fire-and-forget (Step 2: 10 tasks completed)
 
     const txCol = await getCollection('transactions');
@@ -155,6 +166,8 @@ module.exports = async (req, res) => {
         gems: updatedUser.fruitCoin,
         completedTasks: updatedUser.completedTasks,
         xp: updatedUser.xp,
+        level: newProgress.level,
+        levelProgress: newProgress,
       },
     });
   } catch (err) {
