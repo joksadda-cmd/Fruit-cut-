@@ -2,7 +2,7 @@
 // POST /api/slash
 // Fruit Cut Slash Game API Endpoint
 // Cooldown: 30 minutes between games.
-// Reward: 15 to 60 FC randomly (server-validated).
+// Reward: 15 to 40 FC randomly (server-validated).
 // Caps: 48 claims / UTC day, 366 claims / week (see lib/slashGame.js).
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
