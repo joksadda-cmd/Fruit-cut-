@@ -7,14 +7,14 @@
 //     -> { success: true, sessionId }
 //
 //   { action: 'adsgram'|'adsgramDaily'|'gigapub'|'monetag', sessionId }
-//     -> { success: true, user: { coins: <newGoldValue> } }   (claims the reward)
+//     -> { success: true, user: { fruitCoin: <newFruitCoinValue> } }   (claims the reward)
 //
 // telegramId is NEVER trusted from the request body — always taken from
 // the verified Telegram initData header.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { createAdSession, claimAdSession, countClaimedToday, revertAdSession } = require('../lib/adSession');
-const { creditGoldForAd } = require('../lib/adReward');
+const { creditAdReward } = require('../lib/adReward');
 const { getSettings } = require('../lib/settings');
 
 const VALID_NETWORKS = ['adsgram', 'adsgramDaily', 'gigapub', 'monetag'];
@@ -64,11 +64,11 @@ module.exports = async (req, res) => {
       }
 
       const settings = await getSettings();
-      const amount = (settings.adRewardFc && settings.adRewardFc[action]) || (settings.adRewardGold && settings.adRewardGold[action]) || 20;
+      const amount = (settings.adRewardFc && settings.adRewardFc[action]) || 20;
 
       // CRITICAL FIX: atomic limit enforcement
       const dailyLimitMax = (settings.adDailyLimits && settings.adDailyLimits[action]) || 999;
-      const result = await creditGoldForAd(telegramId, amount, action, `session_${sessionId}`, dailyLimitMax);
+      const result = await creditAdReward(telegramId, amount, action, `session_${sessionId}`, dailyLimitMax);
 
       if (!result.success) {
         console.warn(`[ads] credit failed: telegramId=${telegramId} network=${action} sessionId=${sessionId} reason=${result.reason}`);
@@ -90,9 +90,7 @@ module.exports = async (req, res) => {
         success: true,
         user: {
           fruitCoin: result.newFruitCoin,
-          gold: result.newGold,
           gems: result.newFruitCoin,
-          coins: result.newGold,
         },
       });
     }
