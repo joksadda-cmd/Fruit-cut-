@@ -49,7 +49,7 @@ async function handleClaimGift(req, res, user) {
     success: true,
     amount: gift.amount,
     reason: gift.reason,
-    user: { fruitCoin: updatedUser.fruitCoin, gold: updatedUser.gold },
+    user: { fruitCoin: updatedUser.fruitCoin },
   });
 }
 
