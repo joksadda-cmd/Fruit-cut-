@@ -67,11 +67,11 @@ module.exports = async (req, res) => {
     });
     if (countToday >= maxPerDay) return ok();
 
-    const rewardGold = (settings.adRewardGold && settings.adRewardGold.gigapub) || 120;
+    const rewardFc = (settings.adRewardFc && settings.adRewardFc.gigapub) || 15;
 
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id },
-      { $inc: { gold: rewardGold, totalAdsWatched: 1 }, $set: { lastActive: new Date() } },
+      { $inc: { fruitCoin: rewardFc, totalAdsWatched: 1 }, $set: { lastActive: new Date() } },
       { returnDocument: 'after' }
     );
     if (updatedUser) maybeTriggerValidReferral(updatedUser);
@@ -82,8 +82,9 @@ module.exports = async (req, res) => {
     await txCol.insertOne({
       telegramId,
       type: 'ad_reward',
-      amount: rewardGold,
-      balanceAfter: updatedUser ? updatedUser.gold : undefined,
+      amount: rewardFc,
+      currency: 'FC',
+      balanceAfter: updatedUser ? updatedUser.fruitCoin : undefined,
       meta: { network: 'gigapub', event, source: 's2s_postback' },
       createdAt: new Date(),
     });
