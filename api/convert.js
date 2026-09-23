@@ -1,21 +1,19 @@
 // api/convert.js
 // POST /api/convert
-// Body: { goldAmount: number }
+// Body: { action: 'redeem_promo', code: string }
 // Header: x-telegram-init-data (verified, same pattern as api/auth.js)
 //
-// Converts Gold -> Fruit Coin using the rate stored in settings.goldToFc
-// (currently 100,000 Gold = 10,000 FC, i.e. 10 Gold = 1 FC).
-// The server recalculates the FC amount itself — it never trusts an FC
-// amount sent from the client.
+// This file used to also do a Gold -> Fruit Coin conversion (the app's old
+// second currency, "Gold", has been removed entirely — Fruit Coin is now
+// the only currency). Promo code redemption is the only thing left here.
+// It stays in this file (instead of its own api/promo.js) because Vercel's
+// Hobby plan caps a project at 12 Serverless Functions — see api/verify_task.js
+// and api/auth.js's header comments for the same reasoning.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
-const { getCollection, findUserByTelegramId, idVariants } = require('../lib/db');
-const { getSettings } = require('../lib/settings');
+const { getCollection, idVariants } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { redeemPromoCode, revertPromoRedeem } = require('../lib/promo');
-
-const MIN_GOLD_PER_CONVERT = 20000;
-const MAX_GOLD_PER_CONVERT = 2000000;
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -34,117 +32,60 @@ module.exports = async (req, res) => {
     const telegramId = verify.user.id;
     const action = body.action;
 
+    if (action !== 'redeem_promo') {
+      return res.status(400).json({ success: false, message: 'unknown action' });
+    }
+
     // ── Promo: validate the code + credit the reward FIRST. An ad only
     // plays AFTER a successful redeem (pure revenue, not a gate) — an
     // invalid/expired/already-used code is rejected immediately with no
     // ad shown at all. The frontend plays the ad itself once it sees
     // success:true; this endpoint doesn't need to know about ads at all.
-    if (action === 'redeem_promo') {
-      const { code } = body;
+    const { code } = body;
 
-      const result = await redeemPromoCode(telegramId, code);
-      if (!result.ok) {
-        return res.status(200).json({ success: false, error: result.reason });
-      }
-
-      // IMPORTANT: telegramId can be stored as either a string or a number
-      // depending on how the user doc was created — always match both forms
-      // via idVariants(), same as every other endpoint in this project.
-      // A plain { telegramId } query here previously caused the credit to
-      // silently fail as "not found" AFTER the code was already marked
-      // used, permanently locking users out of a code they never got paid
-      // for. Fixed, plus a rollback below as a second safety net.
-      const usersCol = await getCollection('users');
-      const updatedUser = await usersCol.findOneAndUpdate(
-        { telegramId: { $in: idVariants(telegramId) } },
-        {
-          $inc: { fruitCoin: result.rewardFc || 0, gold: result.rewardGold || 0 },
-          $set: { lastActive: new Date() },
-        },
-        { returnDocument: 'after' }
-      );
-
-      if (!updatedUser) {
-        // Credit failed after the code was already marked used — undo that
-        // so the user can retry instead of being stuck on "already_redeemed".
-        await revertPromoRedeem(code, telegramId);
-        return res.status(404).json({ success: false, error: 'user_not_found' });
-      }
-
-      const txCol = await getCollection('transactions');
-      await txCol.insertOne({
-        telegramId,
-        type: TRANSACTION_TYPES.PROMO_REWARD,
-        amount: result.rewardFc || 0,
-        balanceAfter: updatedUser.fruitCoin,
-        meta: { code: result.code, rewardGold: result.rewardGold || 0 },
-        createdAt: new Date(),
-      });
-
-      return res.status(200).json({
-        success: true,
-        rewardFc: result.rewardFc || 0,
-        rewardGold: result.rewardGold || 0,
-        user: { fruitCoin: updatedUser.fruitCoin, gold: updatedUser.gold },
-      });
+    const result = await redeemPromoCode(telegramId, code);
+    if (!result.ok) {
+      return res.status(200).json({ success: false, error: result.reason });
     }
 
-    // ── Default action: Gold -> Fruit Coin conversion (unchanged) ──────
-    const { goldAmount } = body;
-
-    const gold = parseInt(goldAmount, 10);
-    if (!gold || gold < MIN_GOLD_PER_CONVERT) {
-      return res.status(400).json({ success: false, message: `Minimum ${MIN_GOLD_PER_CONVERT.toLocaleString()} Gold` });
-    }
-    if (gold > MAX_GOLD_PER_CONVERT) {
-      return res.status(400).json({ success: false, message: `Maximum ${MAX_GOLD_PER_CONVERT.toLocaleString()} Gold per conversion` });
-    }
-
-    const settings = await getSettings();
-    const rate = settings.goldToFc || { goldAmount: 100000, fcAmount: 10000 };
-
+    // IMPORTANT: telegramId can be stored as either a string or a number
+    // depending on how the user doc was created — always match both forms
+    // via idVariants(), same as every other endpoint in this project.
+    // A plain { telegramId } query here previously caused the credit to
+    // silently fail as "not found" AFTER the code was already marked
+    // used, permanently locking users out of a code they never got paid
+    // for. Fixed, plus a rollback below as a second safety net.
     const usersCol = await getCollection('users');
-    const user = await findUserByTelegramId(usersCol, telegramId);
-
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    if (user.banned) return res.status(403).json({ success: false, message: 'Account suspended' });
-    if (user.gold < gold) return res.status(400).json({ success: false, message: 'Not enough Gold' });
-
-    // Server-side calculation — floor to avoid fractional FC.
-    const fcGained = Math.floor((gold * rate.fcAmount) / rate.goldAmount);
-    if (fcGained <= 0) {
-      return res.status(400).json({ success: false, message: 'Amount too small to convert' });
-    }
-
-    // NOTE: MongoDB driver v6+ returns the matched document directly from
-    // findOneAndUpdate (not wrapped in { value: doc } like older versions).
     const updatedUser = await usersCol.findOneAndUpdate(
-      { _id: user._id, gold: { $gte: gold } }, // re-check balance atomically to avoid race conditions
-      { $inc: { gold: -gold, fruitCoin: fcGained }, $set: { lastActive: new Date() } },
+      { telegramId: { $in: idVariants(telegramId) } },
+      {
+        $inc: { fruitCoin: result.rewardFc || 0 },
+        $set: { lastActive: new Date() },
+      },
       { returnDocument: 'after' }
     );
 
     if (!updatedUser) {
-      return res.status(400).json({ success: false, message: 'Not enough Gold (balance changed)' });
+      // Credit failed after the code was already marked used — undo that
+      // so the user can retry instead of being stuck on "already_redeemed".
+      await revertPromoRedeem(code, telegramId);
+      return res.status(404).json({ success: false, error: 'user_not_found' });
     }
 
     const txCol = await getCollection('transactions');
     await txCol.insertOne({
       telegramId,
-      type: TRANSACTION_TYPES.GOLD_TO_FC_CONVERT,
-      amount: fcGained,
+      type: TRANSACTION_TYPES.PROMO_REWARD,
+      amount: result.rewardFc || 0,
       balanceAfter: updatedUser.fruitCoin,
-      meta: { goldSpent: gold },
+      meta: { code: result.code },
       createdAt: new Date(),
     });
 
     return res.status(200).json({
       success: true,
-      user: {
-        telegramId: updatedUser.telegramId,
-        gold: updatedUser.gold,
-        fruitCoin: updatedUser.fruitCoin,
-      },
+      rewardFc: result.rewardFc || 0,
+      user: { fruitCoin: updatedUser.fruitCoin },
     });
   } catch (err) {
     console.error('convert error:', err);
