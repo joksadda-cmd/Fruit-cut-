@@ -43,9 +43,9 @@ const FC_TO_USDT_RATE = 0.00002; // 50,000 FC = $1 USDT — matches existing fro
 
 function levelOf(user) {
   // Matches the level number already shown everywhere else in the app
-  // (api/init.js, api/auth.js both call getLevelProgress(user.totalSlices||0)),
+  // (api/init.js, api/auth.js both call getLevelProgress(user.xp||0)),
   // so "Level 3" here is the exact same Level 3 the player sees on screen.
-  return getLevelForXp(user.totalSlices || 0);
+  return getLevelForXp(user.xp || 0);
 }
 
 async function buildStatus(user, settings) {
