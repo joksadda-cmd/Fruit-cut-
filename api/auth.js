@@ -31,6 +31,18 @@ const { checkReferralStep1 } = require('../lib/referral');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
+// The device-fingerprint check below only ever ran when the client sent a
+// non-empty `deviceId` — a script that simply left it out of the request
+// body skipped the whole "one device, one account" system for free. The
+// real frontend's getDeviceId() always returns SOME string (falls back to
+// 'dev_unknown' even if every fingerprint source throws), so this fallback
+// only ever engages for requests that were hand-crafted without it.
+function getClientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return String(xff).split(',')[0].trim();
+  return req.headers['x-real-ip'] || (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+
 async function handleAcceptTerms(req, res, telegramId) {
   const usersCol = await getCollection('users');
   await usersCol.updateOne({ telegramId }, { $set: { termsAcceptedAt: new Date() } });
@@ -81,6 +93,11 @@ module.exports = async (req, res) => {
 
     const username = verify.user.username || verify.user.first_name || 'Player';
     const photoUrl = verify.user.photo_url || clientPhotoUrl || null;
+    const clientIp = getClientIp(req);
+    // A request that never sent a real deviceId (a hand-rolled script call,
+    // not the actual mini-app) still gets checked against a fingerprint —
+    // just an IP-based one instead of skipping the check entirely.
+    const fingerprint = deviceId || `ip_${clientIp}`;
 
     const usersCol = await getCollection('users');
     const devicesCol = await getCollection('devices');
@@ -97,8 +114,8 @@ module.exports = async (req, res) => {
     // A different telegramId showing up on the same deviceId gets
     // blocked and shown who currently owns it (matches Rashu's reference
     // screenshot from Mining Buddies).
-    if (deviceId) {
-      const deviceOwner = await devicesCol.findOne({ deviceId });
+    {
+      const deviceOwner = await devicesCol.findOne({ deviceId: fingerprint });
 
       // String(...) both sides — deviceOwner.telegramId may have been
       // written by older code as a Number; strict !== was wrongly
@@ -112,7 +129,7 @@ module.exports = async (req, res) => {
         // this same second telegramId over and over doesn't count multiple
         // times, since that's a UI-refresh loop, not new farmed accounts. ──
         const updatedDevice = await devicesCol.findOneAndUpdate(
-          { deviceId },
+          { deviceId: fingerprint },
           { $addToSet: { blockedAttempts: telegramId }, $set: { lastBlockedAt: new Date() } },
           { returnDocument: 'after' }
         );
@@ -139,7 +156,7 @@ module.exports = async (req, res) => {
       }
 
       if (!deviceOwner) {
-        await devicesCol.insertOne({ deviceId, telegramId, firstSeenAt: new Date() });
+        await devicesCol.insertOne({ deviceId: fingerprint, telegramId, firstSeenAt: new Date() });
       }
     }
 
@@ -161,6 +178,7 @@ module.exports = async (req, res) => {
         validReferralGiven: false,
         totalGamesPlayed: 0,
         deviceId: deviceId || null,
+        signupIp: clientIp,
         referredBy: referredBy || null,
         referralCount: 0,
         tonWallet: null,
@@ -212,6 +230,7 @@ module.exports = async (req, res) => {
           $set: {
             lastActive: new Date(),
             username,
+            lastIp: clientIp,
             ...(photoUrl ? { photoUrl } : {}),
           },
         }
