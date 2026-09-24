@@ -1,177 +1,283 @@
-// api/verify_task.js
-// GET  /api/verify_task           -> list active tasks (for the Task section)
-// POST /api/verify_task  { taskId } -> claim/verify a task
+// api/slash.js
+// POST /api/slash
+// Fruit Cut Slash Game API Endpoint
+// Cooldown: 30 minutes between games.
+// Reward: 15 to 40 FC randomly (server-validated).
+// Caps: 48 claims / UTC day, 366 claims / week (see lib/slashGame.js).
 //
-// NOTE: task LISTING lives in this same file (not a separate api/tasks.js)
-// on purpose — Vercel's Hobby plan caps a project at 12 Serverless
-// Functions, and this project is already at exactly 12. Same domain
-// (tasks), one file, routed by HTTP method.
-//
-// This also fixes a real bug: the frontend was calling
-// `https://fruit-cut-eight.vercel.app/api/tasks` (GET) for the task list,
-// but no api/tasks.js ever existed in this repo — so the Task section was
-// always empty/broken. It now calls /api/verify_task (GET) instead.
-//
-// - type 'api'    -> must actually be a member of task.chatId (checked via
-//                    Telegram's getChatMember, same mechanism as the
-//                    join-gate) before the reward is credited.
-// - type 'nonapi' -> trust-based (website visits, other bots, socials that
-//                    can't be verified via API) — credited on claim.
+// Anti-automation: claiming requires a short-lived session opened via
+// action:'start' first (see lib/slashSession.js) — a script that just
+// replays action:'claim' in a loop every 30 minutes, without ever calling
+// 'start' moments before, is rejected outright. On top of that, a rolling
+// "precision streak" flags (never auto-bans) any account whose claims land
+// suspiciously close to the exact cooldown boundary many times in a row —
+// real players drift by minutes; a scheduler doesn't.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
-const { ObjectId } = require('mongodb');
-const { checkReferralStep2 } = require('../lib/referral');
-const { getLevelProgress } = require('../lib/levelSystem');
+const { TRANSACTION_TYPES } = require('../lib/constants');
+const { pickSlashReward, SLASH_COOLDOWN_MS, SLASH_MAX_PER_DAY, SLASH_MAX_PER_WEEK } = require('../lib/slashGame');
+const { createSlashSession, claimSlashSession } = require('../lib/slashSession');
+const { checkAndIncrementDailyLimit, checkAndIncrementWeeklyLimit } = require('../lib/dailyLimit');
+const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
+const { checkReferralStep3, checkReferralStep4, checkReferralWeeklyValid } = require('../lib/referral');
+const { recordSlashWin } = require('../lib/leaderboard');
+const { notifyAdmin } = require('../lib/notify');
 
-const JOINED_STATUSES = ['creator', 'administrator', 'member', 'restricted'];
-
-async function isMemberOf(chatId, telegramId) {
-  const token = process.env.BOT_TOKEN;
-  try {
-    const url = `https://api.telegram.org/bot${token}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${telegramId}`;
-    const r = await fetch(url);
-    const data = await r.json();
-    const status = data && data.ok && data.result ? data.result.status : null;
-    return JOINED_STATUSES.includes(status);
-  } catch (err) {
-    console.error('verify_task membership check failed:', err);
-    return false;
-  }
-}
-
-// ── GET: list active tasks, grouped by category ──────────────────────
-async function handleList(req, res) {
-  const tasksCol = await getCollection('tasks');
-  const tasks = await tasksCol
-    .find({ active: true })
-    .sort({ createdAt: -1 })
-    .toArray();
-
-  // Only public-safe fields — chatId is used server-side for verification
-  // only and isn't needed by the client.
-  const out = tasks.map((t) => ({
-    id: String(t._id),
-    title: t.title,
-    description: t.description || '',
-    category: t.category || 'social', // daily | social | exclusive | partner
-    type: t.type,                     // 'api' | 'nonapi'
-    icon: t.icon || (t.type === 'api' ? '📢' : '⚡'),
-    url: t.url || '',
-    reward: t.reward || 0,
-    rewardFc: t.rewardFc || 0,
-  }));
-
-  return res.status(200).json({ success: true, tasks: out });
-}
+// How close to *exactly* SLASH_COOLDOWN_MS a claim has to land to count as
+// "suspiciously precise". Real humans check back a bit late almost every
+// time; a cron/Termux loop tends to fire within a couple seconds of the
+// exact interval, over and over.
+const PRECISION_TOLERANCE_MS = 3000;
+const PRECISION_STREAK_FLAG_AT = 8; // ~4 hours of back-to-back exact timing
 
 module.exports = async (req, res) => {
-  if (req.method === 'GET') {
-    try {
-      return await handleList(req, res);
-    } catch (err) {
-      console.error('verify_task list error:', err);
-      return res.status(500).json({ success: false, message: 'Server error' });
-    }
-  }
-
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Method not allowed' });
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
     const initData = req.headers['x-telegram-init-data'] || '';
     const verify = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
     if (!verify.valid) {
-      return res.status(401).json({ success: false, message: 'invalid_auth' });
+      return res.status(401).json({ success: false, error: 'invalid_auth' });
     }
+
     const telegramId = verify.user.id;
-
-    const { taskId } = req.body || {};
-    if (!taskId || !ObjectId.isValid(taskId)) {
-      return res.status(400).json({ success: false, message: 'Invalid task' });
-    }
-
-    const tasksCol = await getCollection('tasks');
-    const task = await tasksCol.findOne({ _id: new ObjectId(taskId), active: true });
-    if (!task) {
-      return res.status(404).json({ success: false, message: 'Task not found' });
-    }
-
     const usersCol = await getCollection('users');
     const user = await findUserByTelegramId(usersCol, telegramId);
-    if (!user) return res.status(404).json({ success: false, message: 'user_not_found' });
-    if (user.banned) return res.status(403).json({ success: false, message: 'Account suspended' });
 
-    // Already claimed? (idempotent — no double rewards)
-    if ((user.completedTasks || []).includes(taskId)) {
-      return res.status(200).json({ success: false, message: 'Task already completed' });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'user_not_found' });
+    }
+    if (user.banned) {
+      return res.status(403).json({ success: false, error: 'Account suspended' });
     }
 
-    // Real verification for API (channel/group) tasks — non-API tasks are
-    // trust-based since there's no API to check an Instagram/YouTube follow.
-    if (task.type === 'api') {
-      const joined = await isMemberOf(task.chatId, telegramId);
-      if (!joined) {
-        return res.status(200).json({ success: false, message: 'Please join first, then try again' });
+    const now = new Date();
+    const lastSlashTime = user.lastSlashAt ? new Date(user.lastSlashAt).getTime() : 0;
+    const elapsed = now.getTime() - lastSlashTime;
+    const onCooldown = lastSlashTime > 0 && elapsed < SLASH_COOLDOWN_MS;
+    const nextAvailableAt = new Date(lastSlashTime + SLASH_COOLDOWN_MS);
+    const remainingMs = Math.max(0, SLASH_COOLDOWN_MS - elapsed);
+
+    const action = req.body && req.body.action ? req.body.action : 'status';
+    const currentXp = user.xp || 0;
+    const currentProgress = getLevelProgress(currentXp);
+
+    // ── Status Action ──────────────────────────────────────────────
+    if (action === 'status') {
+      return res.status(200).json({
+        success: true,
+        onCooldown,
+        remainingMs,
+        nextAvailableAt,
+        fruitCoin: user.fruitCoin || 0,
+        totalSlices: user.totalSlices || 0,
+        xp: currentXp,
+        level: currentProgress.level,
+        levelProgress: currentProgress,
+      });
+    }
+
+    // ── Start Action ───────────────────────────────────────────────
+    // Opened the arena — mint a short-lived, single-use session that the
+    // eventual 'claim' call must present. Fails fast here if on cooldown
+    // (or over the daily/weekly cap) instead of letting a script open a
+    // session it can never legitimately use.
+    if (action === 'start') {
+      if (onCooldown) {
+        return res.status(200).json({ success: false, error: 'on_cooldown', nextAvailableAt, remainingMs });
       }
+      const sessionId = await createSlashSession(telegramId);
+      return res.status(200).json({ success: true, sessionId });
     }
 
-    const fcReward = task.rewardFc || task.reward || 0;
+    // ── Claim / Slash Action ───────────────────────────────────────
+    if (action === 'claim') {
+      if (onCooldown) {
+        return res.status(200).json({
+          success: false,
+          error: 'on_cooldown',
+          message: 'Fruit slice is on cooldown. Come back in 30 minutes!',
+          nextAvailableAt,
+          remainingMs,
+        });
+      }
 
-    // Driver v6+: findOneAndUpdate returns the document directly, not { value }.
-    const updatedUser = await usersCol.findOneAndUpdate(
-      { _id: user._id, completedTasks: { $ne: taskId } }, // re-check atomically (race guard)
-      {
-        $inc: { fruitCoin: fcReward, xp: 2 },
-        $addToSet: { completedTasks: taskId },
-        $set: { lastActive: new Date() },
-      },
-      { returnDocument: 'after' }
-    );
+      const sessionCheck = await claimSlashSession(telegramId, req.body && req.body.sessionId);
+      if (!sessionCheck.ok) {
+        return res.status(200).json({
+          success: false,
+          error: 'invalid_session',
+          message: 'Please open the slice game and play a round before claiming.',
+        });
+      }
 
-    if (!updatedUser) {
-      return res.status(200).json({ success: false, message: 'Task already completed' });
+      // NOTE: sessionCheck already atomically marked the session 'claimed'
+      // above — that's deliberate and happens BEFORE the daily/weekly caps
+      // below so a session can't be claimed twice even if two requests
+      // race here. If either cap rejects this claim, the session is spent
+      // and the player simply needs to reopen the arena for a new one —
+      // an acceptable trade-off since hitting the daily/weekly cap is rare
+      // and reopening the arena is exactly what a script *can't* cheaply
+      // fake its way around anyway.
+
+      // Daily / weekly ceilings (see lib/slashGame.js for why 48/366).
+      const dailyCheck = await checkAndIncrementDailyLimit(telegramId, 'slash_claim', SLASH_MAX_PER_DAY);
+      if (!dailyCheck.allowed) {
+        return res.status(200).json({
+          success: false,
+          error: 'daily_limit_reached',
+          message: `Daily slash limit reached (${SLASH_MAX_PER_DAY}/day). Come back tomorrow!`,
+        });
+      }
+      const weeklyCheck = await checkAndIncrementWeeklyLimit(telegramId, 'slash_claim', SLASH_MAX_PER_WEEK);
+      if (!weeklyCheck.allowed) {
+        return res.status(200).json({
+          success: false,
+          error: 'weekly_limit_reached',
+          message: `Weekly slash limit reached (${SLASH_MAX_PER_WEEK}/week). Come back next week!`,
+        });
+      }
+
+      // 1. Calculate slice reward: 15 - 60 FC (weighted)
+      const baseReward = pickSlashReward();
+
+      // 2. Calculate XP & Level progression (+1 XP per slash)
+      const oldXp = user.xp || 0;
+      const newXp = oldXp + 1;
+      const oldLevel = getLevelForXp(oldXp);
+      const newLevel = getLevelForXp(newXp);
+
+      let levelReward = 0;
+      let isLevelUp = false;
+
+      if (newLevel > oldLevel) {
+        isLevelUp = true;
+        const targetLevelConfig = LEVELS.find((l) => l.level === newLevel);
+        if (targetLevelConfig) {
+          levelReward = targetLevelConfig.rewardFc || 0;
+        }
+      }
+
+      const totalReward = baseReward + levelReward;
+      const cutoff = new Date(now.getTime() - SLASH_COOLDOWN_MS);
+
+      // Anti-bot: is THIS claim landing suspiciously close to the exact
+      // cooldown boundary (bot-scheduler behavior), continuing a streak of
+      // the same from previous claims?
+      const isPreciseTiming = lastSlashTime > 0 && Math.abs(elapsed - SLASH_COOLDOWN_MS) <= PRECISION_TOLERANCE_MS;
+      const newStreak = isPreciseTiming ? (user.slashPreciseStreak || 0) + 1 : 0;
+
+      // 3. Atomically ensure user hasn't claimed within the cooldown window
+      const updatedUser = await usersCol.findOneAndUpdate(
+        {
+          _id: user._id,
+          $or: [
+            { lastSlashAt: { $exists: false } },
+            { lastSlashAt: null },
+            { lastSlashAt: { $lt: cutoff } },
+          ],
+        },
+        {
+          $inc: {
+            fruitCoin: totalReward,
+            totalSlices: 1,
+            xp: 1,
+          },
+          $set: {
+            level: newLevel,
+            lastSlashAt: now,
+            lastActive: now,
+            slashPreciseStreak: newStreak,
+          },
+        },
+        { returnDocument: 'after' }
+      );
+
+      if (!updatedUser) {
+        return res.status(200).json({
+          success: false,
+          error: 'on_cooldown',
+          message: 'Already slashed recently! Try again in a bit.',
+          nextAvailableAt: new Date(now.getTime() + SLASH_COOLDOWN_MS),
+        });
+      }
+
+      // Flag (never auto-ban) accounts with a long streak of bot-precise
+      // claim timing, so an admin can look at the account manually. Only
+      // pings once per crossing of each further threshold multiple, so it
+      // doesn't spam a DM on every single claim after the first flag.
+      if (newStreak >= PRECISION_STREAK_FLAG_AT && newStreak % PRECISION_STREAK_FLAG_AT === 0) {
+        notifyAdmin(
+          `🤖 <b>Possible scripted slash activity</b>\n\n` +
+            `User <code>${user.telegramId}</code> (@${user.username || 'unknown'}) has claimed ` +
+            `<b>${newStreak}</b> slash rewards in a row within ${PRECISION_TOLERANCE_MS / 1000}s of the exact ` +
+            `30-minute cooldown — worth a manual look.`
+        ).catch(() => {});
+      }
+
+      // 4. Record transaction log
+      const txCol = await getCollection('transactions');
+      await txCol.insertOne({
+        telegramId: user.telegramId,
+        type: TRANSACTION_TYPES.SLASH_REWARD,
+        amount: totalReward,
+        balanceAfter: updatedUser.fruitCoin,
+        meta: {
+          baseReward,
+          levelReward,
+          isLevelUp,
+          level: newLevel,
+          totalSlices: updatedUser.totalSlices,
+          xp: updatedUser.xp,
+        },
+        createdAt: now,
+      });
+
+      // 5. Feed this week's leaderboard tally (weekly Top Slasher competition)
+      recordSlashWin(user.telegramId, user.username).catch(() => {});
+
+      // 5b. Log for the admin dashboard's rolling 7-day slash count (auto-purged via TTL)
+      getCollection('slashLog')
+        .then((col) => col.insertOne({ telegramId: user.telegramId, createdAt: now }))
+        .catch(() => {});
+
+      // 6. Trigger referral milestones asynchronously
+      checkReferralStep3(updatedUser).catch(() => {});
+      // Also check: does this claim make the referral "valid" for this
+      // week's Top Referrer leaderboard? (5 slash claims — separate,
+      // lower bar than Step 3's 10-claim/120 FC milestone above.)
+      checkReferralWeeklyValid(updatedUser).catch(() => {});
+      if (newLevel >= 3) {
+        checkReferralStep4(updatedUser, newLevel).catch(() => {});
+      }
+
+      const updatedProgress = getLevelProgress(updatedUser.xp || newXp);
+
+      return res.status(200).json({
+        success: true,
+        reward: baseReward,
+        levelReward,
+        isLevelUp,
+        newLevel,
+        totalSlices: updatedUser.totalSlices,
+        nextAvailableAt: new Date(now.getTime() + SLASH_COOLDOWN_MS),
+        user: {
+          fruitCoin: updatedUser.fruitCoin,
+          level: updatedProgress.level,
+          levelProgress: updatedProgress,
+          totalSlices: updatedUser.totalSlices,
+          lastSlashAt: updatedUser.lastSlashAt,
+          xp: updatedUser.xp,
+        },
+      });
     }
 
-    // Keep the stored `level` field (used elsewhere — withdraw gate, admin
-    // panel, etc.) in sync with the XP we just credited, and hand the fresh
-    // progress back so the frontend can update the level UI immediately
-    // instead of only on the next app reload.
-    const newProgress = getLevelProgress(updatedUser.xp || 0);
-    if (newProgress.level !== updatedUser.level) {
-      await usersCol.updateOne({ _id: updatedUser._id }, { $set: { level: newProgress.level } });
-      updatedUser.level = newProgress.level;
-    }
-
-    checkReferralStep2(updatedUser); // fire-and-forget (Step 2: 10 tasks completed)
-
-    const txCol = await getCollection('transactions');
-    await txCol.insertOne({
-      telegramId,
-      type: 'task_reward',
-      amount: fcReward,
-      currency: 'FC',
-      balanceAfter: updatedUser.fruitCoin,
-      meta: { taskId, taskType: task.type, title: task.title },
-      createdAt: new Date(),
-    });
-
-    return res.status(200).json({
-      success: true,
-      rewardFc: fcReward,
-      gemsReward: fcReward,
-      user: {
-        fruitCoin: updatedUser.fruitCoin,
-        gems: updatedUser.fruitCoin,
-        completedTasks: updatedUser.completedTasks,
-        xp: updatedUser.xp,
-        level: newProgress.level,
-        levelProgress: newProgress,
-      },
-    });
+    return res.status(400).json({ success: false, error: 'invalid_action' });
   } catch (err) {
-    console.error('verify_task error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    console.error('api/slash error:', err);
+    return res.status(500).json({ success: false, error: 'Server error' });
   }
 };
