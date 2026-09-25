@@ -3,7 +3,7 @@
 // Runs Monday 00:05 UTC (any time in that hour is fine) and:
 //   1. Pays out BOTH weekly competitions for the week that just ended:
 //      - "Top Slasher" — lib/leaderboard.js (30,000 FC pool, top 20)
-//      - "Top Referrer" — lib/referralLeaderboard.js (25,000 FC pool, top 10)
+//      - "Top Referrer" — lib/referralLeaderboard.js (50,000 FC pool, top 15)
 //   2. Broadcasts the top-3 winners of each to EVERY user (not just the
 //      winners, who already get an individual DM from step 1).
 //   3. Broadcasts a separate "new week has started" announcement.
