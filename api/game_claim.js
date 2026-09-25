@@ -5,9 +5,10 @@
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
-const { TRANSACTION_TYPES, LEADERBOARD_WEEKLY_REWARDS, LEADERBOARD_MIN_WINS_FOR_PRIZE, REFERRAL_WEEKLY_REWARDS } = require('../lib/constants');
+const { TRANSACTION_TYPES, LEADERBOARD_WEEKLY_REWARDS, LEADERBOARD_MIN_WINS_FOR_PRIZE, REFERRAL_WEEKLY_REWARDS, REFERRAL_MIN_FOR_PRIZE } = require('../lib/constants');
 const { getWeekKey, getTopSlashers, getWeeklyWins, getUserRank } = require('../lib/leaderboard');
 const { getTopReferrers, getWeeklyReferrals, getUserReferralRank } = require('../lib/referralLeaderboard');
+const { getRecentWinners } = require('../lib/recentWinners');
 const { ObjectId } = require('mongodb');
 
 const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec: every 12hr)
@@ -147,9 +148,9 @@ async function resolveTelegramPhoto(telegramId, botToken) {
 // ── Weekly Competition (Slash + Refer tabs) ─────────────────────────
 // Backs the "Weekly Competition" leaderboard modal: two tabs sharing one
 // call — Top Slasher (lib/leaderboard.js, 100+ wins gate, 30,000 FC pool,
-// top 20) and Top Referrer (lib/referralLeaderboard.js, no gate, 25,000 FC
-// pool, top 10). Both reset every Monday 00:00 UTC and are paid out by the
-// same cron (api/cron_weekly_leaderboard.js).
+// top 20) and Top Referrer (lib/referralLeaderboard.js, 20-referral gate,
+// 30,000 FC pool, top 10). Both reset every Monday 00:00 UTC and are paid
+// out by the same cron (api/cron_weekly_leaderboard.js).
 async function attachProfiles(entries, usersCol, botToken) {
   if (entries.length === 0) return [];
   const ids = entries.map((e) => e.telegramId);
@@ -177,13 +178,14 @@ async function handleWeeklyLeaderboard(req, res, user) {
   const weekKey = getWeekKey();
   const myId = String(user.telegramId);
 
-  const [slashTop, referTop, myWins, myReferrals, mySlashRank, myReferralRank] = await Promise.all([
+  const [slashTop, referTop, myWins, myReferrals, mySlashRank, myReferralRank, recentWinners] = await Promise.all([
     getTopSlashers(weekKey, LEADERBOARD_WEEKLY_REWARDS.length),
     getTopReferrers(weekKey, REFERRAL_WEEKLY_REWARDS.length),
     getWeeklyWins(myId, weekKey),
     getWeeklyReferrals(myId, weekKey),
     getUserRank(myId, weekKey),
     getUserReferralRank(myId, weekKey),
+    getRecentWinners(20),
   ]);
 
   const [slashWithProfiles, referWithProfiles] = await Promise.all([
@@ -209,6 +211,7 @@ async function handleWeeklyLeaderboard(req, res, user) {
     level,
     referrals: entry.referrals || 0,
     prizeFc: REFERRAL_WEEKLY_REWARDS[index] || 0,
+    eligible: (entry.referrals || 0) >= REFERRAL_MIN_FOR_PRIZE,
     isCurrentUser: entry.telegramId === myId,
   }));
 
@@ -224,8 +227,16 @@ async function handleWeeklyLeaderboard(req, res, user) {
     refer: {
       list: referList,
       poolFc: REFERRAL_WEEKLY_REWARDS.reduce((a, b) => a + b, 0),
+      minReferralsForPrize: REFERRAL_MIN_FOR_PRIZE,
       me: { referrals: myReferrals, rank: myReferralRank },
     },
+    recentWinners: recentWinners.map((w) => ({
+      username: w.username,
+      type: w.type,
+      rank: w.rank,
+      prize: w.prize,
+      wonAt: w.wonAt,
+    })),
   });
 }
 
