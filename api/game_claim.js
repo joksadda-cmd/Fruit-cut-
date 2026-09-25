@@ -1,7 +1,8 @@
 // api/game_claim.js
 // POST /api/game_claim
-// Handles gift claims, Daily Gift Box (10-40 FC), and the Weekly Competition
-// leaderboard (Slash + Refer tabs — see handleWeeklyLeaderboard below).
+// Handles gift claims, Daily Gift Box / Treasure Box (20-100 FC + 10 XP),
+// and the Weekly Competition leaderboard (Slash + Refer tabs — see
+// handleWeeklyLeaderboard below).
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
@@ -9,6 +10,7 @@ const { TRANSACTION_TYPES, LEADERBOARD_WEEKLY_REWARDS, LEADERBOARD_MIN_WINS_FOR_
 const { getWeekKey, getTopSlashers, getWeeklyWins, getUserRank } = require('../lib/leaderboard');
 const { getTopReferrers, getWeeklyReferrals, getUserReferralRank } = require('../lib/referralLeaderboard');
 const { getRecentWinners } = require('../lib/recentWinners');
+const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
 const { ObjectId } = require('mongodb');
 
 const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec: every 12hr)
@@ -54,7 +56,7 @@ async function handleClaimGift(req, res, user) {
   });
 }
 
-// ── Daily Gift Box: 10 to 40 FC randomly once per 24 hours ────────
+// ── Daily Gift Box ("Treasure Box"): random FC + fixed XP once per 12h ──
 async function handleDailyGiftStatus(req, res, user) {
   const now = Date.now();
   const lastTime = user.lastDailyGiftAt ? new Date(user.lastDailyGiftAt).getTime() : 0;
@@ -70,12 +72,35 @@ async function handleDailyGiftStatus(req, res, user) {
   });
 }
 
+// XP granted per Treasure Box open (per Rasedul's update spec).
+const TREASURE_BOX_XP_REWARD = 10;
+
 async function handleClaimDailyGift(req, res, user) {
   const now = new Date();
   const cutoff = new Date(now.getTime() - DAILY_GIFT_COOLDOWN_MS);
 
-  // Server-side random reward: 20 to 30 FC (user spec: 20-30 FC)
-  const reward = Math.floor(Math.random() * (30 - 20 + 1)) + 20;
+  // Server-side random reward: 20 to 100 FC (updated per Rasedul's spec —
+  // was 20-30 FC, which had gotten too low relative to slash/task rewards).
+  const baseReward = Math.floor(Math.random() * (100 - 20 + 1)) + 20;
+
+  // Level-up bonus on the XP this box grants — same pattern as
+  // api/slash.js and api/verify_task.js, so a Treasure Box open that
+  // happens to cross a level threshold pays out that level's milestone
+  // FC too, instead of being the one reward source that doesn't.
+  const oldXp = user.xp || 0;
+  const newXp = oldXp + TREASURE_BOX_XP_REWARD;
+  const oldLevel = getLevelForXp(oldXp);
+  const newLevel = getLevelForXp(newXp);
+
+  let levelReward = 0;
+  let isLevelUp = false;
+  if (newLevel > oldLevel) {
+    isLevelUp = true;
+    const targetLevelConfig = LEVELS.find((l) => l.level === newLevel);
+    if (targetLevelConfig) levelReward = targetLevelConfig.rewardFc || 0;
+  }
+
+  const reward = baseReward + levelReward;
 
   const usersCol = await getCollection('users');
   const updatedUser = await usersCol.findOneAndUpdate(
@@ -88,8 +113,8 @@ async function handleClaimDailyGift(req, res, user) {
       ],
     },
     {
-      $inc: { fruitCoin: reward },
-      $set: { lastDailyGiftAt: now, lastActive: now },
+      $inc: { fruitCoin: reward, xp: TREASURE_BOX_XP_REWARD },
+      $set: { level: newLevel, lastDailyGiftAt: now, lastActive: now },
     },
     { returnDocument: 'after' }
   );
@@ -112,14 +137,25 @@ async function handleClaimDailyGift(req, res, user) {
     type: 'daily_gift_reward',
     amount: reward,
     balanceAfter: updatedUser.fruitCoin,
+    meta: { baseReward, levelReward, isLevelUp, level: newLevel, xpGained: TREASURE_BOX_XP_REWARD },
     createdAt: now,
   });
+
+  const updatedProgress = getLevelProgress(updatedUser.xp || newXp);
 
   return res.status(200).json({
     success: true,
     reward,
+    levelReward,
+    isLevelUp,
+    newLevel,
     nextDailyGiftAt: new Date(now.getTime() + DAILY_GIFT_COOLDOWN_MS),
-    user: { fruitCoin: updatedUser.fruitCoin },
+    user: {
+      fruitCoin: updatedUser.fruitCoin,
+      xp: updatedUser.xp,
+      level: updatedProgress.level,
+      levelProgress: updatedProgress,
+    },
   });
 }
 
@@ -147,9 +183,9 @@ async function resolveTelegramPhoto(telegramId, botToken) {
 
 // ── Weekly Competition (Slash + Refer tabs) ─────────────────────────
 // Backs the "Weekly Competition" leaderboard modal: two tabs sharing one
-// call — Top Slasher (lib/leaderboard.js, 100+ wins gate, 30,000 FC pool,
+// call — Top Slasher (lib/leaderboard.js, 50+ wins gate, 30,000 FC pool,
 // top 20) and Top Referrer (lib/referralLeaderboard.js, 20-referral gate,
-// 30,000 FC pool, top 10). Both reset every Monday 00:00 UTC and are paid
+// 50,000 FC pool, top 15). Both reset every Monday 00:00 UTC and are paid
 // out by the same cron (api/cron_weekly_leaderboard.js).
 async function attachProfiles(entries, usersCol, botToken) {
   if (entries.length === 0) return [];
