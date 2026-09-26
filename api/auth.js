@@ -6,6 +6,9 @@
 // Hobby caps a project at 12 Serverless Functions, see api/verify_task.js's
 // header comment for the same reasoning):
 //   { action: 'check_join' }                        -> channel-join status check
+//   { action: 'accept_terms' }                       -> mark terms accepted
+//   { action: 'referral_captcha_start' }             -> issue a new captcha challenge
+//   { action: 'referral_captcha_verify', tappedSequence } -> verify a solve attempt
 //   { deviceId, referredBy, photoUrl } (default)     -> register/sync user
 //
 // Reads initData from the 'x-telegram-init-data' HEADER — matches your
@@ -27,7 +30,7 @@ const { sendTelegramMessage } = require('../lib/notify');
 const { DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD } = require('../lib/constants');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
-const { checkReferralStep1 } = require('../lib/referral');
+const { checkReferralStep1, startReferralCaptcha, verifyReferralCaptcha } = require('../lib/referral');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
@@ -47,6 +50,19 @@ async function handleAcceptTerms(req, res, telegramId) {
   const usersCol = await getCollection('users');
   await usersCol.updateOne({ telegramId }, { $set: { termsAcceptedAt: new Date() } });
   return res.status(200).json({ success: true });
+}
+
+// ── Referral verification captcha (see lib/referral.js for full design
+// rationale) — two thin action handlers, the actual logic lives there so
+// it stays with the referral feature it serves. ──
+async function handleReferCaptchaStart(req, res, telegramId) {
+  const result = await startReferralCaptcha(telegramId);
+  return res.status(200).json(result);
+}
+async function handleReferCaptchaVerify(req, res, telegramId) {
+  const { tappedSequence } = req.body || {};
+  const result = await verifyReferralCaptcha(telegramId, tappedSequence);
+  return res.status(200).json(result);
 }
 
 async function handleCheckJoin(req, res, telegramId) {
@@ -89,6 +105,12 @@ module.exports = async (req, res) => {
     }
     if (action === 'accept_terms') {
       return await handleAcceptTerms(req, res, telegramId);
+    }
+    if (action === 'referral_captcha_start') {
+      return await handleReferCaptchaStart(req, res, telegramId);
+    }
+    if (action === 'referral_captcha_verify') {
+      return await handleReferCaptchaVerify(req, res, telegramId);
     }
 
     const username = verify.user.username || verify.user.first_name || 'Player';
@@ -245,6 +267,15 @@ module.exports = async (req, res) => {
 
     const levelProg = getLevelProgress(user.xp || 0);
 
+    // Only worth showing the captcha to a user who: was referred, hasn't
+    // already passed it, and whose referral isn't already resolved one way
+    // or the other (valid or permanently blocked) — no point prompting
+    // someone whose referral already counts, or already never will.
+    const referCaptchaNeeded = !!user.referredBy &&
+      !user.referCaptchaPassed &&
+      !user.referWeeklyValidGiven &&
+      !user.referWeeklyValidBlocked;
+
     return res.status(200).json({
       success: true,
       status: 'ok',
@@ -263,6 +294,7 @@ module.exports = async (req, res) => {
         level: levelProg.level,
         levelProgress: levelProg,
         totalSlices: user.totalSlices || 0,
+        referCaptchaNeeded,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
