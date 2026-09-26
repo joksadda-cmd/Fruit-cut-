@@ -4,6 +4,12 @@
     "api/bot.js": {
       "maxDuration": 60
     },
+    "api/cron_notify.js": {
+      "maxDuration": 60
+    },
+    "api/cron_weekly_leaderboard.js": {
+      "maxDuration": 60
+    },
     "api/*.js": {
       "maxDuration": 10
     }
