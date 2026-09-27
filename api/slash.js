@@ -43,7 +43,7 @@ const { notifyAdmin } = require('../lib/notify');
 // time; a cron/Termux loop tends to fire within a couple seconds of the
 // exact interval, over and over.
 const PRECISION_TOLERANCE_MS = 3000;
-const PRECISION_STREAK_FLAG_AT = 8; // ~4 hours of back-to-back exact timing
+const PRECISION_STREAK_FLAG_AT = 3; // 3 back-to-back exact-interval claims — per Rasedul's spec: no human hits the exact same 30-min mark 3 times running without any delay drift, so 3 is treated as script activity
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
