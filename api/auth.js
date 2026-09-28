@@ -225,7 +225,7 @@ module.exports = async (req, res) => {
           );
           // NOTE: this new referral does NOT yet count toward the weekly
           // "Top Referrer" leaderboard — that only happens once the friend
-          // has played REFERRAL_WEEKLY_VALID_SLASH_COUNT slash games (see
+          // has joined the channel+group and played their first game (see
           // checkReferralWeeklyValid in lib/referral.js, called from
           // api/slash.js). Crediting it here at signup would let anyone
           // farm the weekly FC pool with disposable accounts.
@@ -271,10 +271,10 @@ module.exports = async (req, res) => {
     // already passed it, and whose referral isn't already resolved one way
     // or the other (valid or permanently blocked) — no point prompting
     // someone whose referral already counts, or already never will.
-    const referCaptchaNeeded = !!user.referredBy &&
-      !user.referCaptchaPassed &&
-      !user.referWeeklyValidGiven &&
-      !user.referWeeklyValidBlocked;
+    // UPDATED 2026-09-28: the tap-captcha + ad step is no longer part of the
+    // referral flow (a referral now counts after channel+group join + first
+    // game — see lib/referral.js). Kept false so the frontend never shows it.
+    const referCaptchaNeeded = false;
 
     return res.status(200).json({
       success: true,
