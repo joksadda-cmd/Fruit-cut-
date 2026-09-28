@@ -34,6 +34,9 @@ const { pickSlashReward, SLASH_COOLDOWN_MS, SLASH_MAX_PER_DAY, SLASH_MAX_PER_WEE
 const { createSlashSession, claimSlashSession } = require('../lib/slashSession');
 const { checkAndIncrementDailyLimit, checkAndIncrementWeeklyLimit } = require('../lib/dailyLimit');
 const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
+
+// XP granted per successful slash claim (was 1, now 5).
+const SLASH_XP_REWARD = 5;
 const { checkReferralStep3, checkReferralStep4, checkReferralWeeklyValid } = require('../lib/referral');
 const { recordSlashWin } = require('../lib/leaderboard');
 const { notifyAdmin } = require('../lib/notify');
@@ -158,9 +161,9 @@ module.exports = async (req, res) => {
       // 1. Calculate slice reward: 15 - 40 FC (weighted)
       const baseReward = pickSlashReward();
 
-      // 2. Calculate XP & Level progression (+1 XP per slash)
+      // 2. Calculate XP & Level progression (+5 XP per slash)
       const oldXp = user.xp || 0;
-      const newXp = oldXp + 1;
+      const newXp = oldXp + SLASH_XP_REWARD;
       const oldLevel = getLevelForXp(oldXp);
       const newLevel = getLevelForXp(newXp);
 
@@ -198,7 +201,7 @@ module.exports = async (req, res) => {
           $inc: {
             fruitCoin: totalReward,
             totalSlices: 1,
-            xp: 1,
+            xp: SLASH_XP_REWARD,
           },
           $set: {
             level: newLevel,
