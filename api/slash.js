@@ -261,8 +261,8 @@ module.exports = async (req, res) => {
       // 6. Trigger referral milestones asynchronously
       checkReferralStep3(updatedUser).catch(() => {});
       // Also check: does this claim make the referral "valid" for this
-      // week's Top Referrer leaderboard? (5 slash claims — separate,
-      // lower bar than Step 3's 10-claim/120 FC milestone above.)
+      // week's Top Referrer leaderboard? (needs channel+group join + first
+      // game claim — separate from Step 3's 10-claim/120 FC milestone above.)
       checkReferralWeeklyValid(updatedUser).catch(() => {});
       if (newLevel >= 3) {
         checkReferralStep4(updatedUser, newLevel).catch(() => {});
