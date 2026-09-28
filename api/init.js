@@ -14,6 +14,7 @@
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getLevelProgress } = require('../lib/levelSystem');
+const { getAdCountsToday } = require('../lib/adSession');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -55,6 +56,7 @@ module.exports = async (req, res) => {
     );
 
     const levelProg = getLevelProgress(user.xp || 0);
+    const adCounts = await getAdCountsToday(telegramId).catch(() => null);
 
     return res.status(200).json({
       success: true,
@@ -70,6 +72,7 @@ module.exports = async (req, res) => {
         level: levelProg.level,
         levelProgress: levelProg,
         totalSlices: user.totalSlices || 0,
+        ...(adCounts ? { adCounts } : {}),
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
