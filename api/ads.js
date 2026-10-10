@@ -88,6 +88,7 @@ module.exports = async (req, res) => {
       // apiCall() auto-updates on-screen balance
       return res.status(200).json({
         success: true,
+        rewardFc: amount, // the SERVER decides the reward; the client only displays this
         user: {
           fruitCoin: result.newFruitCoin,
           gems: result.newFruitCoin,
