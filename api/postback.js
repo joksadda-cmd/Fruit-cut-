@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
     });
     if (countToday >= maxPerDay) return ok();
 
-    const rewardFc = (settings.adRewardFc && settings.adRewardFc.gigapub) || 15;
+    const rewardFc = (settings.adRewardFc && settings.adRewardFc.gigapub) || 20;
 
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id },
