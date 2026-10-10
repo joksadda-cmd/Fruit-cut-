@@ -44,6 +44,32 @@ module.exports = async (req, res) => {
       return res.status(200).json({ success: false, status: 'blocked_banned' });
     }
 
+    // ── All Games section (list + play counter). Kept in this file because the
+    // Vercel Hobby plan allows max 12 serverless functions. ──────────────────
+    const body = req.body || {};
+    if (body.action === 'list_games') {
+      const gamesCol = await getCollection('games');
+      const page = Math.max(0, parseInt(body.page, 10) || 0);
+      const limit = 30;
+      const filter = { isActive: { $ne: false } };
+      const total = await gamesCol.countDocuments(filter);
+      const list = await gamesCol.find(filter).sort({ createdAt: -1 }).skip(page * limit).limit(limit).toArray();
+      return res.status(200).json({
+        success: true,
+        total,
+        hasMore: (page + 1) * limit < total,
+        games: list.map((g) => ({ id: String(g._id), title: g.title, thumbnail: g.thumbnail || '', gameUrl: g.gameUrl, category: g.category || '' })),
+      });
+    }
+    if (body.action === 'game_played') {
+      try {
+        const { ObjectId } = require('mongodb');
+        const gamesCol = await getCollection('games');
+        await gamesCol.updateOne({ _id: new ObjectId(String(body.gameId)) }, { $inc: { playCount: 1 } });
+      } catch (e) { /* ignore bad ids */ }
+      return res.status(200).json({ success: true });
+    }
+
     // Pending gift (created via the admin bot's "Send Gift" flow) — the
     // frontend shows an animated gift-box popup if this is non-null.
     // Claiming happens through /api/game_claim (action: 'claim_gift') so
