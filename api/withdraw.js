@@ -120,7 +120,7 @@ module.exports = async (req, res) => {
       const history = await withdrawalsCol
         .find({ telegramId })
         .sort({ createdAt: -1 })
-        .limit(30)
+        .limit(10)
         .toArray();
       return res.status(200).json({
         success: true,
