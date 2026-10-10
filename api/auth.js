@@ -30,7 +30,8 @@ const { sendTelegramMessage } = require('../lib/notify');
 const { DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD } = require('../lib/constants');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
-const { checkReferralStep1, startReferralCaptcha, verifyReferralCaptcha } = require('../lib/referral');
+const { checkReferralStep1, startReferralCaptcha, verifyReferralCaptcha, grantWeeklyReferralValidity } = require('../lib/referral');
+const { handleOnboardingAction, onboardingState } = require('../lib/onboarding');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
@@ -106,6 +107,18 @@ module.exports = async (req, res) => {
     if (action === 'accept_terms') {
       return await handleAcceptTerms(req, res, telegramId);
     }
+    if (typeof action === 'string' && action.startsWith('onboard_')) {
+      const result = await handleOnboardingAction(action, telegramId, req.body || {}, {
+        // After the final step: count this referral for the weekly contest right away.
+        onReferralVerified: async (verifiedUser) => {
+          await checkReferralStep1(verifiedUser).catch(() => {});
+          const usersCol = await getCollection('users');
+          const fresh = await findUserByTelegramId(usersCol, verifiedUser.telegramId);
+          if (fresh) await grantWeeklyReferralValidity(fresh);
+        },
+      });
+      return res.status(200).json(result);
+    }
     if (action === 'referral_captcha_start') {
       return await handleReferCaptchaStart(req, res, telegramId);
     }
@@ -136,7 +149,10 @@ module.exports = async (req, res) => {
     // A different telegramId showing up on the same deviceId gets
     // blocked and shown who currently owns it (matches Rashu's reference
     // screenshot from Mining Buddies).
-    {
+    // Legacy clients (cached old index.html) still send the old weak 'dev_xxxx'
+    // hash, which collides between unrelated phones — never block on it.
+    const isLegacyFingerprint = typeof deviceId === 'string' && deviceId.startsWith('dev_');
+    if (!isLegacyFingerprint) {
       const deviceOwner = await devicesCol.findOne({ deviceId: fingerprint });
 
       // String(...) both sides — deviceOwner.telegramId may have been
@@ -172,7 +188,8 @@ module.exports = async (req, res) => {
           status: 'blocked_device',
           ownerInfo: {
             username: owner ? owner.username : 'Unknown',
-            telegramId: deviceOwner.telegramId,
+            // masked: a blocked person doesn't need the owner's full Telegram ID
+            telegramId: String(deviceOwner.telegramId).replace(/^(\d{3})\d+(\d{3})$/, '$1****$2'),
           },
         });
       }
@@ -206,6 +223,8 @@ module.exports = async (req, res) => {
         tonWallet: null,
         banned: false,
         termsAcceptedAt: null,
+        onboardedAt: null,       // null = must pass onboarding (puzzle > bot code > join > language > terms)
+        onboardStep: 'puzzle',
         joinedAt: new Date(),
         lastActive: new Date(),
       };
@@ -235,8 +254,8 @@ module.exports = async (req, res) => {
             referrer.telegramId,
             `🎉 <b>New Friend Joined!</b>\n\n` +
               `${joinedWho} just joined using your invite link!\n\n` +
-              `You will earn <b>+30 FC</b> when they verify channel membership! 🍎\n\n` +
-              `Keep inviting friends to earn up to 430 FC per friend! 🚀`,
+              `You will earn <b>+50 FC</b> as soon as they finish account verification, plus more at every milestone! 🍎\n\n` +
+              `Keep inviting friends — earn up to 600 FC per friend + 15% of their withdrawals! 🚀`,
             {
               reply_markup: {
                 inline_keyboard: [[{ text: '🎮 Open Game', url: MINI_APP_URL }]],
@@ -254,6 +273,9 @@ module.exports = async (req, res) => {
             username,
             lastIp: clientIp,
             ...(photoUrl ? { photoUrl } : {}),
+            // keep the stored id on the new unique format (used by the referral
+            // "same device" checks too — the old weak hash gave false matches)
+            ...(typeof deviceId === 'string' && deviceId.startsWith('dv2_') ? { deviceId } : {}),
           },
         }
       );
@@ -295,6 +317,7 @@ module.exports = async (req, res) => {
         levelProgress: levelProg,
         totalSlices: user.totalSlices || 0,
         referCaptchaNeeded,
+        onboarding: onboardingState(user),
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
