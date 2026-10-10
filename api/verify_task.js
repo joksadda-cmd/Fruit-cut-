@@ -41,10 +41,13 @@ async function checkTaskChannelMembership(chatId, telegramId) {
 
 async function handleList(req, res) {
   const tasksCol = await getCollection('tasks');
-  const tasks = await tasksCol
-    .find({ active: true })
+  const now = new Date();
+  const all = await tasksCol
+    .find({ active: true, $or: [{ expiresAt: null }, { expiresAt: { $exists: false } }, { expiresAt: { $gt: now } }] })
     .sort({ createdAt: -1 })
     .toArray();
+  // Hide tasks whose quantity limit is already used up.
+  const tasks = all.filter((t) => !(t.maxCompletions > 0 && (t.completedCount || 0) >= t.maxCompletions));
 
   return res.status(200).json({
     success: true,
@@ -58,6 +61,10 @@ async function handleList(req, res) {
       chatId: t.chatId || null,
       reward: t.reward || t.rewardFc || 0,
       rewardFc: t.rewardFc || t.reward || 0,
+      maxCompletions: t.maxCompletions || 0,
+      completedCount: t.completedCount || 0,
+      expiresAt: t.expiresAt || null,
+      minLevel: t.minLevel || 0,
     })),
   });
 }
@@ -95,6 +102,17 @@ async function handleClaim(req, res) {
     return res.status(404).json({ success: false, error: 'task_not_found' });
   }
 
+  // ── Task options: expiry / quantity / minimum level ─────────────
+  if (task.expiresAt && new Date(task.expiresAt) <= new Date()) {
+    return res.status(200).json({ success: false, error: 'task_expired', message: 'This task has expired.' });
+  }
+  if (task.maxCompletions > 0 && (task.completedCount || 0) >= task.maxCompletions) {
+    return res.status(200).json({ success: false, error: 'task_full', message: 'This task is full — all slots were taken.' });
+  }
+  if (task.minLevel > 0 && getLevelForXp(user.xp || 0) < task.minLevel) {
+    return res.status(200).json({ success: false, error: 'level_too_low', message: `You need Level ${task.minLevel} for this task.` });
+  }
+
   // ── Verification ────────────────────────────────────────────────
   // 'api' tasks (Telegram channel/group) are checked live against
   // Telegram's getChatMember. 'nonapi' tasks (website/other bot/social)
@@ -128,6 +146,26 @@ async function handleClaim(req, res) {
   const totalReward = baseReward + levelReward;
   const now = new Date();
 
+  // Reserve one slot atomically BEFORE paying, so two users can never both take
+  // the last slot. Rolled back below if the user-credit step doesn't happen.
+  let reservedLast = false;
+  if (task.maxCompletions > 0) {
+    const reserved = await tasksCol.findOneAndUpdate(
+      { _id: task._id, active: true, $expr: { $lt: [{ $ifNull: ['$completedCount', 0] }, '$maxCompletions'] } },
+      { $inc: { completedCount: 1 } },
+      { returnDocument: 'after' }
+    );
+    if (!reserved) {
+      return res.status(200).json({ success: false, error: 'task_full', message: 'This task is full — all slots were taken.' });
+    }
+    if (reserved.completedCount >= reserved.maxCompletions) {
+      reservedLast = true;
+      await tasksCol.updateOne({ _id: task._id }, { $set: { active: false, filledAt: new Date() } });
+    }
+  } else {
+    await tasksCol.updateOne({ _id: task._id }, { $inc: { completedCount: 1 } });
+  }
+
   // Atomic: only credits if this task isn't already in completedTasks —
   // closes the double-claim race (two rapid taps / two requests in-flight).
   const updatedUser = await usersCol.findOneAndUpdate(
@@ -141,6 +179,11 @@ async function handleClaim(req, res) {
   );
 
   if (!updatedUser) {
+    // Give the reserved slot back (user had already completed it in a parallel request).
+    await tasksCol.updateOne(
+      { _id: task._id },
+      { $inc: { completedCount: -1 }, ...(reservedLast ? { $set: { active: true }, $unset: { filledAt: '' } } : {}) }
+    );
     return res.status(200).json({ success: false, error: 'already_completed' });
   }
 
