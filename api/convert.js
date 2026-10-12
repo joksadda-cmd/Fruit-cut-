@@ -11,6 +11,7 @@
 // and api/auth.js's header comments for the same reasoning.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
+const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, idVariants } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { redeemPromoCode, revertPromoRedeem } = require('../lib/promo');
@@ -26,6 +27,7 @@ module.exports = async (req, res) => {
     const botToken = process.env.BOT_TOKEN;
 
     const verify = verifyTelegramInitData(initData, botToken);
+    if (await rateGuard(req, res, verify, 'convert')) return; // flood protection (lib/rateLimit.js)
     if (!verify.valid) {
       return res.status(401).json({ success: false, message: 'Auth failed' });
     }
