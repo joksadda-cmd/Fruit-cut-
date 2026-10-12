@@ -14,7 +14,6 @@
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { createAdSession, claimAdSession, countClaimedToday, revertAdSession, getAdSession } = require('../lib/adSession');
-const { createChallenge, verifyChallenge } = require('../lib/adPuzzle');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { recordAdClaimAndCheck } = require('../lib/botGuard');
 const { touch: touchGame, getState: getGameState, consumeClaim, refundClaim } = require('../lib/gamePlay');
@@ -22,8 +21,10 @@ const { creditAdReward } = require('../lib/adReward');
 const { getSettings } = require('../lib/settings');
 
 const VALID_NETWORKS = ['adsgram', 'adsgramDaily', 'gigapub', 'monetag', 'gameAd'];
-// Adsgram rewards are only paid AFTER the user solves a server-issued image captcha.
-const PUZZLE_NETWORKS = ['adsgram', 'adsgramDaily'];
+// Adsgram rewards are confirmed server-to-server: Adsgram's own server calls our /api/postback
+// (the "Reward URL" of the ad block) after the user really got the reward. No confirmation = no FC.
+// Needs the ADSGRAM_REWARD_TOKEN environment variable; without it this check is skipped.
+const ADSGRAM_S2S = !!process.env.ADSGRAM_REWARD_TOKEN;
 const GAME_PROVIDERS = ['gigapub', 'adsgram'];
 const GIGAPUB_MIN_WATCH_MS = 5000;
 
@@ -53,7 +54,7 @@ module.exports = async (req, res) => {
   }
   const telegramId = verify.user.id;
 
-  const { action, network, sessionId, provider, gameId, puzzleToken, answer } = req.body || {};
+  const { action, network, sessionId, provider, gameId } = req.body || {};
 
   try {
     // LOCKUP ('bot_pattern' only): a script-locked account earns no more ad / game rewards.
@@ -80,22 +81,6 @@ module.exports = async (req, res) => {
         claimsMax: (settings.adDailyLimits && settings.adDailyLimits.gameAd) || 50,
         rewardFc: (settings.adRewardFc && settings.adRewardFc.gameAd) || 10,
       });
-    }
-
-    // ── Captcha answer -> reward ─────────────────────────────────────
-    if (action === 'puzzle_verify') {
-      const v = await verifyChallenge(telegramId, puzzleToken, answer);
-      if (!v.ok) {
-        return res.status(200).json({ success: false, message: v.error, final: !!v.final, image: v.image, triesLeft: v.triesLeft });
-      }
-      const ch = v.challenge;
-      const result = await payReward(telegramId, ch.source, ch.amount, ch.sessionId);
-      if (!result.success) {
-        const isDailyLimit = result.reason === 'daily_limit_reached';
-        console.warn(`[ads] puzzle credit failed: telegramId=${telegramId} source=${ch.source} reason=${result.reason}`);
-        return res.status(200).json({ success: false, message: result.duplicate ? 'already_used' : (result.reason || 'credit_failed'), final: true, retryable: false });
-      }
-      return res.status(200).json({ success: true, rewardFc: ch.amount, user: { fruitCoin: result.newFruitCoin, gems: result.newFruitCoin } });
     }
 
     // ── STEP 1: issue a session right before the ad plays ──────────
@@ -128,19 +113,24 @@ module.exports = async (req, res) => {
         return res.status(400).json({ success: false, message: 'missing sessionId' });
       }
 
-      // In-game GigaPub claim: GigaPub's own server must have confirmed the view
-      // (S2S postback marks the session) and at least 5s must have passed.
-      let gameProvider = null;
-      if (action === 'gameAd') {
-        const sess = await getAdSession(sessionId);
-        gameProvider = sess && sess.provider;
-        if (gameProvider === 'gigapub' && sess.status === 'pending') {
+      // The server-to-server confirmation (postback) must have arrived first:
+      //  - GigaPub (in-game claim): GigaPub's server marks the session; also >=5s must have passed.
+      //  - Adsgram (Ads section + in-game): Adsgram's server calls our Reward URL.
+      // The client retries while it waits (retryable: true).
+      const sess = await getAdSession(sessionId);
+      if (sess && String(sess.telegramId) === String(telegramId) && sess.status === 'pending') {
+        const gameProvider = action === 'gameAd' ? sess.provider : null;
+        if (gameProvider === 'gigapub') {
           if (Date.now() - new Date(sess.createdAt).getTime() < GIGAPUB_MIN_WATCH_MS) {
             return res.status(200).json({ success: false, message: 'too_fast', retryable: true });
           }
           if (!sess.postbackSeen) {
             return res.status(200).json({ success: false, message: 'waiting_postback', retryable: true });
           }
+        }
+        const isAdsgram = action === 'adsgram' || action === 'adsgramDaily' || (action === 'gameAd' && gameProvider === 'adsgram');
+        if (isAdsgram && ADSGRAM_S2S && !sess.postbackSeen) {
+          return res.status(200).json({ success: false, message: 'waiting_postback', retryable: true });
         }
       }
 
@@ -163,13 +153,6 @@ module.exports = async (req, res) => {
 
       const settings = await getSettings();
       const amount = (settings.adRewardFc && settings.adRewardFc[action]) || (action === 'gameAd' ? 10 : 20);
-
-      // Adsgram (Ads section + in-game Adsgram claim): NO reward yet — the user must
-      // first solve a server-issued captcha (see lib/adPuzzle.js).
-      if (PUZZLE_NETWORKS.includes(action) || (action === 'gameAd' && gameProvider === 'adsgram')) {
-        const challenge = await createChallenge({ telegramId, sessionId, source: action, amount });
-        return res.status(200).json({ success: true, needPuzzle: true, ...challenge, rewardFc: amount });
-      }
 
       // CRITICAL FIX: atomic limit enforcement (payReward also handles play-time for gameAd)
       const result = await payReward(telegramId, action, amount, sessionId);
