@@ -28,6 +28,7 @@
 // real players drift by minutes; a scheduler doesn't.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
+const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { pickSlashReward, SLASH_COOLDOWN_MS, SLASH_MAX_PER_DAY, SLASH_MAX_PER_WEEK } = require('../lib/slashGame');
@@ -56,6 +57,7 @@ module.exports = async (req, res) => {
   try {
     const initData = req.headers['x-telegram-init-data'] || '';
     const verify = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+    if (await rateGuard(req, res, verify, 'slash')) return; // flood protection (lib/rateLimit.js)
     if (!verify.valid) {
       return res.status(401).json({ success: false, error: 'invalid_auth' });
     }
