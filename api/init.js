@@ -12,6 +12,7 @@
 // nothing consumed.)
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
+const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { getAdCountsToday } = require('../lib/adSession');
@@ -26,6 +27,7 @@ module.exports = async (req, res) => {
     const botToken = process.env.BOT_TOKEN;
 
     const verify = verifyTelegramInitData(initData, botToken);
+    if (await rateGuard(req, res, verify, 'init')) return; // flood protection (lib/rateLimit.js)
     if (!verify.valid) {
       return res.status(401).json({ success: false, status: 'invalid_auth', reason: verify.reason });
     }
