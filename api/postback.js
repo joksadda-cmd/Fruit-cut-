@@ -15,6 +15,7 @@
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
 const { maybeTriggerValidReferral } = require('../lib/referral');
+const { markGameGigapubPostback } = require('../lib/adSession');
 
 // Shared secret agreed with GigaPub support — anyone hitting this URL
 // without the right token is ignored. If you ever need to rotate it,
@@ -41,6 +42,10 @@ module.exports = async (req, res) => {
     const usersCol = await getCollection('users');
     const user = await findUserByTelegramId(usersCol, telegramId);
     if (!user || user.banned) return ok();
+
+    // In-game claim: if this view belongs to a pending in-game GigaPub claim, just confirm it
+    // for that claim (api/ads.js pays it, spending 3 min of play time) — do NOT also pay here.
+    if (await markGameGigapubPostback(telegramId)) return ok();
 
     const eventsCol = await getCollection('postbackEvents');
 
