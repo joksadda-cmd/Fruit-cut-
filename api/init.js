@@ -49,16 +49,24 @@ module.exports = async (req, res) => {
     const body = req.body || {};
     if (body.action === 'list_games') {
       const gamesCol = await getCollection('games');
+      // FAST PATH: small pages (12), only the 4 fields the app shows, no countDocuments
+      // (we ask for one extra row to know if there is a next page), served by the
+      // games {isActive, createdAt} index created in lib/db.js.
       const page = Math.max(0, parseInt(body.page, 10) || 0);
-      const limit = 30;
-      const filter = { isActive: { $ne: false } };
-      const total = await gamesCol.countDocuments(filter);
-      const list = await gamesCol.find(filter).sort({ createdAt: -1 }).skip(page * limit).limit(limit).toArray();
+      const limit = Math.min(24, Math.max(1, parseInt(body.limit, 10) || 12));
+      const rows = await gamesCol
+        .find({ isActive: { $ne: false } }, { projection: { title: 1, thumbnail: 1, gameUrl: 1, category: 1 } })
+        .sort({ createdAt: -1 })
+        .skip(page * limit)
+        .limit(limit + 1)
+        .toArray();
+      const hasMore = rows.length > limit;
       return res.status(200).json({
         success: true,
-        total,
-        hasMore: (page + 1) * limit < total,
-        games: list.map((g) => ({ id: String(g._id), title: g.title, thumbnail: g.thumbnail || '', gameUrl: g.gameUrl, category: g.category || '' })),
+        page,
+        hasMore,
+        total: page === 0 && rows.length === 0 ? 0 : undefined,
+        games: rows.slice(0, limit).map((g) => ({ id: String(g._id), title: g.title, thumbnail: g.thumbnail || '', gameUrl: g.gameUrl, category: g.category || '' })),
       });
     }
     if (body.action === 'game_played') {
