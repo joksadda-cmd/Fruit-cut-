@@ -15,7 +15,7 @@
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
 const { maybeTriggerValidReferral } = require('../lib/referral');
-const { markGameGigapubPostback, markAdsgramPostback } = require('../lib/adSession');
+const { markGameGigapubPostback, recordAdsgramConfirm } = require('../lib/adSession');
 
 // Shared secret agreed with GigaPub support — anyone hitting this URL
 // without the right token is ignored. If you ever need to rotate it,
@@ -32,13 +32,16 @@ module.exports = async (req, res) => {
     // ── Adsgram "Reward URL": Adsgram's server confirms the user really got the reward ──
     // URL set in the Adsgram dashboard:  /api/postback?network=adsgram|adsgramDaily&token=SECRET&uid=[userId]
     if (network === 'adsgram' || network === 'adsgramDaily') {
-      const secret = process.env.ADSGRAM_REWARD_TOKEN;
-      if (!secret || token !== secret) {
-        console.warn('postback(adsgram): invalid token');
-        return ok();
-      }
-      if (!uid || !/^\d{3,15}$/.test(String(uid))) return ok();
-      await markAdsgramPostback(String(uid), network);
+      const secret = String(process.env.ADSGRAM_REWARD_TOKEN || '').trim();
+      const given = String(Array.isArray(token) ? token[0] : token || '').trim();
+      const q = req.query || {};
+      const rawUid = String(q.uid || q.userid || q.userId || q.user_id || '').trim();
+      const tokenOk = !!secret && given === secret;
+      const uidOk = /^\d{3,15}$/.test(rawUid);
+      let recorded = false;
+      if (tokenOk && uidOk) recorded = await recordAdsgramConfirm(rawUid, network);
+      // One diagnostic line per Adsgram callback (never prints the secret) -> Vercel > Logs, search "adsgram-postback"
+      console.log(`adsgram-postback network=${network} tokenOk=${tokenOk} (given length ${given.length}, expected ${secret.length}) uid="${rawUid.slice(0, 20)}" uidOk=${uidOk} recorded=${recorded}`);
       return ok();
     }
 
