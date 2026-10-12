@@ -39,34 +39,49 @@ async function checkTaskChannelMembership(chatId, telegramId) {
   }
 }
 
-async function handleList(req, res) {
+// Public task list is the same for everybody, so keep it in memory for a few seconds on each
+// warm server AND let Vercel's edge cache serve it (see Cache-Control below). Opening the Tasks
+// window no longer waits for a cold start + MongoDB query every single time.
+const TASKS_CACHE_MS = 20 * 1000;
+let tasksCache = { at: 0, tasks: null };
+
+async function loadActiveTasks() {
+  if (tasksCache.tasks && Date.now() - tasksCache.at < TASKS_CACHE_MS) return tasksCache.tasks;
+
   const tasksCol = await getCollection('tasks');
   const now = new Date();
   const all = await tasksCol
     .find({ active: true, $or: [{ expiresAt: null }, { expiresAt: { $exists: false } }, { expiresAt: { $gt: now } }] })
     .sort({ createdAt: -1 })
+    .limit(100)
     .toArray();
   // Hide tasks whose quantity limit is already used up.
-  const tasks = all.filter((t) => !(t.maxCompletions > 0 && (t.completedCount || 0) >= t.maxCompletions));
+  const visible = all.filter((t) => !(t.maxCompletions > 0 && (t.completedCount || 0) >= t.maxCompletions));
 
-  return res.status(200).json({
-    success: true,
-    tasks: tasks.map((t) => ({
-      id: String(t._id),
-      title: t.title,
-      category: t.category || 'daily',
-      type: t.type,
-      icon: t.icon || '📋',
-      url: t.url || '',
-      chatId: t.chatId || null,
-      reward: t.reward || t.rewardFc || 0,
-      rewardFc: t.rewardFc || t.reward || 0,
-      maxCompletions: t.maxCompletions || 0,
-      completedCount: t.completedCount || 0,
-      expiresAt: t.expiresAt || null,
-      minLevel: t.minLevel || 0,
-    })),
-  });
+  const tasks = visible.map((t) => ({
+    id: String(t._id),
+    title: t.title,
+    category: t.category || 'daily',
+    type: t.type,
+    icon: t.icon || '📋',
+    url: t.url || '',
+    chatId: t.chatId || null,
+    reward: t.reward || t.rewardFc || 0,
+    rewardFc: t.rewardFc || t.reward || 0,
+    maxCompletions: t.maxCompletions || 0,
+    completedCount: t.completedCount || 0,
+    expiresAt: t.expiresAt || null,
+    minLevel: t.minLevel || 0,
+  }));
+  tasksCache = { at: Date.now(), tasks };
+  return tasks;
+}
+
+async function handleList(req, res) {
+  const tasks = await loadActiveTasks();
+  // Edge-cache 20s, and serve a slightly stale list instantly while it refreshes in the background.
+  res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=120');
+  return res.status(200).json({ success: true, tasks });
 }
 
 async function handleClaim(req, res) {
@@ -207,6 +222,8 @@ async function handleClaim(req, res) {
 
   // Referral Step 2 (10 completed tasks -> referrer gets 80 FC + 5 XP).
   checkReferralStep2(updatedUser).catch(() => {});
+
+  tasksCache = { at: 0, tasks: null }; // completedCount changed -> next list is rebuilt fresh
 
   const updatedProgress = getLevelProgress(updatedUser.xp || newXp);
 
