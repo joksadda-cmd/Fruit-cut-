@@ -15,7 +15,7 @@
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
 const { maybeTriggerValidReferral } = require('../lib/referral');
-const { markGameGigapubPostback } = require('../lib/adSession');
+const { markGameGigapubPostback, markAdsgramPostback } = require('../lib/adSession');
 
 // Shared secret agreed with GigaPub support — anyone hitting this URL
 // without the right token is ignored. If you ever need to rotate it,
@@ -28,6 +28,19 @@ module.exports = async (req, res) => {
 
   try {
     const { network, uid, event, token } = req.query || {};
+
+    // ── Adsgram "Reward URL": Adsgram's server confirms the user really got the reward ──
+    // URL set in the Adsgram dashboard:  /api/postback?network=adsgram|adsgramDaily&token=SECRET&uid=[userId]
+    if (network === 'adsgram' || network === 'adsgramDaily') {
+      const secret = process.env.ADSGRAM_REWARD_TOKEN;
+      if (!secret || token !== secret) {
+        console.warn('postback(adsgram): invalid token');
+        return ok();
+      }
+      if (!uid || !/^\d{3,15}$/.test(String(uid))) return ok();
+      await markAdsgramPostback(String(uid), network);
+      return ok();
+    }
 
     if (token !== POSTBACK_TOKEN) {
       console.warn('postback: invalid token', req.query);
