@@ -32,6 +32,7 @@
 // server-verified Telegram initData header, same as every other endpoint.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
+const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getLevelForXp } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
@@ -77,6 +78,7 @@ module.exports = async (req, res) => {
   try {
     const initData = req.headers['x-telegram-init-data'] || '';
     const verify = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+    if (await rateGuard(req, res, verify, 'withdraw')) return; // flood protection (lib/rateLimit.js)
     if (!verify.valid) {
       return res.status(401).json({ success: false, message: 'invalid_auth' });
     }
