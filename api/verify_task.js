@@ -13,6 +13,7 @@
 
 const { ObjectId } = require('mongodb');
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
+const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
@@ -87,6 +88,7 @@ async function handleList(req, res) {
 async function handleClaim(req, res) {
   const initData = req.headers['x-telegram-init-data'] || '';
   const verify = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  if (await rateGuard(req, res, verify, 'verify_task')) return; // flood protection (lib/rateLimit.js)
   if (!verify.valid) {
     return res.status(401).json({ success: false, error: 'invalid_auth' });
   }
