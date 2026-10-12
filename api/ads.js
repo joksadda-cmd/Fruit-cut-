@@ -13,7 +13,8 @@
 // the verified Telegram initData header.
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
-const { createAdSession, claimAdSession, countClaimedToday, revertAdSession, getAdSession } = require('../lib/adSession');
+const { rateGuard } = require('../lib/rateLimit');
+const { createAdSession, claimAdSession, countClaimedToday, revertAdSession, getAdSession, confirmSessionWithAdsgram } = require('../lib/adSession');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { recordAdClaimAndCheck } = require('../lib/botGuard');
 const { touch: touchGame, getState: getGameState, consumeClaim, refundClaim } = require('../lib/gamePlay');
@@ -24,7 +25,7 @@ const VALID_NETWORKS = ['adsgram', 'adsgramDaily', 'gigapub', 'monetag', 'gameAd
 // Adsgram rewards are confirmed server-to-server: Adsgram's own server calls our /api/postback
 // (the "Reward URL" of the ad block) after the user really got the reward. No confirmation = no FC.
 // Needs the ADSGRAM_REWARD_TOKEN environment variable; without it this check is skipped.
-const ADSGRAM_S2S = !!process.env.ADSGRAM_REWARD_TOKEN;
+const ADSGRAM_S2S = !!String(process.env.ADSGRAM_REWARD_TOKEN || '').trim();
 const GAME_PROVIDERS = ['gigapub', 'adsgram'];
 const GIGAPUB_MIN_WATCH_MS = 5000;
 
@@ -49,6 +50,7 @@ module.exports = async (req, res) => {
 
   const initData = req.headers['x-telegram-init-data'] || '';
   const verify = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+  if (await rateGuard(req, res, verify, 'ads')) return; // flood protection (lib/rateLimit.js)
   if (!verify.valid) {
     return res.status(401).json({ success: false, message: 'invalid_auth' });
   }
@@ -62,7 +64,7 @@ module.exports = async (req, res) => {
     if (action && action !== 'game_start' && action !== 'game_ping') {
       const usersCol = await getCollection('users');
       const me = await findUserByTelegramId(usersCol, telegramId);
-      if (me && me.accountLocked && me.accountLockedReason === 'bot_pattern') {
+      if (me && me.accountLocked && (me.accountLockedReason === 'bot_pattern' || me.accountLockedReason === 'api_flood')) {
         return res.status(200).json({ success: false, message: 'account_locked' });
       }
     }
@@ -129,8 +131,11 @@ module.exports = async (req, res) => {
           }
         }
         const isAdsgram = action === 'adsgram' || action === 'adsgramDaily' || (action === 'gameAd' && gameProvider === 'adsgram');
-        if (isAdsgram && ADSGRAM_S2S && !sess.postbackSeen) {
-          return res.status(200).json({ success: false, message: 'waiting_postback', retryable: true });
+        if (isAdsgram && ADSGRAM_S2S) {
+          const blocks = action === 'adsgram' ? ['adsgram'] : ['adsgramDaily'];
+          if (!(await confirmSessionWithAdsgram(sess, blocks))) {
+            return res.status(200).json({ success: false, message: 'waiting_postback', retryable: true });
+          }
         }
       }
 
