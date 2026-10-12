@@ -25,6 +25,7 @@
 //   { success: false, status: 'invalid_auth' }
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
+const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
 const { DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD } = require('../lib/constants');
@@ -97,6 +98,7 @@ module.exports = async (req, res) => {
     const referredBy = typeof rawReferredBy === 'string' && /^\d+$/.test(rawReferredBy) ? rawReferredBy : null;
 
     const verify = verifyTelegramInitData(initData, botToken);
+    if (await rateGuard(req, res, verify, 'auth')) return; // flood protection (lib/rateLimit.js)
     if (!verify.valid) {
       return res.status(401).json({ success: false, status: 'invalid_auth', reason: verify.reason });
     }
