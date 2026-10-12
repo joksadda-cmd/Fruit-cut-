@@ -86,6 +86,17 @@ module.exports = async (req, res) => {
     const user = await findUserByTelegramId(usersCol, telegramId);
     if (!user) return res.status(404).json({ success: false, message: 'user_not_found' });
     if (user.banned) return res.status(403).json({ success: false, message: 'Account suspended' });
+    // LOCKUP: a locked account keeps its balance but cannot withdraw until the admin reviews it
+    // (lib/lockup.js). Viewing status/history is still allowed.
+    // Blocked at the first step (ad_session) so a locked user doesn't sit through an ad for nothing.
+    if (user.accountLocked && (req.body && (['request', 'ad_session', 'ad_claim'].includes(req.body.action) || (!req.body.action && req.body.amount)))) {
+      return res.status(403).json({
+        success: false,
+        locked: true,
+        error: 'account_locked',
+        message: '🔒 Your account is temporarily locked for review. Please contact support in our Official Community.',
+      });
+    }
 
     const body = req.body || {};
     const action = body.action || (body.amount ? 'request' : 'status');
