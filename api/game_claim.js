@@ -5,6 +5,7 @@
 // handleWeeklyLeaderboard below).
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
+const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES, LEADERBOARD_WEEKLY_REWARDS, LEADERBOARD_MIN_WINS_FOR_PRIZE, REFERRAL_WEEKLY_REWARDS, REFERRAL_MIN_FOR_PRIZE } = require('../lib/constants');
 const { getWeekKey, getTopSlashers, getWeeklyWins, getUserRank } = require('../lib/leaderboard');
@@ -284,6 +285,7 @@ module.exports = async (req, res) => {
   try {
     const initData = req.headers['x-telegram-init-data'] || '';
     const verify = verifyTelegramInitData(initData, process.env.BOT_TOKEN);
+    if (await rateGuard(req, res, verify, 'game_claim')) return; // flood protection (lib/rateLimit.js)
     if (!verify.valid) {
       return res.status(401).json({ success: false, error: 'invalid_auth' });
     }
