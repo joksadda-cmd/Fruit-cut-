@@ -32,6 +32,8 @@ const { getLevelProgress } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
 const { checkReferralStep1, startReferralCaptcha, verifyReferralCaptcha, grantWeeklyReferralValidity } = require('../lib/referral');
 const { handleOnboardingAction, onboardingState } = require('../lib/onboarding');
+const { recordSignupAndCheck, alertIpBurst, checkReferralVelocity } = require('../lib/velocity');
+const { isBannedInRegistry, registerBan } = require('../lib/lockup');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
 
@@ -174,7 +176,8 @@ module.exports = async (req, res) => {
         const distinctAttempts = (updatedDevice && updatedDevice.blockedAttempts) ? updatedDevice.blockedAttempts.length : 0;
 
         if (owner && !owner.banned && distinctAttempts >= DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD) {
-          await usersCol.updateOne({ _id: owner._id }, { $set: { banned: true, bannedReason: 'multi_account_device' } });
+          await usersCol.updateOne({ _id: owner._id }, { $set: { banned: true, bannedReason: 'multi_account_device', bannedAt: new Date() } });
+          registerBan(owner.telegramId, 'multi_account_device').catch(() => {});
           sendTelegramMessage(
             owner.telegramId,
             `🚫 <b>Account Suspended</b>\n\n` +
@@ -195,8 +198,17 @@ module.exports = async (req, res) => {
       }
 
       if (!deviceOwner) {
-        await devicesCol.insertOne({ deviceId: fingerprint, telegramId, firstSeenAt: new Date() });
+        await devicesCol.insertOne({ deviceId: fingerprint, telegramId, firstSeenAt: new Date(), lastSeenAt: new Date() });
+      } else {
+        // the real owner is still active -> keep this device record from being cleaned up (TTL)
+        devicesCol.updateOne({ deviceId: fingerprint }, { $set: { lastSeenAt: new Date() } }).catch(() => {});
       }
+    }
+
+    // ── Ban registry: a banned Telegram ID can never register again, even after the
+    //    banned user document was auto-deleted by the TTL cleanup (lib/ttlIndexes.js).
+    if (!user && (await isBannedInRegistry(telegramId))) {
+      return res.status(200).json({ success: false, status: 'blocked_banned' });
     }
 
     // ── Silent auto-register / update (no signup form) ─────────
@@ -228,20 +240,36 @@ module.exports = async (req, res) => {
         joinedAt: new Date(),
         lastActive: new Date(),
       };
+      // VELOCITY: too many brand-new accounts from one IP (3 min / 1 h windows) => the new
+      // account is born LOCKED (no withdraw, no referral rewards) and the admin is alerted.
+      const vel = await recordSignupAndCheck(clientIp);
+      if (vel.locked) {
+        newUser.accountLocked = true;
+        newUser.accountLockedAt = new Date();
+        newUser.accountLockedReason = 'ip_signup_velocity';
+        newUser.velocityFlaggedAt = new Date();
+        newUser.velocityFlaggedReason = 'ip_signup_velocity';
+      }
       await usersCol.insertOne(newUser);
       user = newUser;
+      if (vel.locked) alertIpBurst({ ip: clientIp, count: vel.count, countHour: vel.countHour, userId: telegramId });
 
       // ── Instant referral link association (server-side only) ─────────
       if (referredBy && String(referredBy) !== String(telegramId)) {
         const referrer = await findUserByTelegramId(usersCol, referredBy);
         if (referrer && !referrer.banned) {
-          await usersCol.updateOne(
+          const referrerAfter = await usersCol.findOneAndUpdate(
             { _id: referrer._id },
             {
               $inc: { referralCount: 1 },
               $set: { lastActive: new Date() },
-            }
+              // rolling list of signup times under this referrer — feeds the referral
+              // velocity alert (lib/velocity.js)
+              $push: { recentReferralSignups: { $each: [new Date()], $slice: -50 } },
+            },
+            { returnDocument: 'after' }
           );
+          checkReferralVelocity(referrerAfter);
           // NOTE: this new referral does NOT yet count toward the weekly
           // "Top Referrer" leaderboard — that only happens once the friend
           // has joined the channel+group and played their first game (see
@@ -318,6 +346,7 @@ module.exports = async (req, res) => {
         totalSlices: user.totalSlices || 0,
         referCaptchaNeeded,
         onboarding: onboardingState(user),
+        accountLocked: !!user.accountLocked,
       },
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
