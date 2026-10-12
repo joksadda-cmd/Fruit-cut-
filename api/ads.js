@@ -21,7 +21,8 @@ const { touch: touchGame, getState: getGameState, consumeClaim, refundClaim } = 
 const { creditAdReward } = require('../lib/adReward');
 const { getSettings } = require('../lib/settings');
 
-const VALID_NETWORKS = ['adsgram', 'adsgramDaily', 'gigapub', 'monetag', 'gameAd'];
+// 'adsgram' (Adsgram Special, block 28066) is switched off: the block is inactive and the card was removed from the app.
+const VALID_NETWORKS = ['adsgramDaily', 'gigapub', 'monetag', 'gameAd'];
 // Adsgram rewards are confirmed server-to-server: Adsgram's own server calls our /api/postback
 // (the "Reward URL" of the ad block) after the user really got the reward. No confirmation = no FC.
 // Needs the ADSGRAM_REWARD_TOKEN environment variable; without it this check is skipped.
