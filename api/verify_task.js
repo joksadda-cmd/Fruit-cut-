@@ -79,11 +79,11 @@ async function loadActiveTasks() {
     expiresAt: t.expiresAt || null,
     minLevel: t.minLevel || 0,
   }));
-  // Adsgram Task block card (Tasks > Daily): reward + daily cap come from the economy settings.
+  // Adsgram Task card (Tasks > Daily): reward + daily cap come from the economy settings.
   const settings = await getSettings();
   const adsgram = {
     rewardFc: (settings.adRewardFc && settings.adRewardFc.adsgramTask) || 50,
-    dailyLimit: (settings.adDailyLimits && settings.adDailyLimits.adsgramTask) || 5,
+    dailyLimit: (settings.adDailyLimits && settings.adDailyLimits.adsgramTask) || 10,
   };
   tasksCache = { at: Date.now(), tasks, adsgram };
   return tasksCache;
