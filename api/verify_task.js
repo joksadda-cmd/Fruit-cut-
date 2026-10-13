@@ -18,6 +18,11 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { TRANSACTION_TYPES } = require('../lib/constants');
 const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
 const { checkReferralStep2 } = require('../lib/referral');
+const { getSettings } = require('../lib/settings');
+const sponsorApi = require('../lib/sponsorApi');
+
+// "Sponsor & Post Task" calls share this endpoint (Vercel Hobby = max 12 functions). They carry an `action`.
+const SPONSOR_ACTIONS = ['config', 'verify_bot', 'create', 'list', 'check'];
 
 // XP granted per completed task (see lib/levelSystem.js header comment).
 const TASK_XP_REWARD = 2;
@@ -44,10 +49,10 @@ async function checkTaskChannelMembership(chatId, telegramId) {
 // warm server AND let Vercel's edge cache serve it (see Cache-Control below). Opening the Tasks
 // window no longer waits for a cold start + MongoDB query every single time.
 const TASKS_CACHE_MS = 20 * 1000;
-let tasksCache = { at: 0, tasks: null };
+let tasksCache = { at: 0, tasks: null, adsgram: null };
 
 async function loadActiveTasks() {
-  if (tasksCache.tasks && Date.now() - tasksCache.at < TASKS_CACHE_MS) return tasksCache.tasks;
+  if (tasksCache.tasks && Date.now() - tasksCache.at < TASKS_CACHE_MS) return tasksCache;
 
   const tasksCol = await getCollection('tasks');
   const now = new Date();
@@ -74,15 +79,21 @@ async function loadActiveTasks() {
     expiresAt: t.expiresAt || null,
     minLevel: t.minLevel || 0,
   }));
-  tasksCache = { at: Date.now(), tasks };
-  return tasks;
+  // Adsgram Task block card (Tasks > Daily): reward + daily cap come from the economy settings.
+  const settings = await getSettings();
+  const adsgram = {
+    rewardFc: (settings.adRewardFc && settings.adRewardFc.adsgramTask) || 50,
+    dailyLimit: (settings.adDailyLimits && settings.adDailyLimits.adsgramTask) || 5,
+  };
+  tasksCache = { at: Date.now(), tasks, adsgram };
+  return tasksCache;
 }
 
 async function handleList(req, res) {
-  const tasks = await loadActiveTasks();
+  const { tasks, adsgram } = await loadActiveTasks();
   // Edge-cache 20s, and serve a slightly stale list instantly while it refreshes in the background.
   res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=120');
-  return res.status(200).json({ success: true, tasks });
+  return res.status(200).json({ success: true, tasks, adsgram });
 }
 
 async function handleClaim(req, res) {
@@ -225,7 +236,7 @@ async function handleClaim(req, res) {
   // Referral Step 2 (10 completed tasks -> referrer gets 80 FC + 5 XP).
   checkReferralStep2(updatedUser).catch(() => {});
 
-  tasksCache = { at: 0, tasks: null }; // completedCount changed -> next list is rebuilt fresh
+  tasksCache = { at: 0, tasks: null, adsgram: null }; // completedCount changed -> next list is rebuilt fresh
 
   const updatedProgress = getLevelProgress(updatedUser.xp || newXp);
 
@@ -251,6 +262,7 @@ module.exports = async (req, res) => {
       return await handleList(req, res);
     }
     if (req.method === 'POST') {
+      if (req.body && SPONSOR_ACTIONS.includes(req.body.action)) return await sponsorApi(req, res);
       return await handleClaim(req, res);
     }
     return res.status(405).json({ success: false, error: 'Method not allowed' });
