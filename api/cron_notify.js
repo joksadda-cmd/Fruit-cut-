@@ -26,6 +26,7 @@
 
 const { getCollection } = require('../lib/db');
 const { broadcastToAllUsers } = require('../lib/notify');
+const { scanDeposits } = require('../lib/sponsor');
 
 // Same values api/bot.js hardcodes for its own "Open App" buttons — if you
 // ever rename the bot or the Mini App short name, update BOTH files.
@@ -66,6 +67,18 @@ module.exports = async (req, res) => {
 
   if (!isAuthorized) {
     return res.status(401).json({ success: false, error: 'unauthorized' });
+  }
+
+  // AUTO TON-DEPOSIT CHECK (Sponsor & Post Task) — merged here to stay under Vercel Hobby's 12-function limit.
+  // cron-job.org URL: /api/cron_notify?job=ton_deposits  (every 1 minute, same Authorization header)
+  if (req.query && req.query.job === 'ton_deposits') {
+    try {
+      const result = await scanDeposits({ force: true });
+      return res.status(200).json({ success: result.ok !== false, ...result });
+    } catch (err) {
+      console.error('cron ton_deposits error:', err);
+      return res.status(500).json({ success: false, error: 'Server error' });
+    }
   }
 
   try {
