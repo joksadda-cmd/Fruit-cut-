@@ -28,7 +28,7 @@ const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { sendTelegramMessage } = require('../lib/notify');
-const { DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD } = require('../lib/constants');
+const { DEVICE_MULTI_ACCOUNT_BAN_THRESHOLD, INTERSTITIAL_ADS } = require('../lib/constants');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
 const { checkReferralStep1, startReferralCaptcha, verifyReferralCaptcha, grantWeeklyReferralValidity } = require('../lib/referral');
@@ -353,6 +353,12 @@ module.exports = async (req, res) => {
       pendingGift: pendingGift
         ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
         : null,
+      ads: {
+        interstitialBlockId: process.env.ADSGRAM_INTERSTITIAL_BLOCK_ID || null,
+        minLevel: INTERSTITIAL_ADS.MIN_LEVEL,
+        gameEveryMs: INTERSTITIAL_ADS.GAME_EVERY_MS,
+        resumeAfterMs: INTERSTITIAL_ADS.RESUME_AFTER_MS,
+      },
     });
   } catch (err) {
     console.error('auth error:', err);
