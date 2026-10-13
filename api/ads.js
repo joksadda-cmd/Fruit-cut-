@@ -22,7 +22,11 @@ const { creditAdReward } = require('../lib/adReward');
 const { getSettings } = require('../lib/settings');
 
 // 'adsgram' (Adsgram Special, block 28066) is switched off: the block is inactive and the card was removed from the app.
-const VALID_NETWORKS = ['adsgramDaily', 'gigapub', 'monetag', 'gameAd'];
+const VALID_NETWORKS = ['adsgramDaily', 'gigapub', 'monetag', 'gameAd', 'adsgramTask'];
+// 'adsgramTask' = the Adsgram Task card in Tasks > Daily. By the owner's choice it has NO server-to-server
+// confirmation (the app reports the card's 'reward' event). Limits that still apply: one-time session,
+// daily cap (settings.adDailyLimits.adsgramTask) and a minimum gap between two rewards.
+const ADSGRAM_TASK_MIN_GAP_MS = 15 * 1000;
 // Adsgram rewards are confirmed server-to-server: Adsgram's own server calls our /api/postback
 // (the "Reward URL" of the ad block) after the user really got the reward. No confirmation = no FC.
 // Needs the ADSGRAM_REWARD_TOKEN environment variable; without it this check is skipped.
@@ -99,6 +103,14 @@ module.exports = async (req, res) => {
         return res.status(200).json({ success: false, message: 'daily_limit_reached' });
       }
 
+      if (network === 'adsgramTask') {
+        const asCol = await getCollection('adSessions');
+        const last = await asCol.findOne({ telegramId, network: 'adsgramTask', status: 'claimed' }, { sort: { claimedAt: -1 } });
+        if (last && last.claimedAt && Date.now() - new Date(last.claimedAt).getTime() < ADSGRAM_TASK_MIN_GAP_MS) {
+          return res.status(200).json({ success: false, message: 'too_fast' });
+        }
+      }
+
       let extra = {};
       if (network === 'gameAd') {
         if (!GAME_PROVIDERS.includes(provider)) return res.status(400).json({ success: false, message: 'unknown provider' });
@@ -152,7 +164,9 @@ module.exports = async (req, res) => {
         const usersCol = await getCollection('users');
         const me = await findUserByTelegramId(usersCol, telegramId);
         const sess = await getAdSession(sessionId);
-        if (me && sess && (await recordAdClaimAndCheck(me, { createdAt: sess.createdAt, network: action }))) {
+        // (Adsgram Task cards are claimed right after the card's own 'reward' event, so the watch-time
+        //  pattern rules do not apply to them.)
+        if (action !== 'adsgramTask' && me && sess && (await recordAdClaimAndCheck(me, { createdAt: sess.createdAt, network: action }))) {
           return res.status(200).json({ success: false, message: 'account_locked' });
         }
       }
