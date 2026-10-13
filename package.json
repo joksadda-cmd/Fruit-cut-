@@ -6,6 +6,9 @@
     "node": "24.x"
   },
   "dependencies": {
+    "@ton/core": "^0.60.0",
+    "@ton/crypto": "^3.3.0",
+    "@ton/ton": "^15.1.0",
     "mongodb": "^6.10.0"
   }
 }
