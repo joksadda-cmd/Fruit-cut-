@@ -28,6 +28,7 @@ const { getCollection } = require('../lib/db');
 const { broadcastToAllUsers } = require('../lib/notify');
 const { scanDeposits } = require('../lib/sponsor');
 const { alertPendingWithdrawals } = require('../lib/withdrawAlert');
+const { resolveMissingTxHashes } = require('../lib/payoutFlow');
 
 // Same values api/bot.js hardcodes for its own "Open App" buttons — if you
 // ever rename the bot or the Mini App short name, update BOTH files.
@@ -78,7 +79,10 @@ module.exports = async (req, res) => {
       // Same 1-minute job also re-sends any withdrawal alert that did not reach the admin the first time.
       let withdrawAlerts = null;
       try { withdrawAlerts = await alertPendingWithdrawals(); } catch (e) { console.error('withdraw alert retry error:', e); }
-      return res.status(200).json({ success: result.ok !== false, ...result, withdrawAlerts });
+      // ...and looks up the transaction hash of recent payouts that do not have one yet (for the 'View transaction' link).
+      let txHashes = null;
+      try { txHashes = await resolveMissingTxHashes(); } catch (e) { console.error('tx hash resolver error:', e); }
+      return res.status(200).json({ success: result.ok !== false, ...result, withdrawAlerts, txHashes });
     } catch (err) {
       console.error('cron ton_deposits error:', err);
       return res.status(500).json({ success: false, error: 'Server error' });
