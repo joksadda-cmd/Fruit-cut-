@@ -42,18 +42,24 @@ async function handleClaimGift(req, res, user) {
   const txCol = await getCollection('transactions');
   await txCol.insertOne({
     telegramId: user.telegramId,
-    type: TRANSACTION_TYPES.GIFT_REWARD,
+    type: gift.kind === 'slash_prize' ? TRANSACTION_TYPES.LEADERBOARD_REWARD
+      : gift.kind === 'refer_prize' ? TRANSACTION_TYPES.REFERRAL_LEADERBOARD_REWARD
+      : TRANSACTION_TYPES.GIFT_REWARD,
     amount: gift.amount,
     balanceAfter: updatedUser.fruitCoin,
     meta: { giftId: String(gift._id), reason: gift.reason },
     createdAt: new Date(),
   });
 
+  // If more gifts are waiting (e.g. both contests won in the same week), show the next popup right away.
+  const nextG = await giftsCol.findOne({ telegramId: user.telegramId, status: 'pending' }, { sort: { createdAt: 1 } });
+
   return res.status(200).json({
     success: true,
     amount: gift.amount,
     reason: gift.reason,
     user: { fruitCoin: updatedUser.fruitCoin },
+    nextGift: nextG ? { id: nextG._id, amount: nextG.amount, reason: nextG.reason, title: nextG.title || null, icon: nextG.icon || null } : null,
   });
 }
 
@@ -160,75 +166,62 @@ async function handleClaimDailyGift(req, res, user) {
   });
 }
 
-async function resolveTelegramPhoto(telegramId, botToken) {
-  if (!telegramId || !botToken) return null;
-  try {
-    const r1 = await fetch(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${telegramId}&limit=1`, {
-      signal: AbortSignal.timeout(3000),
-    });
-    const d1 = await r1.json();
-    if (d1.ok && d1.result && d1.result.photos && d1.result.photos.length > 0) {
-      const sizes = d1.result.photos[0];
-      const fileId = sizes[0].file_id;
-      const r2 = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`, {
-        signal: AbortSignal.timeout(3000),
-      });
-      const d2 = await r2.json();
-      if (d2.ok && d2.result && d2.result.file_path) {
-        return `https://api.telegram.org/file/bot${botToken}/${d2.result.file_path}`;
-      }
-    }
-  } catch (e) {}
-  return null;
-}
-
 // ── Weekly Competition (Slash + Refer tabs) ─────────────────────────
 // Backs the "Weekly Competition" leaderboard modal: two tabs sharing one
 // call — Top Slasher (lib/leaderboard.js, 50+ wins gate, 30,000 FC pool,
 // top 20) and Top Referrer (lib/referralLeaderboard.js, 20-referral gate,
 // 50,000 FC pool, top 15). Both reset every Monday 00:00 UTC and are paid
 // out by the same cron (api/cron_weekly_leaderboard.js).
-async function attachProfiles(entries, usersCol, botToken) {
+async function attachProfiles(entries, usersCol) {
   if (entries.length === 0) return [];
   const ids = entries.map((e) => e.telegramId);
   const profiles = await usersCol
-    .find({ telegramId: { $in: ids } })
-    .project({ telegramId: 1, photoUrl: 1, level: 1 })
+    .find({ telegramId: { $in: ids } }, { projection: { telegramId: 1, photoUrl: 1, level: 1 } })
     .toArray();
   const byId = new Map(profiles.map((p) => [String(p.telegramId), p]));
+  // NOTE: no per-user Telegram photo lookups here any more — they made the leaderboard slow
+  // (2 network calls per row) and their URLs contained the bot token. Rows without a saved
+  // photo simply show the first letter of the name.
+  return entries.map((e) => {
+    const profile = byId.get(String(e.telegramId));
+    return { entry: e, photoUrl: profile && profile.photoUrl ? profile.photoUrl : null, level: profile ? profile.level || 1 : 1 };
+  });
+}
 
-  return Promise.all(
-    entries.map(async (e) => {
-      const profile = byId.get(String(e.telegramId));
-      let photoUrl = profile && profile.photoUrl ? profile.photoUrl : null;
-      if (!photoUrl && botToken) {
-        photoUrl = await resolveTelegramPhoto(e.telegramId, botToken);
-      }
-      return { entry: e, photoUrl, level: profile ? profile.level || 1 : 1 };
-    })
-  );
+// The top lists are the same for everybody, so they are cached for a short time (per server instance).
+// Only "me" / "isCurrentUser" is computed per request.
+const LB_CACHE_MS = 30 * 1000;
+let lbCache = { weekKey: null, at: 0, data: null };
+
+async function getSharedLeaderboard(weekKey) {
+  if (lbCache.data && lbCache.weekKey === weekKey && Date.now() - lbCache.at < LB_CACHE_MS) return lbCache.data;
+  const usersCol = await getCollection('users');
+  const [slashTop, referTop, recentWinners] = await Promise.all([
+    getTopSlashers(weekKey, LEADERBOARD_WEEKLY_REWARDS.length),
+    getTopReferrers(weekKey, REFERRAL_WEEKLY_REWARDS.length),
+    getRecentWinners(20),
+  ]);
+  const [slashWithProfiles, referWithProfiles] = await Promise.all([
+    attachProfiles(slashTop, usersCol),
+    attachProfiles(referTop, usersCol),
+  ]);
+  const data = { slashWithProfiles, referWithProfiles, recentWinners };
+  lbCache = { weekKey, at: Date.now(), data };
+  return data;
 }
 
 async function handleWeeklyLeaderboard(req, res, user) {
-  const botToken = process.env.BOT_TOKEN;
-  const usersCol = await getCollection('users');
   const weekKey = getWeekKey();
   const myId = String(user.telegramId);
 
-  const [slashTop, referTop, myWins, myReferrals, mySlashRank, myReferralRank, recentWinners] = await Promise.all([
-    getTopSlashers(weekKey, LEADERBOARD_WEEKLY_REWARDS.length),
-    getTopReferrers(weekKey, REFERRAL_WEEKLY_REWARDS.length),
+  const [shared, myWins, myReferrals, mySlashRank, myReferralRank] = await Promise.all([
+    getSharedLeaderboard(weekKey),
     getWeeklyWins(myId, weekKey),
     getWeeklyReferrals(myId, weekKey),
     getUserRank(myId, weekKey),
     getUserReferralRank(myId, weekKey),
-    getRecentWinners(20),
   ]);
-
-  const [slashWithProfiles, referWithProfiles] = await Promise.all([
-    attachProfiles(slashTop, usersCol, botToken),
-    attachProfiles(referTop, usersCol, botToken),
-  ]);
+  const { slashWithProfiles, referWithProfiles, recentWinners } = shared;
 
   const slashList = slashWithProfiles.map(({ entry, photoUrl, level }, index) => ({
     rank: index + 1,
