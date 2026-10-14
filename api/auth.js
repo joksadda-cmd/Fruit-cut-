@@ -351,10 +351,10 @@ module.exports = async (req, res) => {
         accountLocked: !!user.accountLocked,
       },
       pendingGift: pendingGift
-        ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
+        ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason, title: pendingGift.title || null, icon: pendingGift.icon || null }
         : null,
       ads: {
-        interstitialBlockId: process.env.ADSGRAM_INTERSTITIAL_BLOCK_ID || null,
+        interstitialBlockId: process.env.ADSGRAM_INTERSTITIAL_BLOCK_ID || 'int-28067',
         minLevel: INTERSTITIAL_ADS.MIN_LEVEL,
         gameEveryMs: INTERSTITIAL_ADS.GAME_EVERY_MS,
         resumeAfterMs: INTERSTITIAL_ADS.RESUME_AFTER_MS,
