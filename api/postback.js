@@ -14,7 +14,8 @@
 
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
-const { maybeTriggerValidReferral } = require('../lib/referral');
+const { maybeTriggerValidReferral, checkReferralStep4 } = require('../lib/referral');
+const { planXp } = require('../lib/xp');
 const { markGameGigapubPostback, recordAdsgramConfirm } = require('../lib/adSession');
 
 // Shared secret agreed with GigaPub support — anyone hitting this URL
@@ -90,11 +91,17 @@ module.exports = async (req, res) => {
 
     const rewardFc = (settings.adRewardFc && settings.adRewardFc.gigapub) || 20;
 
+    // GigaPub (Ads section) = 2 XP (lib/xp.js), plus the normal bonus if that XP levels the user up.
+    const plan = planXp(user, 'gigapub');
+    const inc = { fruitCoin: rewardFc + plan.levelReward, totalAdsWatched: 1 };
+    const set = { lastActive: new Date() };
+    if (plan.xpGain > 0) { inc.xp = plan.xpGain; if (plan.isLevelUp) set.level = plan.newLevel; }
     const updatedUser = await usersCol.findOneAndUpdate(
       { _id: user._id },
-      { $inc: { fruitCoin: rewardFc, totalAdsWatched: 1 }, $set: { lastActive: new Date() } },
+      { $inc: inc, $set: set },
       { returnDocument: 'after' }
     );
+    if (updatedUser && plan.isLevelUp && plan.newLevel >= 3) checkReferralStep4(updatedUser, plan.newLevel).catch(() => {});
     if (updatedUser) maybeTriggerValidReferral(updatedUser);
 
     await eventsCol.insertOne({ telegramId, network, event, receivedAt: new Date() });
