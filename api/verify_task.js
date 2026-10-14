@@ -67,7 +67,9 @@ async function loadActiveTasks() {
   const tasks = visible.map((t) => ({
     id: String(t._id),
     title: t.title,
-    category: t.category || 'daily',
+    // Tasks bought through "Sponsor & Post Task" always appear in the Daily tab.
+    category: t.sponsored ? 'daily' : (t.category || 'daily'),
+    sponsored: !!t.sponsored,
     type: t.type,
     icon: t.icon || '📋',
     url: t.url || '',
@@ -83,7 +85,7 @@ async function loadActiveTasks() {
   const settings = await getSettings();
   const adsgram = {
     rewardFc: (settings.adRewardFc && settings.adRewardFc.adsgramTask) || 50,
-    dailyLimit: (settings.adDailyLimits && settings.adDailyLimits.adsgramTask) || 10,
+    dailyLimit: 0, // 0 = unlimited (no daily cap for the Adsgram Task card)
   };
   tasksCache = { at: Date.now(), tasks, adsgram };
   return tasksCache;
