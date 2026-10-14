@@ -146,6 +146,9 @@ module.exports = async (req, res) => {
           address: w.address,
           status: w.status,
           createdAt: w.createdAt,
+          paidAt: w.paidAt || w.processedAt || null,
+          // blockchain transaction id of the automatic payout (shown as a "View transaction" link)
+          txHash: typeof w.payoutTxHash === 'string' && /^[A-Za-z0-9+/=_-]{20,100}$/.test(w.payoutTxHash) ? w.payoutTxHash : null,
         })),
       });
     }
