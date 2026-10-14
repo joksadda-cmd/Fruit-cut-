@@ -37,6 +37,7 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getLevelForXp } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
 const { getSettings } = require('../lib/settings');
+const { alertWithdrawal } = require('../lib/withdrawAlert');
 const { createAdSession, claimAdSession } = require('../lib/adSession');
 const { WITHDRAW_AD_NETWORK, WITHDRAW_AD_SESSION_MAX_AGE_MS, TRANSACTION_TYPES } = require('../lib/constants');
 
@@ -254,7 +255,7 @@ module.exports = async (req, res) => {
       const method = 'tonkeeper';
 
       const withdrawalsCol = await getCollection('withdrawals');
-      await withdrawalsCol.insertOne({
+      const wdInsert = await withdrawalsCol.insertOne({
         telegramId,
         username: user.username || 'unknown',
         amount,
@@ -276,6 +277,14 @@ module.exports = async (req, res) => {
         balanceAfter: updatedUser.fruitCoin,
         meta: { address, unit, convertedAmount },
         createdAt: new Date(),
+      });
+
+      // Tell the admin right away (admin bot message with a button that opens the withdrawals list).
+      // Awaited (with a short cap) so the serverless function is not frozen before Telegram gets the call.
+      // If this fails, the 1-minute cron re-sends it (lib/withdrawAlert.js → alertPendingWithdrawals).
+      await alertWithdrawal({
+        _id: wdInsert.insertedId, telegramId, username: user.username || 'unknown',
+        amount, feeFc, convertedAmount, unit, address,
       });
 
       return res.status(200).json({
