@@ -42,7 +42,7 @@ const MESSAGES = [
     text:
       `👥 <b>Win the Weekly Referral Contest!</b>\n\n` +
       `Invite your friends to Fruit Cut Slice and climb this week's Top Referrer leaderboard.\n\n` +
-      `🏆 Top referrers split a 50,000 🍎 prize pool — earn up to $1+ just from referrals!`,
+      `🏆 Top 20 referrers split a 100,000 🍎 prize pool (about $2) — 1st place wins 20,000 🍎! Just 15 referrals to qualify.`,
   },
   {
     key: 'slash_contest',
