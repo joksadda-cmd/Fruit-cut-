@@ -1,6 +1,6 @@
 // api/cron_notify.js
 // GET /api/cron_notify
-// Runs every 12 hours and broadcasts ONE rotating notification to every
+// Runs every 8–12 hours (set in cron-job.org) and broadcasts ONE rotating notification to every
 // non-banned user — a different message each run, cycling through
 // MESSAGES below in order and wrapping back to the start.
 //
@@ -27,6 +27,7 @@
 const { getCollection } = require('../lib/db');
 const { broadcastToAllUsers } = require('../lib/notify');
 const { scanDeposits } = require('../lib/sponsor');
+const { alertPendingWithdrawals } = require('../lib/withdrawAlert');
 
 // Same values api/bot.js hardcodes for its own "Open App" buttons — if you
 // ever rename the bot or the Mini App short name, update BOTH files.
@@ -74,7 +75,10 @@ module.exports = async (req, res) => {
   if (req.query && req.query.job === 'ton_deposits') {
     try {
       const result = await scanDeposits({ force: true });
-      return res.status(200).json({ success: result.ok !== false, ...result });
+      // Same 1-minute job also re-sends any withdrawal alert that did not reach the admin the first time.
+      let withdrawAlerts = null;
+      try { withdrawAlerts = await alertPendingWithdrawals(); } catch (e) { console.error('withdraw alert retry error:', e); }
+      return res.status(200).json({ success: result.ok !== false, ...result, withdrawAlerts });
     } catch (err) {
       console.error('cron ton_deposits error:', err);
       return res.status(500).json({ success: false, error: 'Server error' });
@@ -83,9 +87,19 @@ module.exports = async (req, res) => {
 
   try {
     const stateCol = await getCollection('cronState');
+
+    // Safety: if the scheduler fires twice by mistake (or every few minutes), do NOT spam users.
+    // Minimum gap between two broadcasts = 5 hours (the schedule is every 8–12 hours). ?force=1 skips this.
+    const MIN_GAP_MS = 5 * 60 * 60 * 1000;
+    const prev = await stateCol.findOne({ _id: 'notify_rotation' });
+    const forced = req.query && (req.query.force === '1' || req.query.force === 'true');
+    if (!forced && prev && prev.lastRunAt && Date.now() - new Date(prev.lastRunAt).getTime() < MIN_GAP_MS) {
+      return res.status(200).json({ success: true, skipped: true, reason: 'too_soon', lastRunAt: prev.lastRunAt });
+    }
+
     const state = await stateCol.findOneAndUpdate(
       { _id: 'notify_rotation' },
-      { $inc: { index: 1 } },
+      { $inc: { index: 1 }, $set: { lastRunAt: new Date() } },
       { upsert: true, returnDocument: 'after' }
     );
 
