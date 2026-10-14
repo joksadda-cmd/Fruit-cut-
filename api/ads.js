@@ -38,7 +38,8 @@ const GIGAPUB_MIN_WATCH_MS = 5000;
 // 3 minutes of server-measured play time, and gives it back if the credit fails.
 async function payReward(telegramId, source, amount, sessionId) {
   const settings = await getSettings();
-  const dailyLimitMax = (settings.adDailyLimits && settings.adDailyLimits[source]) || 999;
+  // 'adsgramTask' has NO daily limit (owner's choice) — 0 means "no cap" in creditAdReward.
+  const dailyLimitMax = source === 'adsgramTask' ? 0 : ((settings.adDailyLimits && settings.adDailyLimits[source]) || 999);
   if (source === 'gameAd') {
     const spent = await consumeClaim(telegramId);
     if (!spent) return { success: false, reason: 'play_more' };
@@ -97,10 +98,12 @@ module.exports = async (req, res) => {
       }
 
       const settings = await getSettings();
-      const dailyLimit = (settings.adDailyLimits && settings.adDailyLimits[network]) || 999;
-      const claimedToday = await countClaimedToday(telegramId, network);
-      if (claimedToday >= dailyLimit) {
-        return res.status(200).json({ success: false, message: 'daily_limit_reached' });
+      if (network !== 'adsgramTask') { // Adsgram Task = unlimited per day
+        const dailyLimit = (settings.adDailyLimits && settings.adDailyLimits[network]) || 999;
+        const claimedToday = await countClaimedToday(telegramId, network);
+        if (claimedToday >= dailyLimit) {
+          return res.status(200).json({ success: false, message: 'daily_limit_reached' });
+        }
       }
 
       if (network === 'adsgramTask') {
@@ -196,9 +199,16 @@ module.exports = async (req, res) => {
       return res.status(200).json({
         success: true,
         rewardFc: amount, // the SERVER decides the reward; the client only displays this
+        xpGain: result.xpGain || 0,
+        isLevelUp: !!result.isLevelUp,
+        newLevel: result.newLevel || null,
+        levelReward: result.levelReward || 0,
         user: {
           fruitCoin: result.newFruitCoin,
           gems: result.newFruitCoin,
+          xp: result.xp,
+          level: result.levelProgress ? result.levelProgress.level : undefined,
+          levelProgress: result.levelProgress,
         },
       });
     }
