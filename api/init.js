@@ -111,7 +111,7 @@ module.exports = async (req, res) => {
         ...(adCounts ? { adCounts } : {}),
       },
       pendingGift: pendingGift
-        ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason }
+        ? { id: pendingGift._id, amount: pendingGift.amount, reason: pendingGift.reason, title: pendingGift.title || null, icon: pendingGift.icon || null }
         : null,
     });
   } catch (err) {
