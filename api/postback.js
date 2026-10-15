@@ -31,8 +31,8 @@ module.exports = async (req, res) => {
     const { network, uid, event, token } = req.query || {};
 
     // ── Adsgram "Reward URL": Adsgram's server confirms the user really got the reward ──
-    // URL set in the Adsgram dashboard:  /api/postback?network=adsgram|adsgramDaily&token=SECRET&uid=[userId]
-    if (network === 'adsgram' || network === 'adsgramDaily') {
+    // URL set in the Adsgram dashboard:  /api/postback?network=adsgram|adsgramDaily|adsgramTask&token=SECRET&uid=[userId]
+    if (network === 'adsgram' || network === 'adsgramDaily' || network === 'adsgramTask') {
       const secret = String(process.env.ADSGRAM_REWARD_TOKEN || '').trim();
       const given = String(Array.isArray(token) ? token[0] : token || '').trim();
       const q = req.query || {};
