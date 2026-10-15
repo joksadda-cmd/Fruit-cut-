@@ -15,7 +15,7 @@ const { ObjectId } = require('mongodb');
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
-const { TRANSACTION_TYPES } = require('../lib/constants');
+const { TRANSACTION_TYPES, AD_HARD_DAILY_CAPS } = require('../lib/constants');
 const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
 const { checkReferralStep2 } = require('../lib/referral');
 const { getSettings } = require('../lib/settings');
@@ -85,7 +85,7 @@ async function loadActiveTasks() {
   const settings = await getSettings();
   const adsgram = {
     rewardFc: (settings.adRewardFc && settings.adRewardFc.adsgramTask) || 50,
-    dailyLimit: 0, // 0 = unlimited (no daily cap for the Adsgram Task card)
+    dailyLimit: (AD_HARD_DAILY_CAPS && AD_HARD_DAILY_CAPS.adsgramTask) || 0, // hard daily cap from lib/constants.js (0 = unlimited)
   };
   tasksCache = { at: Date.now(), tasks, adsgram };
   return tasksCache;
