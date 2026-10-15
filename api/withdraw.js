@@ -33,13 +33,13 @@
 
 const { verifyTelegramInitData } = require('../lib/telegramAuth');
 const { rateGuard } = require('../lib/rateLimit');
-const { getCollection, findUserByTelegramId } = require('../lib/db');
+const { getCollection, findUserByTelegramId, idVariants } = require('../lib/db');
 const { getLevelForXp } = require('../lib/levelSystem');
 const { checkChannelMembership } = require('../lib/joinGate');
 const { getSettings } = require('../lib/settings');
 const { alertWithdrawal } = require('../lib/withdrawAlert');
 const { createAdSession, claimAdSession } = require('../lib/adSession');
-const { WITHDRAW_AD_NETWORK, WITHDRAW_AD_SESSION_MAX_AGE_MS, TRANSACTION_TYPES } = require('../lib/constants');
+const { WITHDRAW_AD_NETWORK, WITHDRAW_AD_SESSION_MAX_AGE_MS, TRANSACTION_TYPES, WITHDRAW_RULES } = require('../lib/constants');
 
 const FC_TO_USDT_RATE = 0.00002; // 50,000 FC = $1 USDT — matches existing frontend WITHDRAW_RATES
 
@@ -50,6 +50,15 @@ function levelOf(user) {
   return getLevelForXp(user.xp || 0);
 }
 
+// How many withdrawals of this user count against the Level-2 limit (rejected / refunded ones do not).
+async function countUsedWithdrawals(user) {
+  const col = await getCollection('withdrawals');
+  return col.countDocuments({
+    telegramId: { $in: idVariants(user.telegramId) },
+    status: { $nin: ['rejected', 'rejected_banned', 'rejected_reset', 'wrong_address_refunded'] },
+  });
+}
+
 async function buildStatus(user, settings) {
   const channels = await checkChannelMembership(user.telegramId);
   const allJoined = channels.every((c) => c.joined);
@@ -57,7 +66,9 @@ async function buildStatus(user, settings) {
 
   return {
     level: levelOf(user),
-    levelNeeded: settings.withdrawMinLevel ?? 3,
+    levelNeeded: WITHDRAW_RULES.MIN_LEVEL,
+    fullLevel: WITHDRAW_RULES.FULL_LEVEL,
+    level2: { maxRequests: WITHDRAW_RULES.LEVEL2_MAX_REQUESTS, maxFc: WITHDRAW_RULES.LEVEL2_MAX_FC, used: await countUsedWithdrawals(user) },
     lifetimeTasks,
     tasksNeeded: settings.withdrawMinLifetimeTasks ?? 5,
     channelsJoined: allJoined,
@@ -161,7 +172,7 @@ module.exports = async (req, res) => {
 
       const minFc = settings.withdrawMinFc ?? 2500;
       const maxFc = settings.withdrawMaxFc ?? 100000;
-      const minLevel = settings.withdrawMinLevel ?? 3;
+      const minLevel = WITHDRAW_RULES.MIN_LEVEL; // fixed in code (lib/constants.js), not read from the saved settings
       const minTasks = settings.withdrawMinLifetimeTasks ?? 5;
       const feePercent = settings.withdrawalFeePercent ?? 10;
 
@@ -180,6 +191,17 @@ module.exports = async (req, res) => {
       const level = levelOf(user);
       if (level < minLevel) {
         return res.status(200).json({ success: false, error: `Reach Level ${minLevel} to unlock withdrawals (you're Level ${level}).` });
+      }
+
+      // Level 2 is a "starter" level: only 2 withdrawals in total and max 5,000 FC each. Level 3+ = unlimited.
+      if (level < WITHDRAW_RULES.FULL_LEVEL) {
+        if (amount > WITHDRAW_RULES.LEVEL2_MAX_FC) {
+          return res.status(200).json({ success: false, error: `Level ${level} can withdraw up to ${WITHDRAW_RULES.LEVEL2_MAX_FC.toLocaleString()} Fruit Coin per request. Reach Level ${WITHDRAW_RULES.FULL_LEVEL} for bigger withdrawals.` });
+        }
+        const usedBefore = await countUsedWithdrawals(user);
+        if (usedBefore >= WITHDRAW_RULES.LEVEL2_MAX_REQUESTS) {
+          return res.status(200).json({ success: false, error: `Level ${level} allows ${WITHDRAW_RULES.LEVEL2_MAX_REQUESTS} withdrawals — you have used them. Reach Level ${WITHDRAW_RULES.FULL_LEVEL} for unlimited withdrawals.` });
+        }
       }
 
       // Lifetime task gate
@@ -270,6 +292,13 @@ module.exports = async (req, res) => {
         status: 'pending',
         createdAt: new Date(),
       });
+
+      // Race guard for the Level-2 limit: if two requests slipped in at the same moment, undo the extra one.
+      if (level < WITHDRAW_RULES.FULL_LEVEL && (await countUsedWithdrawals(user)) > WITHDRAW_RULES.LEVEL2_MAX_REQUESTS) {
+        await withdrawalsCol.deleteOne({ _id: wdInsert.insertedId });
+        await usersCol.updateOne({ _id: user._id }, { $inc: { fruitCoin: amount } });
+        return res.status(200).json({ success: false, error: `Level ${level} allows ${WITHDRAW_RULES.LEVEL2_MAX_REQUESTS} withdrawals. Reach Level ${WITHDRAW_RULES.FULL_LEVEL} for unlimited withdrawals.` });
+      }
 
       const txCol = await getCollection('transactions');
       await txCol.insertOne({
