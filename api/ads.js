@@ -23,9 +23,14 @@ const { getSettings } = require('../lib/settings');
 
 // 'adsgram' (Adsgram Special, block 28066) is switched off: the block is inactive and the card was removed from the app.
 const VALID_NETWORKS = ['adsgramDaily', 'gigapub', 'monetag', 'gameAd', 'adsgramTask'];
-// 'adsgramTask' = the Adsgram Task card in Tasks > Daily. By the owner's choice it has NO server-to-server
-// confirmation (the app reports the card's 'reward' event). Limits that still apply: one-time session,
-// daily cap (settings.adDailyLimits.adsgramTask) and a minimum gap between two rewards.
+// 'adsgramTask' = the Adsgram Task card in Tasks > Daily. It is now confirmed server-to-server like the other
+// Adsgram blocks (Reward URL network=adsgramTask). Also: one-time session, daily cap (lib/constants.js) and a minimum gap.
+const { AD_HARD_DAILY_CAPS } = require('../lib/constants');
+// Daily cap per source: the hard cap (constants) wins for adsgramTask / gameAd, otherwise the admin setting.
+function dailyCapFor(settings, source) {
+  if (AD_HARD_DAILY_CAPS && AD_HARD_DAILY_CAPS[source] != null) return AD_HARD_DAILY_CAPS[source];
+  return (settings.adDailyLimits && settings.adDailyLimits[source]) || 999;
+}
 const ADSGRAM_TASK_MIN_GAP_MS = 15 * 1000;
 // Adsgram rewards are confirmed server-to-server: Adsgram's own server calls our /api/postback
 // (the "Reward URL" of the ad block) after the user really got the reward. No confirmation = no FC.
@@ -39,7 +44,7 @@ const GIGAPUB_MIN_WATCH_MS = 5000;
 async function payReward(telegramId, source, amount, sessionId) {
   const settings = await getSettings();
   // 'adsgramTask' has NO daily limit (owner's choice) — 0 means "no cap" in creditAdReward.
-  const dailyLimitMax = source === 'adsgramTask' ? 0 : ((settings.adDailyLimits && settings.adDailyLimits[source]) || 999);
+  const dailyLimitMax = dailyCapFor(settings, source);
   if (source === 'gameAd') {
     const spent = await consumeClaim(telegramId);
     if (!spent) return { success: false, reason: 'play_more' };
@@ -86,7 +91,7 @@ module.exports = async (req, res) => {
         claimMs: st.claimMs,
         claimable: st.claimable,
         claimsToday: claimedToday,
-        claimsMax: (settings.adDailyLimits && settings.adDailyLimits.gameAd) || 50,
+        claimsMax: dailyCapFor(settings, 'gameAd'),
         rewardFc: (settings.adRewardFc && settings.adRewardFc.gameAd) || 10,
       });
     }
@@ -98,8 +103,8 @@ module.exports = async (req, res) => {
       }
 
       const settings = await getSettings();
-      if (network !== 'adsgramTask') { // Adsgram Task = unlimited per day
-        const dailyLimit = (settings.adDailyLimits && settings.adDailyLimits[network]) || 999;
+      {
+        const dailyLimit = dailyCapFor(settings, network) || 999999;
         const claimedToday = await countClaimedToday(telegramId, network);
         if (claimedToday >= dailyLimit) {
           return res.status(200).json({ success: false, message: 'daily_limit_reached' });
@@ -146,10 +151,11 @@ module.exports = async (req, res) => {
             return res.status(200).json({ success: false, message: 'waiting_postback', retryable: true });
           }
         }
-        const isAdsgram = action === 'adsgram' || action === 'adsgramDaily' || (action === 'gameAd' && gameProvider === 'adsgram');
+        const isAdsgram = action === 'adsgram' || action === 'adsgramDaily' || action === 'adsgramTask' || (action === 'gameAd' && gameProvider === 'adsgram');
         if (isAdsgram && ADSGRAM_S2S) {
-          const blocks = action === 'adsgram' ? ['adsgram'] : ['adsgramDaily'];
-          if (!(await confirmSessionWithAdsgram(sess, blocks))) {
+          const blocks = action === 'adsgram' ? ['adsgram'] : action === 'adsgramTask' ? ['adsgramTask'] : ['adsgramDaily'];
+          // The Task card asks for its session AFTER the reward event, so Adsgram's callback may be a bit older than the session.
+          if (!(await confirmSessionWithAdsgram(sess, blocks, action === 'adsgramTask' ? 90000 : 3000))) {
             return res.status(200).json({ success: false, message: 'waiting_postback', retryable: true });
           }
         }
