@@ -2,9 +2,9 @@
 // POST /api/withdraw   — routed by body.action
 //
 //   { action: 'status' }  (or no action, no amount)
-//     -> { success:true, status:{ level, levelNeeded, lifetimeTasks, tasksNeeded,
-//                                  channelsJoined, walletAddress, walletLocked,
-//                                  minFc, maxFc, feePercent, adVerified } }
+//     -> { success:true, status:{ level, limits:{ requests, used, remaining, maxFc, minFc,
+//                                  dayUsed, dayLimit, nextAt }, lifetimeTasks, tasksNeeded,
+//                                  channelsJoined, walletAddress, walletLocked, feePercent } }
 //
 //   { action: 'ad_session' }
 //     -> { success:true, sessionId }
@@ -39,6 +39,7 @@ const { checkChannelMembership } = require('../lib/joinGate');
 const { getSettings } = require('../lib/settings');
 const { alertWithdrawal } = require('../lib/withdrawAlert');
 const { createAdSession, claimAdSession } = require('../lib/adSession');
+const { withdrawRisk } = require('../lib/guardian');
 const { WITHDRAW_AD_NETWORK, WITHDRAW_AD_SESSION_MAX_AGE_MS, TRANSACTION_TYPES, WITHDRAW_RULES } = require('../lib/constants');
 
 const FC_TO_USDT_RATE = 0.00002; // 50,000 FC = $1 USDT — matches existing frontend WITHDRAW_RATES
@@ -50,13 +51,44 @@ function levelOf(user) {
   return getLevelForXp(user.xp || 0);
 }
 
-// How many withdrawals of this user count against the Level-2 limit (rejected / refunded ones do not).
-async function countUsedWithdrawals(user) {
+const NOT_COUNTED = WITHDRAW_RULES.NOT_COUNTED;
+
+function tierFor(level) {
+  const T = WITHDRAW_RULES.TIERS;
+  return T[level] || T.default;
+}
+
+// Withdrawals of this user that still use up a slot (rejected / refunded ones do not), oldest first.
+async function openWithdrawals(user, extra) {
   const col = await getCollection('withdrawals');
-  return col.countDocuments({
-    telegramId: { $in: idVariants(user.telegramId) },
-    status: { $nin: ['rejected', 'rejected_banned', 'rejected_reset', 'wrong_address_refunded'] },
-  });
+  return col
+    .find({ telegramId: { $in: idVariants(user.telegramId) }, status: { $nin: NOT_COUNTED }, ...(extra || {}) })
+    .project({ _id: 1, createdAt: 1 })
+    .sort({ createdAt: 1, _id: 1 })
+    .toArray();
+}
+
+// Limits for this user right now: this level's quota + the 1-per-24h rule.
+async function limitsFor(user, settings, level) {
+  const tier = tierFor(level);
+  const atLevel = await openWithdrawals(user, { level });
+  const lastDay = await openWithdrawals(user, { createdAt: { $gte: new Date(Date.now() - WITHDRAW_RULES.DAY_MS) } });
+  const maxFc = Math.min(tier.maxFc, settings.withdrawMaxFc ?? 100000);
+  const minFc = Math.min(tier.minFc ?? settings.withdrawMinFc ?? 2500, maxFc);
+  const dayFull = lastDay.length >= WITHDRAW_RULES.PER_DAY;
+  return {
+    tier, minFc, maxFc, atLevel, lastDay,
+    public: {
+      requests: tier.requests,
+      used: atLevel.length,
+      remaining: Math.max(0, tier.requests - atLevel.length),
+      maxFc,
+      minFc,
+      dayLimit: WITHDRAW_RULES.PER_DAY,
+      dayUsed: lastDay.length,
+      nextAt: dayFull ? new Date(new Date(lastDay[0].createdAt).getTime() + WITHDRAW_RULES.DAY_MS).toISOString() : null,
+    },
+  };
 }
 
 async function buildStatus(user, settings) {
@@ -64,19 +96,18 @@ async function buildStatus(user, settings) {
   const allJoined = channels.every((c) => c.joined);
   const lifetimeTasks = (user.completedTasks || []).length;
 
+  const level = levelOf(user);
+  const lim = await limitsFor(user, settings, level);
+
   return {
-    level: levelOf(user),
-    levelNeeded: WITHDRAW_RULES.MIN_LEVEL,
-    fullLevel: WITHDRAW_RULES.FULL_LEVEL,
-    level2: { maxRequests: WITHDRAW_RULES.LEVEL2_MAX_REQUESTS, maxFc: WITHDRAW_RULES.LEVEL2_MAX_FC, used: await countUsedWithdrawals(user) },
+    level,
+    limits: lim.public,
     lifetimeTasks,
     tasksNeeded: settings.withdrawMinLifetimeTasks ?? 5,
     channelsJoined: allJoined,
     channels,
     walletAddress: user.withdrawWalletAddress || null,
     walletLocked: !!user.withdrawWalletAddress,
-    minFc: settings.withdrawMinFc ?? 2500,
-    maxFc: settings.withdrawMaxFc ?? 100000,
     feePercent: settings.withdrawalFeePercent ?? 10,
     balance: user.fruitCoin || 0,
   };
@@ -170,38 +201,34 @@ module.exports = async (req, res) => {
       const address = (body.address || '').trim();
       const adSessionId = body.adSessionId || '';
 
-      const minFc = settings.withdrawMinFc ?? 2500;
-      const maxFc = settings.withdrawMaxFc ?? 100000;
-      const minLevel = WITHDRAW_RULES.MIN_LEVEL; // fixed in code (lib/constants.js), not read from the saved settings
       const minTasks = settings.withdrawMinLifetimeTasks ?? 5;
       const feePercent = settings.withdrawalFeePercent ?? 10;
+
+      const level = levelOf(user);
+      const lim = await limitsFor(user, settings, level);
+      const { tier, minFc, maxFc } = lim;
 
       if (!address) return res.status(200).json({ success: false, error: 'Enter your wallet address.' });
       if (!amount || amount < minFc) {
         return res.status(200).json({ success: false, error: `Minimum withdrawal is ${minFc.toLocaleString()} Fruit Coin.` });
       }
       if (amount > maxFc) {
-        return res.status(200).json({ success: false, error: `Maximum withdrawal is ${maxFc.toLocaleString()} Fruit Coin per request.` });
+        return res.status(200).json({ success: false, error: `Level ${level} can withdraw up to ${maxFc.toLocaleString()} Fruit Coin per request.${level < 3 ? ' Level up for a bigger limit.' : ''}` });
       }
       if ((user.fruitCoin || 0) < amount) {
         return res.status(200).json({ success: false, error: 'Not enough Fruit Coin balance.' });
       }
 
-      // Level gate
-      const level = levelOf(user);
-      if (level < minLevel) {
-        return res.status(200).json({ success: false, error: `Reach Level ${minLevel} to unlock withdrawals (you're Level ${level}).` });
+      // Per-level quota: every level has its own number of withdrawals.
+      if (lim.atLevel.length >= tier.requests) {
+        return res.status(200).json({ success: false, error: `You used all ${tier.requests} withdrawal${tier.requests > 1 ? 's' : ''} of Level ${level}. Reach Level ${level + 1} to unlock ${tierFor(level + 1).requests} more.` });
       }
 
-      // Level 2 is a "starter" level: only 2 withdrawals in total and max 5,000 FC each. Level 3+ = unlimited.
-      if (level < WITHDRAW_RULES.FULL_LEVEL) {
-        if (amount > WITHDRAW_RULES.LEVEL2_MAX_FC) {
-          return res.status(200).json({ success: false, error: `Level ${level} can withdraw up to ${WITHDRAW_RULES.LEVEL2_MAX_FC.toLocaleString()} Fruit Coin per request. Reach Level ${WITHDRAW_RULES.FULL_LEVEL} for bigger withdrawals.` });
-        }
-        const usedBefore = await countUsedWithdrawals(user);
-        if (usedBefore >= WITHDRAW_RULES.LEVEL2_MAX_REQUESTS) {
-          return res.status(200).json({ success: false, error: `Level ${level} allows ${WITHDRAW_RULES.LEVEL2_MAX_REQUESTS} withdrawals — you have used them. Reach Level ${WITHDRAW_RULES.FULL_LEVEL} for unlimited withdrawals.` });
-        }
+      // One withdrawal per account per 24 hours.
+      if (lim.lastDay.length >= WITHDRAW_RULES.PER_DAY) {
+        const nextAt = new Date(lim.lastDay[0].createdAt).getTime() + WITHDRAW_RULES.DAY_MS;
+        const hrs = Math.max(1, Math.ceil((nextAt - Date.now()) / 3600000));
+        return res.status(200).json({ success: false, error: `Only one withdrawal per day. Try again in about ${hrs} hour${hrs > 1 ? 's' : ''}.` });
       }
 
       // Lifetime task gate
@@ -245,6 +272,10 @@ module.exports = async (req, res) => {
         });
       }
 
+      // GUARDIAN: account age, impossible earning speed, shared wallet (lib/guardian.js)
+      const risk = await withdrawRisk(user, address);
+      if (!risk.ok) return res.status(200).json({ success: false, error: risk.message, locked: risk.code === 'review' });
+
       // Atomically consume the ad session first (closes the reuse window).
       const consumed = await adSessionsCol.updateOne(
         { sessionId: adSessionId, status: 'claimed', consumedForWithdraw: { $ne: true } },
@@ -283,6 +314,7 @@ module.exports = async (req, res) => {
       const wdInsert = await withdrawalsCol.insertOne({
         telegramId,
         username: user.username || 'unknown',
+        level, // level at request time — each level has its own withdrawal quota
         amount,
         feeFc,
         convertedAmount,
@@ -293,11 +325,18 @@ module.exports = async (req, res) => {
         createdAt: new Date(),
       });
 
-      // Race guard for the Level-2 limit: if two requests slipped in at the same moment, undo the extra one.
-      if (level < WITHDRAW_RULES.FULL_LEVEL && (await countUsedWithdrawals(user)) > WITHDRAW_RULES.LEVEL2_MAX_REQUESTS) {
+      // Race guard: if two requests slipped in at the same moment, the later one(s) are undone.
+      // Position is judged by order of creation, so exactly one of two simultaneous requests survives.
+      const myId = String(wdInsert.insertedId);
+      const posIn = (docs) => docs.findIndex((d) => String(d._id) === myId);
+      const levelDocs = await openWithdrawals(user, { level });
+      const dayDocs = await openWithdrawals(user, { createdAt: { $gte: new Date(Date.now() - WITHDRAW_RULES.DAY_MS) } });
+      const overDay = posIn(dayDocs) >= WITHDRAW_RULES.PER_DAY;
+      const overLevel = posIn(levelDocs) >= tier.requests;
+      if (overDay || overLevel) {
         await withdrawalsCol.deleteOne({ _id: wdInsert.insertedId });
         await usersCol.updateOne({ _id: user._id }, { $inc: { fruitCoin: amount } });
-        return res.status(200).json({ success: false, error: `Level ${level} allows ${WITHDRAW_RULES.LEVEL2_MAX_REQUESTS} withdrawals. Reach Level ${WITHDRAW_RULES.FULL_LEVEL} for unlimited withdrawals.` });
+        return res.status(200).json({ success: false, error: overDay ? 'Only one withdrawal per day.' : `Level ${level} withdrawal limit reached.` });
       }
 
       const txCol = await getCollection('transactions');
