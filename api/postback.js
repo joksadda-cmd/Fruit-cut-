@@ -10,7 +10,7 @@
 // problems server-side instead of surfacing them back to GigaPub.
 //
 // URL registered with GigaPub support (appid 6350):
-//   https://fruit-cut-eight.vercel.app/api/postback?network=gigapub&uid={user_id}&event=ad_shown&token=fc_pb_8x9k2m4n7q
+//   https://<your-domain>/api/postback?network=gigapub&uid={user_id}&event=ad_shown&token=<GIGAPUB_POSTBACK_TOKEN>
 
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
@@ -21,7 +21,14 @@ const { markGameGigapubPostback, recordAdsgramConfirm } = require('../lib/adSess
 // Shared secret agreed with GigaPub support — anyone hitting this URL
 // without the right token is ignored. If you ever need to rotate it,
 // update it both here AND in GigaPub's dashboard/support ticket.
-const POSTBACK_TOKEN = 'fc_pb_8x9k2m4n7q';
+// The GigaPub secret lives ONLY in the Vercel env var GIGAPUB_POSTBACK_TOKEN (never in code). If it is missing, every
+// GigaPub postback is refused (fail closed) — nobody can be paid until it is set.
+const crypto = require('crypto');
+const { checkAndIncrementDailyLimit } = require('../lib/dailyLimit');
+function safeEqual(a, b) {
+  const x = Buffer.from(String(a)), y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
 const DEDUPE_WINDOW_MS = 60 * 1000; // ignore an identical repeat within 60s (network retries)
 
 module.exports = async (req, res) => {
@@ -46,11 +53,17 @@ module.exports = async (req, res) => {
       return ok();
     }
 
-    if (token !== POSTBACK_TOKEN) {
-      console.warn('postback: invalid token', req.query);
+    const gpToken = String(process.env.GIGAPUB_POSTBACK_TOKEN || '').trim();
+    if (!gpToken) {
+      console.error('[guardian] GIGAPUB_POSTBACK_TOKEN is not set — GigaPub postback refused.');
       return ok();
     }
-    if (network !== 'gigapub' || !uid) {
+    const givenTok = String(Array.isArray(token) ? token[0] : token || '');
+    if (!safeEqual(givenTok, gpToken)) {
+      console.warn('postback: invalid token');
+      return ok();
+    }
+    if (network !== 'gigapub' || !uid || !/^\d{3,15}$/.test(String(uid))) {
       console.warn('postback: unexpected network/uid', req.query);
       return ok();
     }
@@ -58,7 +71,7 @@ module.exports = async (req, res) => {
     const telegramId = String(uid);
     const usersCol = await getCollection('users');
     const user = await findUserByTelegramId(usersCol, telegramId);
-    if (!user || user.banned) return ok();
+    if (!user || user.banned || user.accountLocked) return ok(); // banned / locked accounts earn nothing
 
     // In-game claim: if this view belongs to a pending in-game GigaPub claim, just confirm it
     // for that claim (api/ads.js pays it, spending 3 min of play time) — do NOT also pay here.
@@ -66,28 +79,26 @@ module.exports = async (req, res) => {
 
     const eventsCol = await getCollection('postbackEvents');
 
-    // Dedupe — ignore an identical postback fired again within the window
-    // (guards against GigaPub retrying the same notification).
-    const recentDupe = await eventsCol.findOne({
-      telegramId,
-      network,
-      event,
-      receivedAt: { $gte: new Date(Date.now() - DEDUPE_WINDOW_MS) },
-    });
-    if (recentDupe) return ok();
+    // 1) Atomic "one reward per 60s" gate. The old check (read, then write AFTER paying) could be beaten by sending
+    //    many identical requests at the same moment — every one of them passed before the first was recorded.
+    //    Here the unique _id makes the database itself reject every request but one.
+    try {
+      const gate = await getCollection('postbackGate');
+      await gate.findOneAndUpdate(
+        { _id: `gp_${telegramId}`, lastAt: { $lt: new Date(Date.now() - DEDUPE_WINDOW_MS) } },
+        { $set: { lastAt: new Date(), expireAt: new Date(Date.now() + 24 * 3600 * 1000) } },
+        { upsert: true }
+      );
+    } catch (e) {
+      return ok(); // duplicate key = a reward was already given in the last 60s
+    }
 
-    // Same daily cap as everything else (default 20/day for gigapub)
+    // 2) Atomic daily cap (same counter style as every other reward) — reserve the slot BEFORE paying.
     const settings = await getSettings();
     const maxPerDay = (settings.adDailyLimits && settings.adDailyLimits.gigapub) || 20;
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const startOfDay = new Date(todayStr + 'T00:00:00.000Z');
-    const countToday = await eventsCol.countDocuments({
-      telegramId,
-      network,
-      event,
-      receivedAt: { $gte: startOfDay },
-    });
-    if (countToday >= maxPerDay) return ok();
+    const cap = await checkAndIncrementDailyLimit(telegramId, 'gigapub_postback', maxPerDay);
+    if (!cap.allowed) return ok();
+    await eventsCol.insertOne({ telegramId, network, event, receivedAt: new Date() });
 
     const rewardFc = (settings.adRewardFc && settings.adRewardFc.gigapub) || 20;
 
@@ -103,8 +114,6 @@ module.exports = async (req, res) => {
     );
     if (updatedUser && plan.isLevelUp && plan.newLevel >= 3) checkReferralStep4(updatedUser, plan.newLevel).catch(() => {});
     if (updatedUser) maybeTriggerValidReferral(updatedUser);
-
-    await eventsCol.insertOne({ telegramId, network, event, receivedAt: new Date() });
 
     const txCol = await getCollection('transactions');
     await txCol.insertOne({
