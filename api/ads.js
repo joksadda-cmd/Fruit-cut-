@@ -22,7 +22,10 @@ const { creditAdReward } = require('../lib/adReward');
 const { getSettings } = require('../lib/settings');
 
 // 'adsgram' (Adsgram Special, block 28066) is switched off: the block is inactive and the card was removed from the app.
-const VALID_NETWORKS = ['adsgramDaily', 'gigapub', 'monetag', 'gameAd', 'adsgramTask'];
+// 'gigapub' is NOT here on purpose: the app never claims GigaPub through this endpoint (it is paid ONLY by
+// GigaPub's own server via api/postback.js). Leaving it here was a free faucet: request_session -> wait 5s -> claim,
+// no ad needed. (The in-game GigaPub reward is still verified: network 'gameAd' + provider 'gigapub' + postback.)
+const VALID_NETWORKS = ['adsgramDaily', 'monetag', 'gameAd', 'adsgramTask'];
 // 'adsgramTask' = the Adsgram Task card in Tasks > Daily. It is now confirmed server-to-server like the other
 // Adsgram blocks (Reward URL network=adsgramTask). Also: one-time session, daily cap (lib/constants.js) and a minimum gap.
 const { AD_HARD_DAILY_CAPS } = require('../lib/constants');
@@ -36,6 +39,9 @@ const ADSGRAM_TASK_MIN_GAP_MS = 15 * 1000;
 // (the "Reward URL" of the ad block) after the user really got the reward. No confirmation = no FC.
 // Needs the ADSGRAM_REWARD_TOKEN environment variable; without it this check is skipped.
 const ADSGRAM_S2S = !!String(process.env.ADSGRAM_REWARD_TOKEN || '').trim();
+// FAIL CLOSED: without the token nothing can confirm an Adsgram view, so Adsgram rewards are refused
+// (they used to be paid on the client's word alone). Only set ADSGRAM_ALLOW_UNVERIFIED=1 if you really want the old behaviour.
+const ADSGRAM_ALLOW_UNVERIFIED = process.env.ADSGRAM_ALLOW_UNVERIFIED === '1';
 const GAME_PROVIDERS = ['gigapub', 'adsgram'];
 const GIGAPUB_MIN_WATCH_MS = 5000;
 
@@ -75,7 +81,7 @@ module.exports = async (req, res) => {
     if (action && action !== 'game_start' && action !== 'game_ping') {
       const usersCol = await getCollection('users');
       const me = await findUserByTelegramId(usersCol, telegramId);
-      if (me && me.accountLocked && (me.accountLockedReason === 'bot_pattern' || me.accountLockedReason === 'api_flood')) {
+      if (me && (me.banned || (me.accountLocked && (me.accountLockedReason === 'bot_pattern' || me.accountLockedReason === 'api_flood')))) {
         return res.status(200).json({ success: false, message: 'account_locked' });
       }
     }
@@ -152,6 +158,10 @@ module.exports = async (req, res) => {
           }
         }
         const isAdsgram = action === 'adsgram' || action === 'adsgramDaily' || action === 'adsgramTask' || (action === 'gameAd' && gameProvider === 'adsgram');
+        if (isAdsgram && !ADSGRAM_S2S && !ADSGRAM_ALLOW_UNVERIFIED) {
+          console.error('[guardian] ADSGRAM_REWARD_TOKEN is not set — Adsgram reward refused (cannot verify the view).');
+          return res.status(200).json({ success: false, message: 'ads_unavailable' });
+        }
         if (isAdsgram && ADSGRAM_S2S) {
           const blocks = action === 'adsgram' ? ['adsgram'] : action === 'adsgramTask' ? ['adsgramTask'] : ['adsgramDaily'];
           // The Task card asks for its session AFTER the reward event, so Adsgram's callback may be a bit older than the session.
