@@ -41,6 +41,7 @@ const SLASH_XP_REWARD = 5;
 const { checkReferralStep3, checkReferralStep4, checkReferralWeeklyValid } = require('../lib/referral');
 const { recordSlashWin } = require('../lib/leaderboard');
 const { notifyAdmin } = require('../lib/notify');
+const { lockUser, isBotLocked } = require('../lib/lockup');
 
 // How close to *exactly* SLASH_COOLDOWN_MS a claim has to land to count as
 // "suspiciously precise". Real humans check back a bit late almost every
@@ -71,6 +72,10 @@ module.exports = async (req, res) => {
     }
     if (user.banned) {
       return res.status(403).json({ success: false, error: 'Account suspended' });
+    }
+    // A script-locked account earns nothing more (same rule as ads, lib/guardian.js)
+    if (isBotLocked(user) && (req.body && (req.body.action === 'start' || req.body.action === 'claim'))) {
+      return res.status(200).json({ success: false, error: 'account_locked', message: '🔒 Your account is locked for review. Contact support.' });
     }
 
     const now = new Date();
@@ -235,6 +240,11 @@ module.exports = async (req, res) => {
             `<b>${newStreak}</b> slash rewards in a row within ${PRECISION_TOLERANCE_MS / 1000}s of the exact ` +
             `30-minute cooldown — worth a manual look.`
         ).catch(() => {});
+      }
+
+      // A human cannot hit the exact 30-minute mark 6 times in a row (3 hours, +-3s): lock the account.
+      if (newStreak >= 6 && newStreak % 6 === 0) {
+        lockUser(updatedUser, 'bot_pattern', { botFlaggedAt: new Date() }).catch(() => {});
       }
 
       // 4. Record transaction log
