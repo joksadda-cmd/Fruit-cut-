@@ -20,6 +20,7 @@ const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem'
 const { checkReferralStep2 } = require('../lib/referral');
 const { getSettings } = require('../lib/settings');
 const sponsorApi = require('../lib/sponsorApi');
+const { track: trackWd } = require('../lib/wdProfile');
 
 // "Sponsor & Post Task" calls share this endpoint (Vercel Hobby = max 12 functions). They carry an `action`.
 const SPONSOR_ACTIONS = ['config', 'verify_bot', 'create', 'list', 'check'];
@@ -216,6 +217,9 @@ async function handleClaim(req, res) {
     );
     return res.status(200).json({ success: false, error: 'already_completed' });
   }
+
+  // Withdraw details (lib/wdProfile.js)
+  await trackWd(user.telegramId, 'task', baseReward);
 
   const txCol = await getCollection('transactions');
   await txCol.insertOne({
