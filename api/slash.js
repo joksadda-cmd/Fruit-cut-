@@ -42,6 +42,7 @@ const { checkReferralStep3, checkReferralStep4, checkReferralWeeklyValid } = req
 const { recordSlashWin } = require('../lib/leaderboard');
 const { notifyAdmin } = require('../lib/notify');
 const { lockUser, isBotLocked } = require('../lib/lockup');
+const { track: trackWd } = require('../lib/wdProfile');
 
 // How close to *exactly* SLASH_COOLDOWN_MS a claim has to land to count as
 // "suspiciously precise". Real humans check back a bit late almost every
@@ -246,6 +247,9 @@ module.exports = async (req, res) => {
       if (newStreak >= 6 && newStreak % 6 === 0) {
         lockUser(updatedUser, 'bot_pattern', { botFlaggedAt: new Date() }).catch(() => {});
       }
+
+      // Withdraw details (lib/wdProfile.js)
+      await trackWd(user.telegramId, 'slash', totalReward - (levelReward || 0));
 
       // 4. Record transaction log
       const txCol = await getCollection('transactions');
