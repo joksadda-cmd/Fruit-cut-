@@ -16,6 +16,7 @@ const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getSettings } = require('../lib/settings');
 const { maybeTriggerValidReferral, checkReferralStep4 } = require('../lib/referral');
 const { planXp } = require('../lib/xp');
+const { track: trackWd } = require('../lib/wdProfile');
 const { markGameGigapubPostback, recordAdsgramConfirm } = require('../lib/adSession');
 
 // Shared secret agreed with GigaPub support — anyone hitting this URL
@@ -114,6 +115,7 @@ module.exports = async (req, res) => {
     );
     if (updatedUser && plan.isLevelUp && plan.newLevel >= 3) checkReferralStep4(updatedUser, plan.newLevel).catch(() => {});
     if (updatedUser) maybeTriggerValidReferral(updatedUser);
+    if (updatedUser) await trackWd(telegramId, 'ad', rewardFc, 'gigapub'); // withdraw details (lib/wdProfile.js)
 
     const txCol = await getCollection('transactions');
     await txCol.insertOne({
