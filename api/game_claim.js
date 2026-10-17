@@ -13,6 +13,7 @@ const { getTopReferrers, getWeeklyReferrals, getUserReferralRank } = require('..
 const { getRecentWinners } = require('../lib/recentWinners');
 const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem');
 const { ObjectId } = require('mongodb');
+const { track: trackWd } = require('../lib/wdProfile');
 
 const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec: every 12hr)
 
@@ -137,6 +138,9 @@ async function handleClaimDailyGift(req, res, user) {
       nextDailyGiftAt,
     });
   }
+
+  // Withdraw details (lib/wdProfile.js)
+  await trackWd(user.telegramId, 'gift', baseReward);
 
   const txCol = await getCollection('transactions');
   await txCol.insertOne({
