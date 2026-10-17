@@ -2,7 +2,7 @@
 // POST /api/slash
 // Fruit Cut Slash Game API Endpoint
 // Cooldown: 30 minutes between games.
-// Reward: 15 to 40 FC randomly (server-validated).
+// Reward: 25 to 50 FC randomly (server-validated).
 // Caps: 48 claims / UTC day, 366 claims / week (see lib/slashGame.js).
 //
 // BUG FOUND WHILE ANSWERING "any more bugs like the last one?": this file
@@ -166,7 +166,7 @@ module.exports = async (req, res) => {
         });
       }
 
-      // 1. Calculate slice reward: 15 - 40 FC (weighted)
+      // 1. Calculate slice reward: 25 - 50 FC (weighted, rolled server-side only)
       const baseReward = pickSlashReward();
 
       // 2. Calculate XP & Level progression (+5 XP per slash)
