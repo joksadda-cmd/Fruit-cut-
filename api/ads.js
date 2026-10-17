@@ -191,7 +191,7 @@ module.exports = async (req, res) => {
       }
 
       const settings = await getSettings();
-      const amount = (settings.adRewardFc && settings.adRewardFc[action]) || (action === 'gameAd' ? 10 : 20);
+      const amount = (settings.adRewardFc && settings.adRewardFc[action]) || (action === 'gameAd' ? 10 : action === 'adsgramDaily' ? 40 : 20);
 
       // CRITICAL FIX: atomic limit enforcement (payReward also handles play-time for gameAd)
       const result = await payReward(telegramId, action, amount, sessionId);
