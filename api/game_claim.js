@@ -1,6 +1,6 @@
 // api/game_claim.js
 // POST /api/game_claim
-// Handles gift claims, Daily Gift Box / Treasure Box (20-100 FC + 10 XP),
+// Handles gift claims, Daily Gift Box / Treasure Box (30-80 FC + 10 XP, every 8h),
 // and the Weekly Competition leaderboard (Slash + Refer tabs — see
 // handleWeeklyLeaderboard below).
 
@@ -15,7 +15,9 @@ const { getLevelForXp, getLevelProgress, LEVELS } = require('../lib/levelSystem'
 const { ObjectId } = require('mongodb');
 const { track: trackWd } = require('../lib/wdProfile');
 
-const DAILY_GIFT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours (user spec: every 12hr)
+const DAILY_GIFT_COOLDOWN_MS = 8 * 60 * 60 * 1000; // 8 hours (changed 12h -> 8h on 2026-10-17)
+const TREASURE_MIN_FC = 30;
+const TREASURE_MAX_FC = 80;
 
 // ── Admin-sent gift claim ──────────────────────────────────────────
 async function handleClaimGift(req, res, user) {
@@ -64,7 +66,7 @@ async function handleClaimGift(req, res, user) {
   });
 }
 
-// ── Daily Gift Box ("Treasure Box"): random FC + fixed XP once per 12h ──
+// ── Daily Gift Box ("Treasure Box"): random FC + fixed XP once per 8h ──
 async function handleDailyGiftStatus(req, res, user) {
   const now = Date.now();
   const lastTime = user.lastDailyGiftAt ? new Date(user.lastDailyGiftAt).getTime() : 0;
@@ -87,9 +89,9 @@ async function handleClaimDailyGift(req, res, user) {
   const now = new Date();
   const cutoff = new Date(now.getTime() - DAILY_GIFT_COOLDOWN_MS);
 
-  // Server-side random reward: 20 to 100 FC (updated per Rasedul's spec —
-  // was 20-30 FC, which had gotten too low relative to slash/task rewards).
-  const baseReward = Math.floor(Math.random() * (100 - 20 + 1)) + 20;
+  // Server-side random reward: 30 to 80 FC (updated 2026-10-17, was 20-100 FC).
+  // The amount is rolled here on the server only — the client never sends or influences it.
+  const baseReward = Math.floor(Math.random() * (TREASURE_MAX_FC - TREASURE_MIN_FC + 1)) + TREASURE_MIN_FC;
 
   // Level-up bonus on the XP this box grants — same pattern as
   // api/slash.js and api/verify_task.js, so a Treasure Box open that
@@ -134,7 +136,7 @@ async function handleClaimDailyGift(req, res, user) {
     return res.status(200).json({
       success: false,
       error: 'gift_on_cooldown',
-      message: 'Treasure box is on 12-hour cooldown! Available soon.',
+      message: 'Treasure box is on 8-hour cooldown! Available soon.',
       nextDailyGiftAt,
     });
   }
@@ -172,7 +174,7 @@ async function handleClaimDailyGift(req, res, user) {
 
 // ── Weekly Competition (Slash + Refer tabs) ─────────────────────────
 // Backs the "Weekly Competition" leaderboard modal: two tabs sharing one
-// call — Top Slasher (lib/leaderboard.js, 50+ wins gate, 30,000 FC pool,
+// call — Top Slasher (lib/leaderboard.js, 30+ wins gate, 30,000 FC pool,
 // top 20) and Top Referrer (lib/referralLeaderboard.js, 20-referral gate,
 // 50,000 FC pool, top 15). Both reset every Monday 00:00 UTC and are paid
 // out by the same cron (api/cron_weekly_leaderboard.js).
