@@ -20,7 +20,7 @@ const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
 const val = (n, d) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? Number(args[i + 1]) : d; };
 const DAYS = val('--days', 7);
-const CEILING = val('--ceiling', 7000);
+const CEILING = val('--ceiling', 8500); // keep equal to lib/guardian.js (updated 2026-10-17)
 const AD_CEILING = val('--ad-ceiling', 220);
 const MANY_WITHDRAWALS = val('--many-withdrawals', 8);
 
