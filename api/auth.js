@@ -34,6 +34,7 @@ const { checkChannelMembership } = require('../lib/joinGate');
 const { checkReferralStep1, startReferralCaptcha, verifyReferralCaptcha, grantWeeklyReferralValidity } = require('../lib/referral');
 const { handleOnboardingAction, onboardingState } = require('../lib/onboarding');
 const { recordSignupAndCheck, alertIpBurst, checkReferralVelocity } = require('../lib/velocity');
+const { checkSignupBurst } = require('../lib/signupBursts');
 const { isBannedInRegistry, registerBan } = require('../lib/lockup');
 
 const MINI_APP_URL = 'https://t.me/Fruit_cut_bot/PlayTo_Earn'; // update if your bot/app short-name differs
@@ -255,6 +256,9 @@ module.exports = async (req, res) => {
       await usersCol.insertOne(newUser);
       user = newUser;
       if (vel.locked) alertIpBurst({ ip: clientIp, count: vel.count, countHour: vel.countHour, userId: telegramId });
+      // Many accounts of ANY kind within 5 minutes (not only one IP) -> one alert to the admin, max every 15 min.
+      // Awaited with a short cap: serverless can freeze work that is still running after the response.
+      await Promise.race([checkSignupBurst(), new Promise((r) => setTimeout(r, 1200))]);
 
       // ── Instant referral link association (server-side only) ─────────
       if (referredBy && String(referredBy) !== String(telegramId)) {
@@ -274,7 +278,7 @@ module.exports = async (req, res) => {
           checkReferralVelocity(referrerAfter);
           // NOTE: this new referral does NOT yet count toward the weekly
           // "Top Referrer" leaderboard — that only happens once the friend
-          // has joined the channel+group and played their first game (see
+          // has joined the channel+payment-channel and played their first game (see
           // checkReferralWeeklyValid in lib/referral.js, called from
           // api/slash.js). Crediting it here at signup would let anyone
           // farm the weekly FC pool with disposable accounts.
@@ -324,7 +328,7 @@ module.exports = async (req, res) => {
     // or the other (valid or permanently blocked) — no point prompting
     // someone whose referral already counts, or already never will.
     // UPDATED 2026-09-28: the tap-captcha + ad step is no longer part of the
-    // referral flow (a referral now counts after channel+group join + first
+    // referral flow (a referral now counts after channel+payment-channel join + first
     // game — see lib/referral.js). Kept false so the frontend never shows it.
     const referCaptchaNeeded = false;
 
