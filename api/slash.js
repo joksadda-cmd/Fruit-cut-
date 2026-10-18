@@ -4,6 +4,8 @@
 // Cooldown: 30 minutes between games.
 // Reward: 25 to 50 FC randomly (server-validated).
 // Caps: 48 claims / UTC day, 366 claims / week (see lib/slashGame.js).
+// Anti-bot (2026-10-18): repeated refused tries -> 2-min pause -> lock; same-time multi-account clusters; wider
+// exact-interval check; play-time metronome — all in lib/slashGuard.js.
 //
 // BUG FOUND WHILE ANSWERING "any more bugs like the last one?": this file
 // was running an OLDER version with no session gate at all. The newer,
@@ -43,13 +45,14 @@ const { recordSlashWin } = require('../lib/leaderboard');
 const { notifyAdmin } = require('../lib/notify');
 const { lockUser, isBotLocked } = require('../lib/lockup');
 const { track: trackWd } = require('../lib/wdProfile');
+const slashGuard = require('../lib/slashGuard');
 
-// How close to *exactly* SLASH_COOLDOWN_MS a claim has to land to count as
-// "suspiciously precise". Real humans check back a bit late almost every
-// time; a cron/Termux loop tends to fire within a couple seconds of the
-// exact interval, over and over.
-const PRECISION_TOLERANCE_MS = 3000;
-const PRECISION_STREAK_FLAG_AT = 3; // 3 back-to-back exact-interval claims — per Rasedul's spec: no human hits the exact same 30-min mark 3 times running without any delay drift, so 3 is treated as script activity
+// How close to *exactly* SLASH_COOLDOWN_MS a claim has to land to count as "suspiciously precise".
+// Real humans come back minutes late; a cron/Termux loop fires right on the mark — even with a little
+// random delay it stays inside a minute. (Was 3 s; widened to 60 s on 2026-10-18 — see lib/slashGuard.js CFG.)
+const PRECISION_TOLERANCE_MS = slashGuard.CFG.PRECISION_TOLERANCE_MS;
+const PRECISION_STREAK_FLAG_AT = slashGuard.CFG.PRECISION_NOTIFY_AT; // admin alert at 3 in a row
+const PRECISION_STREAK_LOCK_AT = slashGuard.CFG.PRECISION_LOCK_AT;   // account lock at 4 in a row
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -77,6 +80,21 @@ module.exports = async (req, res) => {
     // A script-locked account earns nothing more (same rule as ads, lib/guardian.js)
     if (isBotLocked(user) && (req.body && (req.body.action === 'start' || req.body.action === 'claim'))) {
       return res.status(200).json({ success: false, error: 'account_locked', message: '🔒 Your account is locked for review. Contact support.' });
+    }
+
+    // Short pause after repeated refused tries (lib/slashGuard.js). Still-hammering scripts escalate to a lock.
+    if (req.body && (req.body.action === 'start' || req.body.action === 'claim')) {
+      const waitMs = slashGuard.throttleRemainingMs(user);
+      if (waitMs > 0) {
+        const r = await slashGuard.recordRejectedAttempt(user, 'on_cooldown', req.body.action);
+        if (r.locked) return res.status(200).json({ success: false, error: 'account_locked', message: '🔒 Your account is locked for review. Contact support.' });
+        return res.status(200).json({
+          success: false,
+          error: 'too_fast',
+          message: `⏳ Too many attempts. Please wait ${Math.ceil(waitMs / 1000)} seconds.`,
+          retryAfterMs: waitMs,
+        });
+      }
     }
 
     const now = new Date();
@@ -112,6 +130,9 @@ module.exports = async (req, res) => {
     // session it can never legitimately use.
     if (action === 'start') {
       if (onCooldown) {
+        // The real app checks the cooldown before opening the arena, so this is rare for people and constant for scripts.
+        const r = await slashGuard.recordRejectedAttempt(user, 'on_cooldown', 'start');
+        if (r.locked) return res.status(200).json({ success: false, error: 'account_locked', message: '🔒 Your account is locked for review. Contact support.' });
         return res.status(200).json({ success: false, error: 'on_cooldown', nextAvailableAt, remainingMs });
       }
       const sessionId = await createSlashSession(telegramId);
@@ -121,6 +142,8 @@ module.exports = async (req, res) => {
     // ── Claim / Slash Action ───────────────────────────────────────
     if (action === 'claim') {
       if (onCooldown) {
+        const r = await slashGuard.recordRejectedAttempt(user, 'on_cooldown', 'claim');
+        if (r.locked) return res.status(200).json({ success: false, error: 'account_locked', message: '🔒 Your account is locked for review. Contact support.' });
         return res.status(200).json({
           success: false,
           error: 'on_cooldown',
@@ -132,6 +155,8 @@ module.exports = async (req, res) => {
 
       const sessionCheck = await claimSlashSession(telegramId, req.body && req.body.sessionId);
       if (!sessionCheck.ok) {
+        const r = await slashGuard.recordRejectedAttempt(user, sessionCheck.reason, 'claim');
+        if (r.locked) return res.status(200).json({ success: false, error: 'account_locked', message: '🔒 Your account is locked for review. Contact support.' });
         return res.status(200).json({
           success: false,
           error: 'invalid_session',
@@ -217,6 +242,8 @@ module.exports = async (req, res) => {
             lastActive: now,
             slashPreciseStreak: newStreak,
           },
+          // last 6 start->claim times (ms): a script repeats the same number, a person never does
+          $push: { slashPlay: { $each: [Math.round(sessionCheck.playMs || 0)], $slice: -slashGuard.CFG.PLAY_SAMPLES } },
         },
         { returnDocument: 'after' }
       );
@@ -230,22 +257,27 @@ module.exports = async (req, res) => {
         });
       }
 
-      // Flag (never auto-ban) accounts with a long streak of bot-precise
-      // claim timing, so an admin can look at the account manually. Only
-      // pings once per crossing of each further threshold multiple, so it
-      // doesn't spam a DM on every single claim after the first flag.
-      if (newStreak >= PRECISION_STREAK_FLAG_AT && newStreak % PRECISION_STREAK_FLAG_AT === 0) {
+      // Bot-precise timing streak. Admin is told at 3 in a row; at 4 in a row the account is locked
+      // (soft lock: balance stays, one tap to unlock in the admin bot). Never an automatic ban.
+      if (newStreak >= PRECISION_STREAK_LOCK_AT) {
+        const locked = await lockUser(updatedUser, 'bot_pattern', { botFlaggedAt: new Date() }).catch(() => false);
+        if (locked) {
+          notifyAdmin(
+            `🤖 <b>Slash script detected — account LOCKED</b>\n\n` +
+              `User <code>${user.telegramId}</code> (@${user.username || 'unknown'}) claimed <b>${newStreak}</b> slash rewards in a row ` +
+              `within ${PRECISION_TOLERANCE_MS / 1000}s of the exact 30-minute cooldown. A person is never that regular.\n\n` +
+              `The account is 🔒 locked (no slash, ads, withdrawals). If it was a real player, unlock below.`,
+            { reply_markup: slashGuard.userButtons(user.telegramId) }
+          ).catch(() => {});
+        }
+      } else if (newStreak >= PRECISION_STREAK_FLAG_AT && newStreak % PRECISION_STREAK_FLAG_AT === 0) {
         notifyAdmin(
           `🤖 <b>Possible scripted slash activity</b>\n\n` +
             `User <code>${user.telegramId}</code> (@${user.username || 'unknown'}) has claimed ` +
             `<b>${newStreak}</b> slash rewards in a row within ${PRECISION_TOLERANCE_MS / 1000}s of the exact ` +
-            `30-minute cooldown — worth a manual look.`
+            `30-minute cooldown — one more and the account is locked automatically.`,
+          { reply_markup: slashGuard.reviewButtons(user.telegramId) }
         ).catch(() => {});
-      }
-
-      // A human cannot hit the exact 30-minute mark 6 times in a row (3 hours, +-3s): lock the account.
-      if (newStreak >= 6 && newStreak % 6 === 0) {
-        lockUser(updatedUser, 'bot_pattern', { botFlaggedAt: new Date() }).catch(() => {});
       }
 
       // Withdraw details (lib/wdProfile.js)
@@ -273,14 +305,24 @@ module.exports = async (req, res) => {
       recordSlashWin(user.telegramId, user.username).catch(() => {});
 
       // 5b. Log for the admin dashboard's rolling 7-day slash count (auto-purged via TTL)
-      getCollection('slashLog')
-        .then((col) => col.insertOne({ telegramId: user.telegramId, createdAt: now }))
-        .catch(() => {});
+      // Awaited (not fire-and-forget): serverless can freeze work that is still running after the response.
+      // Capped at 1.5 s so detection can never make a real claim feel slow.
+      try {
+        await Promise.race([
+          (async () => {
+            const col = await getCollection('slashLog');
+            await col.insertOne({ telegramId: user.telegramId, createdAt: now });
+            await slashGuard.checkSyncGroup(updatedUser, now);   // same-time multi-account clusters
+            await slashGuard.checkPlayTime(updatedUser);          // metronome play-time (alert only)
+          })(),
+          new Promise((resolve) => setTimeout(resolve, 1500)),
+        ]);
+      } catch (e) { /* detection must never break a claim */ }
 
       // 6. Trigger referral milestones asynchronously
       checkReferralStep3(updatedUser).catch(() => {});
       // Also check: does this claim make the referral "valid" for this
-      // week's Top Referrer leaderboard? (needs channel+group join + first
+      // week's Top Referrer leaderboard? (needs channel+payment-channel join + first
       // game claim — separate from Step 3's 10-claim/120 FC milestone above.)
       checkReferralWeeklyValid(updatedUser).catch(() => {});
       if (newLevel >= 3) {
