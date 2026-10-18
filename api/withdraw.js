@@ -139,7 +139,7 @@ module.exports = async (req, res) => {
         success: false,
         locked: true,
         error: 'account_locked',
-        message: '🔒 Your account is temporarily locked for review. Please contact support in our Official Community.',
+        message: '🔒 Your account is temporarily locked for review. Please contact support (@fruitcutSu).',
       });
     }
 
@@ -237,10 +237,10 @@ module.exports = async (req, res) => {
         return res.status(200).json({ success: false, error: `Complete ${minTasks} tasks first (${lifetimeTasks}/${minTasks}).` });
       }
 
-      // Channel/community join gate (existing mechanism)
+      // Channel + payment-channel join gate (existing mechanism)
       const channels = await checkChannelMembership(telegramId);
       if (!channels.every((c) => c.joined)) {
-        return res.status(200).json({ success: false, error: 'Join our Official Channel & Community first.' });
+        return res.status(200).json({ success: false, error: 'Join our Official Channel & Payment Channel first.' });
       }
 
       // Mandatory pre-withdraw ad watch — must be a freshly-claimed session
