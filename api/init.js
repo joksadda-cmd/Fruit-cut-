@@ -16,6 +16,7 @@ const { rateGuard } = require('../lib/rateLimit');
 const { getCollection, findUserByTelegramId } = require('../lib/db');
 const { getLevelProgress } = require('../lib/levelSystem');
 const { getAdCountsToday } = require('../lib/adSession');
+const { getPublicStats } = require('../lib/publicStats');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -49,6 +50,12 @@ module.exports = async (req, res) => {
     // ── All Games section (list + play counter). Kept in this file because the
     // Vercel Hobby plan allows max 12 serverless functions. ──────────────────
     const body = req.body || {};
+    // Community stats card at the bottom of the Player Profile: total users, active today, USDT paid this
+    // calendar month. Totals only, cached 5 minutes (lib/publicStats.js).
+    if (body.action === 'public_stats') {
+      const stats = await getPublicStats();
+      return res.status(200).json({ success: true, stats });
+    }
     if (body.action === 'list_games') {
       const gamesCol = await getCollection('games');
       // FAST PATH: small pages (12), only the 4 fields the app shows, no countDocuments
